@@ -1,11 +1,11 @@
 import Script from "next/script";
 
 const BANNER = String.raw`
- ____  _____ _____ _____  __  ____ _   _    _  _____
-|  _ \| ____| ____|_ _\ \/ / / ___| | | |  / \|_   _|
-| | | |  _| |  _|  | | \  / | |   | |_| | / _ \ | |
-| |_| | |___| |___ | | /  \ | |___|  _  |/ ___ \| |
-|____/|_____|_____|___/_/\_\ \____|_| |_/_/   \_\_|
+ _____ ___ ____  _____ ____ ___  ____ _____ _______  __
+|  ___|_ _|  _ \| ____/ ___/ _ \|  _ \_   _| ____\ \/ /
+| |_   | || |_) |  _|| |  | | | | |_) || | |  _|  \  /
+|  _|  | ||  _ <| |__| |__| |_| |  _ < | | | |___ /  \
+|_|   |___|_| \_\_____\____\___/|_| \_\|_| |_____/_/\_\
 `;
 
 const BANNER_SCRIPT = `
@@ -26,7 +26,7 @@ const BANNER_SCRIPT = `
     "background:#d4d4d4",
     "background:transparent"
   );
-  console.log("%cOfficial: https://github.com/lieyanc/FireCortex  |  Repository: https://github.com/lieyanc/FireCortex  |  License: Apache License 2.0", "color:#64748b;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace");
+  console.log("%cRepository: https://github.com/lieyanc/FireCortex  |  License: Apache License 2.0", "color:#64748b;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace");
 })();
 `;
 
