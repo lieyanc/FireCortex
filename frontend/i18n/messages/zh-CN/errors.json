@@ -458,6 +458,12 @@
     "serviceUnavailable": "设置服务不可用。",
     "smtpInvalid": "SMTP 设置无效。"
   },
+  "systemUpdate": {
+    "inProgress": "已有更新正在进行中。",
+    "noPending": "没有待安装的已下载版本，请重新检查更新。",
+    "superadminRequired": "仅超级管理员可以管理更新。",
+    "unavailable": "当前服务未启用自动更新。"
+  },
   "skill": {
     "invalidId": "技能 ID 无效。",
     "notFound": "技能不存在。",

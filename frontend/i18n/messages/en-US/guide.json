@@ -119,7 +119,7 @@
     "trace": "Render processing traces, model thinking, tool calls, inline errors, Markdown, formulas, tables, code blocks, and file cards.",
     "billing": "Support subscriptions, balances, usage, per-call, per-second, and tiered billing with aggregated multi-tool run costs.",
     "admin": "Provide unified admin entry points for accounts, identity providers, upstreams, models, billing, logs, chats, files, MCP, and audit logs.",
-    "ops": "Include structured logs, request IDs, Swagger docs, Docker builds, static asset hosting, GeoIP audit, and OpenTelemetry traces."
+    "ops": "Include structured logs, request IDs, Swagger docs, single-binary releases with in-place updates, embedded web UI hosting, GeoIP audit, and OpenTelemetry traces."
   },
   "userTips": {
     "profile": "Set profile, timezone, and security options so chats, files, tools, and memory match your usage habits.",

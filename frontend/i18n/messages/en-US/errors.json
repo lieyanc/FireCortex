@@ -458,6 +458,12 @@
     "serviceUnavailable": "Settings service is unavailable.",
     "smtpInvalid": "Invalid SMTP settings."
   },
+  "systemUpdate": {
+    "inProgress": "An update is already in progress.",
+    "noPending": "No downloaded update is waiting to be installed. Check for updates again.",
+    "superadminRequired": "Only a superadmin can manage updates.",
+    "unavailable": "Self-update is not available on this server."
+  },
   "skill": {
     "invalidId": "Invalid skill ID.",
     "notFound": "Skill not found.",

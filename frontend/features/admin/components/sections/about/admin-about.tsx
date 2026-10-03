@@ -1,10 +1,10 @@
 "use client";
 
-import { useSyncExternalStore, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { CircleArrowUp, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
-import packageMeta from "@/package.json";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,160 +16,352 @@ import {
   DialogHeightTransition,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { SpinnerLabel } from "@/components/ui/spinner";
+import type { AdminSystemUpdateStatus } from "@/features/admin/api/system-update.types";
 import { AdminUpdateTooltipContent } from "@/features/admin/components/admin-update-tooltip-content";
+import { formatDateTime } from "@/features/admin/model/log-display";
 import {
-  compareReleaseVersions,
-  formatReleaseVersion,
-  getCachedLatestReleaseSnapshot,
-  getServerLatestReleaseSnapshot,
-  LATEST_RELEASE_ENDPOINT,
-  resolveAvailableRelease,
-  subscribeLatestReleaseChange,
-  type ReleaseInfo,
-  writeCachedLatestRelease,
-} from "@/features/admin/model/update-check";
+  applySystemUpdate,
+  checkSystemUpdate,
+  dismissSystemUpdate,
+  formatSystemVersion,
+  hasPendingSystemUpdate,
+  systemUpdateReleaseURL,
+  type SystemUpdateSnapshot,
+  useSystemUpdate,
+} from "@/features/admin/model/system-update-store";
 import { AboutSettingsContent } from "@/shared/components/about-settings-content";
 import { UPSTREAM_PROJECT } from "@/shared/config/upstream";
-import { useDialogSnapshot } from "@/shared/hooks/use-dialog-snapshot";
+import { useAuthSession } from "@/shared/auth/auth-session-context";
+import { useLocalizedErrorMessage } from "@/i18n/use-localized-error";
 import { cn } from "@/lib/utils";
 
-type GitHubRelease = {
-  tag_name?: string;
-  html_url?: string;
-};
+type UpdateView =
+  | "loading"
+  | "unavailable"
+  | "current"
+  | "available"
+  | "checking"
+  | "downloading"
+  | "ready"
+  | "applying"
+  | "restartTimeout"
+  | "failed";
 
-type UpdateDialogState =
-  | { type: "current" }
-  | { type: "available"; release: ReleaseInfo }
-  | { type: "failed" };
+function resolveUpdateView(update: SystemUpdateSnapshot): UpdateView {
+  const { status } = update;
+  if (update.restartTimedOut) return "restartTimeout";
+  if (!status) return update.loadError ? "unavailable" : "loading";
+  if (status.state === "applying") return "applying";
+  if (status.state === "checking" || update.pendingAction === "check") return "checking";
+  if (status.state === "downloading") return "downloading";
+  if (status.state === "ready") return "ready";
+  if (status.state === "failed") return "failed";
+  return status.hasUpdate ? "available" : "current";
+}
 
-function AdminUpdateCheck() {
+function useUpdateActions() {
   const t = useTranslations("adminUsers.aboutPage");
-  const [checking, setChecking] = useState(false);
-  const [dialogState, setDialogState] = useState<UpdateDialogState | null>(null);
+  const { accessToken } = useAuthSession();
+  const localizedError = useLocalizedErrorMessage();
+
+  async function run(action: (accessToken: string) => Promise<unknown>): Promise<boolean> {
+    try {
+      await action(accessToken);
+      return true;
+    } catch (error) {
+      toast.error(t("updateDialog.actionFailed"), { description: localizedError(error) });
+      return false;
+    }
+  }
+
+  return {
+    check: () => run(checkSystemUpdate),
+    apply: () => run(applySystemUpdate),
+    dismiss: () => run(dismissSystemUpdate),
+  };
+}
+
+function AdminUpdateActions({ update, canManage }: { update: SystemUpdateSnapshot; canManage: boolean }) {
+  const t = useTranslations("adminUsers.aboutPage");
+  const actions = useUpdateActions();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { status } = update;
+  const view = resolveUpdateView(update);
+  const checking = view === "checking";
 
   async function handleCheckUpdate() {
-    if (checking) return;
+    if (update.pendingAction) return;
+    if (await actions.check()) setDialogOpen(true);
+  }
 
-    setChecking(true);
-    try {
-      const response = await fetch(LATEST_RELEASE_ENDPOINT, {
-        cache: "no-store",
-        headers: { Accept: "application/vnd.github+json" },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Release check failed with HTTP ${response.status}`);
-      }
-
-      const release = (await response.json()) as GitHubRelease;
-      const latestVersion = release.tag_name?.trim();
-      const releaseURL = release.html_url?.trim();
-
-      if (!latestVersion || !releaseURL) {
-        throw new Error("Latest release payload is incomplete");
-      }
-
-      const currentVersion = packageMeta.version;
-      const compareResult = compareReleaseVersions(currentVersion, latestVersion);
-
-      if (compareResult === "available" || compareResult === "unknown") {
-        const release = { version: latestVersion, url: releaseURL };
-        writeCachedLatestRelease(release);
-        setDialogState({ type: "available", release });
-        return;
-      }
-
-      writeCachedLatestRelease({ version: latestVersion, url: releaseURL });
-      setDialogState({ type: "current" });
-    } catch {
-      setDialogState({ type: "failed" });
-    } finally {
-      setChecking(false);
-    }
+  let statusLabel = "";
+  if (view === "available" && status) {
+    statusLabel = t("updateStatus.available", { latest: formatSystemVersion(status.latestVersion) });
+  } else if (view === "downloading" && status) {
+    statusLabel = t("updateStatus.downloading", { progress: Math.round(status.downloadProgress) });
+  } else if (view === "ready") {
+    statusLabel = t("updateStatus.ready");
+  } else if (view === "applying" || update.following) {
+    statusLabel = t("updateStatus.restarting");
+  } else if (view === "failed") {
+    statusLabel = t("updateStatus.failed");
   }
 
   return (
     <>
-      <button
-        type="button"
-        className="inline-flex items-center gap-1 text-xs text-muted-foreground/80 transition-colors hover:text-foreground disabled:cursor-wait disabled:opacity-70"
-        onClick={() => void handleCheckUpdate()}
-        disabled={checking}
-      >
-        <RefreshCw className={cn("size-3", checking && "animate-spin")} />
-        <span>{checking ? t("checkingUpdate") : t("checkUpdate")}</span>
-      </button>
-      <UpdateResultDialog
-        state={dialogState}
-        onOpenChange={(open) => {
-          if (!open) setDialogState(null);
-        }}
-        onRetry={() => void handleCheckUpdate()}
+      {canManage ? (
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground/80 transition-colors hover:text-foreground disabled:cursor-wait disabled:opacity-70"
+          onClick={() => void handleCheckUpdate()}
+          disabled={checking || update.pendingAction !== null}
+        >
+          <RefreshCw className={cn("size-3", checking && "animate-spin")} />
+          <span>{checking ? t("checkingUpdate") : t("checkUpdate")}</span>
+        </button>
+      ) : null}
+      {statusLabel || !canManage ? (
+        <button
+          type="button"
+          className={cn(
+            "inline-flex items-center text-xs transition-colors",
+            view === "failed"
+              ? "text-destructive/90 hover:text-destructive"
+              : statusLabel
+                ? "text-rose-500 hover:text-rose-600"
+                : "text-muted-foreground/80 hover:text-foreground",
+          )}
+          onClick={() => setDialogOpen(true)}
+        >
+          {statusLabel || t("viewUpdate")}
+        </button>
+      ) : null}
+      <UpdateDialog
+        open={dialogOpen}
+        update={update}
+        canManage={canManage}
+        actions={actions}
+        onOpenChange={setDialogOpen}
       />
     </>
   );
 }
 
-function AdminAboutVersionBadge({ updateRelease }: { updateRelease: ReleaseInfo | null }) {
+function AdminAboutVersionBadge({ status }: { status: AdminSystemUpdateStatus | null }) {
   const t = useTranslations("adminUsers.aboutPage");
-  const currentVersion = formatReleaseVersion(packageMeta.version);
 
   return (
     <span className="inline-flex items-center gap-1.5">
-      <span>{currentVersion}</span>
-      {updateRelease ? (
+      <span>{status ? formatSystemVersion(status.currentVersion) : "…"}</span>
+      {hasPendingSystemUpdate(status) ? (
         <CircleArrowUp className="size-3.5 text-rose-500" aria-label={t("updateAvailableIndicator")} />
       ) : null}
     </span>
   );
 }
 
-function UpdateResultDialog({
-  state,
+function UpdateDialog({
+  open,
+  update,
+  canManage,
+  actions,
   onOpenChange,
-  onRetry,
 }: {
-  state: UpdateDialogState | null;
+  open: boolean;
+  update: SystemUpdateSnapshot;
+  canManage: boolean;
+  actions: ReturnType<typeof useUpdateActions>;
   onOpenChange: (open: boolean) => void;
-  onRetry: () => void;
 }) {
   const t = useTranslations("adminUsers.aboutPage");
-  const currentVersion = formatReleaseVersion(packageMeta.version);
-  const stableState = useDialogSnapshot(state);
-  const latestVersion = stableState?.type === "available" ? formatReleaseVersion(stableState.release.version) : "";
+  const locale = useLocale();
+  const localizedError = useLocalizedErrorMessage();
+  const { status, pendingAction } = update;
+  const view = resolveUpdateView(update);
+  const currentVersion = status ? formatSystemVersion(status.currentVersion) : "";
+  const latestVersion = status?.latestVersion ? formatSystemVersion(status.latestVersion) : "";
+  const channel = status ? t(`updateDialog.channels.${status.channel}`) : "";
+  const busy = pendingAction !== null;
+  const showRelease = Boolean(status?.latestVersion && hasPendingSystemUpdate(status));
+  const releaseNotes = status?.releaseNotes.trim() ?? "";
+
+  const title = {
+    loading: t("updateDialog.loadingTitle"),
+    unavailable: t("updateDialog.unavailableTitle"),
+    current: t("updateDialog.currentTitle"),
+    available: t("updateDialog.availableTitle"),
+    checking: t("updateDialog.checkingTitle"),
+    downloading: t("updateDialog.downloadingTitle"),
+    ready: t("updateDialog.readyTitle"),
+    applying: t("updateDialog.applyingTitle"),
+    restartTimeout: t("updateDialog.restartTimeoutTitle"),
+    failed: t("updateDialog.failedTitle"),
+  }[view];
+
+  let description = "";
+  switch (view) {
+    case "loading":
+      description = t("updateDialog.loadingDescription");
+      break;
+    case "unavailable":
+      description = localizedError(update.loadError);
+      break;
+    case "current":
+      description = t("updateDialog.currentDescription", { current: currentVersion, channel });
+      break;
+    case "available":
+      description = status?.channel === "dev"
+        ? t("updateDialog.availableDevDescription", { latest: latestVersion })
+        : t("updateDialog.availableStableDescription", { latest: latestVersion });
+      break;
+    case "checking":
+      description = t("updateDialog.checkingDescription", { channel });
+      break;
+    case "downloading":
+      description = t("updateDialog.downloadingDescription", { latest: latestVersion });
+      break;
+    case "ready":
+      description = t("updateDialog.readyDescription", { latest: latestVersion });
+      break;
+    case "applying":
+      description = t("updateDialog.applyingDescription");
+      break;
+    case "restartTimeout":
+      description = t("updateDialog.restartTimeoutDescription");
+      break;
+    case "failed":
+      description = t("updateDialog.failedDescription");
+      break;
+  }
+
+  function renderPrimaryAction() {
+    if (!canManage || !status) return null;
+    switch (view) {
+      case "checking":
+        return (
+          <Button type="button" disabled>
+            <SpinnerLabel>{t("updateDialog.checking")}</SpinnerLabel>
+          </Button>
+        );
+      case "downloading":
+        return (
+          <Button type="button" disabled>
+            <SpinnerLabel>{t("updateDialog.downloading")}</SpinnerLabel>
+          </Button>
+        );
+      case "applying":
+        return (
+          <Button type="button" disabled>
+            <SpinnerLabel>{t("updateDialog.restarting")}</SpinnerLabel>
+          </Button>
+        );
+      case "available":
+        return (
+          <Button type="button" disabled={busy} onClick={() => void actions.apply()}>
+            {status.channel === "dev" ? t("updateDialog.download") : t("updateDialog.updateNow")}
+          </Button>
+        );
+      case "ready":
+        return (
+          <>
+            <Button type="button" variant="outline" disabled={busy} onClick={() => void actions.dismiss()}>
+              {t("updateDialog.dismiss")}
+            </Button>
+            <Button type="button" disabled={busy} onClick={() => void actions.apply()}>
+              {t("updateDialog.restartToUpdate")}
+            </Button>
+          </>
+        );
+      case "failed":
+        return (
+          <Button
+            type="button"
+            disabled={busy}
+            onClick={() => void (status.hasUpdate ? actions.apply() : actions.check())}
+          >
+            {t("updateDialog.retry")}
+          </Button>
+        );
+      default:
+        return null;
+    }
+  }
 
   return (
-    <Dialog open={state !== null} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-[420px]">
         <DialogHeightTransition contentClassName="max-h-[min(86vh,760px)]">
           <DialogHeader className="shrink-0 px-4 py-4">
-            <DialogTitle>
-              {stableState?.type === "available"
-                ? t("updateDialog.availableTitle")
-                : stableState?.type === "failed"
-                  ? t("updateDialog.failedTitle")
-                  : t("updateDialog.currentTitle")}
-            </DialogTitle>
-            <DialogDescription>
-              {stableState?.type === "available"
-                ? t("updateDialog.availableDescription", { current: currentVersion, latest: latestVersion })
-                : stableState?.type === "failed"
-                  ? t("updateDialog.failedDescription")
-                  : t("updateDialog.currentDescription", { current: currentVersion })}
-            </DialogDescription>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-2">
-            {stableState?.type === "available" ? (
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-2">
+            {status ? (
               <div className="rounded-md bg-muted/50 px-3 py-2 text-xs">
                 <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
                   <span className="text-muted-foreground">{t("updateDialog.currentVersion")}</span>
-                  <span className="font-medium">{currentVersion}</span>
-                  <span className="text-muted-foreground">{t("updateDialog.latestVersion")}</span>
-                  <span className="font-medium">{latestVersion}</span>
+                  <span className="font-medium break-all">{currentVersion}</span>
+                  {latestVersion ? (
+                    <>
+                      <span className="text-muted-foreground">{t("updateDialog.latestVersion")}</span>
+                      <span className="font-medium break-all">{latestVersion}</span>
+                    </>
+                  ) : null}
+                  <span className="text-muted-foreground">{t("updateDialog.channel")}</span>
+                  <span className="font-medium">{channel}</span>
+                  <span className="text-muted-foreground">{t("updateDialog.autoCheck")}</span>
+                  <span className="font-medium">
+                    {status.enabled ? t("updateDialog.autoCheckEnabled") : t("updateDialog.autoCheckDisabled")}
+                  </span>
+                  <span className="text-muted-foreground">{t("updateDialog.lastCheck")}</span>
+                  <span className="font-medium">
+                    {status.lastCheck ? formatDateTime(status.lastCheck, locale) : t("updateDialog.neverChecked")}
+                  </span>
                 </div>
               </div>
+            ) : null}
+
+            {view === "downloading" && status ? (
+              <div className="space-y-1.5 text-xs">
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span>{t("updateDialog.downloadProgress")}</span>
+                  <span className="tabular-nums">{Math.round(status.downloadProgress)}%</span>
+                </div>
+                <div
+                  role="progressbar"
+                  aria-label={t("updateDialog.downloadProgress")}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round(status.downloadProgress)}
+                  className="h-1.5 overflow-hidden rounded-full bg-muted"
+                >
+                  <div
+                    className="h-full rounded-full bg-primary transition-[width] duration-500"
+                    style={{ width: `${Math.min(100, Math.max(0, status.downloadProgress))}%` }}
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            {view === "failed" && status?.error ? (
+              <p className="rounded-md bg-destructive/10 px-3 py-2 font-mono text-xs break-words whitespace-pre-wrap text-destructive">
+                {status.error}
+              </p>
+            ) : null}
+
+            {showRelease && releaseNotes ? (
+              <div className="space-y-1.5 text-xs">
+                <p className="text-muted-foreground">{t("updateDialog.releaseNotes")}</p>
+                <p className="max-h-48 overflow-y-auto rounded-md border border-border/60 px-3 py-2 leading-5 break-words whitespace-pre-wrap">
+                  {releaseNotes}
+                </p>
+              </div>
+            ) : null}
+
+            {!canManage && status ? (
+              <p className="text-xs text-muted-foreground">{t("updateDialog.readOnlyHint")}</p>
             ) : null}
           </div>
 
@@ -179,18 +371,14 @@ function UpdateResultDialog({
                 {t("updateDialog.close")}
               </Button>
             </DialogClose>
-            {stableState?.type === "failed" ? (
-              <Button type="button" onClick={onRetry}>
-                {t("updateDialog.retry")}
-              </Button>
-            ) : null}
-            {stableState?.type === "available" ? (
-              <Button asChild type="button">
-                <a href={stableState.release.url} target="_blank" rel="noopener noreferrer">
+            {showRelease && status ? (
+              <Button asChild type="button" variant="outline">
+                <a href={systemUpdateReleaseURL(status)} target="_blank" rel="noopener noreferrer">
                   {t("updateDialog.openRelease")}
                 </a>
               </Button>
             ) : null}
+            {renderPrimaryAction()}
           </DialogFooter>
         </DialogHeightTransition>
       </DialogContent>
@@ -200,21 +388,17 @@ function UpdateResultDialog({
 
 export function AdminAboutPage() {
   const t = useTranslations("adminUsers.aboutPage");
-  const cachedLatestRelease = useSyncExternalStore(
-    subscribeLatestReleaseChange,
-    getCachedLatestReleaseSnapshot,
-    getServerLatestReleaseSnapshot,
-  );
-  const updateRelease = resolveAvailableRelease(packageMeta.version, cachedLatestRelease);
+  const { user } = useAuthSession();
+  const update = useSystemUpdate();
 
   return (
     <AboutSettingsContent
       title={t("title")}
       description={t("description")}
       consoleLabel={t("adminConsole")}
-      versionBadgeContent={<AdminAboutVersionBadge updateRelease={updateRelease} />}
-      versionBadgeTooltip={<AdminUpdateTooltipContent updateRelease={updateRelease} />}
-      versionActions={<AdminUpdateCheck />}
+      versionBadgeContent={<AdminAboutVersionBadge status={update.status} />}
+      versionBadgeTooltip={<AdminUpdateTooltipContent status={update.status} />}
+      versionActions={<AdminUpdateActions update={update} canManage={user?.role === "superadmin"} />}
       labels={{
         details: t("details"),
         repository: t("repository"),

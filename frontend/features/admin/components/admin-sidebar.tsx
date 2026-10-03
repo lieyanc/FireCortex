@@ -8,14 +8,8 @@ import * as React from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AdminUpdateTooltipContent } from "@/features/admin/components/admin-update-tooltip-content";
 import { ADMIN_SECTIONS, type AdminSection } from "@/features/admin/model/admin-sections";
-import {
-  getCachedLatestReleaseSnapshot,
-  getServerLatestReleaseSnapshot,
-  resolveAvailableRelease,
-  subscribeLatestReleaseChange,
-} from "@/features/admin/model/update-check";
+import { hasPendingSystemUpdate, useSystemUpdate } from "@/features/admin/model/system-update-store";
 import { cn } from "@/lib/utils";
-import packageMeta from "@/package.json";
 import { useAuthSession } from "@/shared/auth/auth-session-context";
 
 const ADMIN_SECTION_LABEL_KEYS: Record<AdminSection, string> = {
@@ -57,12 +51,8 @@ export function AdminSidebar({
   const pathname = usePathname();
   const activeSection = resolveActiveSectionFromPath(pathname, basePath);
   const activeLinkRef = React.useRef<HTMLAnchorElement | null>(null);
-  const cachedLatestRelease = React.useSyncExternalStore(
-    subscribeLatestReleaseChange,
-    getCachedLatestReleaseSnapshot,
-    getServerLatestReleaseSnapshot,
-  );
-  const updateRelease = resolveAvailableRelease(packageMeta.version, cachedLatestRelease);
+  const { status: updateStatus } = useSystemUpdate();
+  const updatePending = hasPendingSystemUpdate(updateStatus);
   const visibleSections = React.useMemo(
     () => user?.role === "superadmin"
       ? ADMIN_SECTIONS
@@ -112,7 +102,7 @@ export function AdminSidebar({
                 )}
               >
                 <span className="truncate">{sectionLabel(item.id, item.label)}</span>
-                {item.id === "about" && updateRelease ? (
+                {item.id === "about" && updatePending ? (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span className="ml-auto inline-flex size-4 shrink-0 items-center justify-center text-rose-500">
@@ -120,7 +110,7 @@ export function AdminSidebar({
                       </span>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <AdminUpdateTooltipContent updateRelease={updateRelease} />
+                      <AdminUpdateTooltipContent status={updateStatus} />
                     </TooltipContent>
                   </Tooltip>
                 ) : null}
