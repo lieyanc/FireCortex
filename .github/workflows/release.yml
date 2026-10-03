@@ -1,0 +1,327 @@
+name: Release
+
+# Builds the single FireCortex binary (web UI embedded) per platform and
+# publishes the assets the built-in updater consumes:
+#   firecortex-{goos}-{goarch}, SHA256SUMS, version.json
+# The asset names, SHA256SUMS format, dev version string and the rolling
+# dev-latest tag are a protocol shared with backend/internal/infra/updater;
+# change both sides together.
+
+on:
+  push:
+    branches:
+      - dev
+    tags:
+      - "v*.*.*"
+  pull_request:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Branch builds share the rolling dev-latest release: cancel an older run
+# before it can overwrite a newer one. Tag and PR runs are isolated by ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type == 'branch' }}
+
+jobs:
+  meta:
+    name: Build metadata
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      commit: ${{ steps.meta.outputs.commit }}
+      build_time: ${{ steps.meta.outputs.build_time }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version metadata
+        id: meta
+        run: |
+          set -euo pipefail
+          SHORT_SHA="${GITHUB_SHA::7}"
+          BUILD_TIME="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+            FILE_VERSION="$(tr -d '[:space:]' < VERSION)"
+            if [[ "${VERSION}" != "${FILE_VERSION}" ]]; then
+              echo "tag ${GITHUB_REF_NAME} does not match VERSION file (${FILE_VERSION})" >&2
+              exit 1
+            fi
+          elif [[ "${GITHUB_REF}" == refs/heads/dev ]]; then
+            # dev-{run}-{yyyymmdd}-{sha}: parsed by the updater, keep the format.
+            VERSION="dev-$(printf '%04d' "${GITHUB_RUN_NUMBER}")-$(date -u +'%Y%m%d')-${SHORT_SHA}"
+          else
+            VERSION="$(tr -d '[:space:]' < VERSION)"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "commit=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "build_time=${BUILD_TIME}" >> "$GITHUB_OUTPUT"
+
+  test:
+    name: Backend tests
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install SQLite headers
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libsqlite3-dev
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Run Go tests
+        working-directory: backend
+        run: go test ./...
+
+  frontend:
+    name: Frontend export
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter @firecortex/web...
+
+      - name: Build static export
+        env:
+          # The embedded UI is served same-origin.
+          NEXT_PUBLIC_API_BASE_URL: ""
+        run: pnpm --filter @firecortex/web build
+
+      - name: Upload export
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-out
+          path: frontend/out
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 3
+
+  build:
+    name: Build ${{ matrix.target }}
+    needs:
+      - meta
+      - test
+      - frontend
+    strategy:
+      fail-fast: false
+      matrix:
+        # target must equal the updater's targetName(): {goos}-{goarch}.
+        # CGO (go-sqlite3, sqlite-vec) needs native runners; ubuntu-22.04
+        # pins the glibc floor at 2.35.
+        include:
+          - target: linux-amd64
+            runner: ubuntu-22.04
+          - target: linux-arm64
+            runner: ubuntu-22.04-arm
+          - target: darwin-arm64
+            runner: macos-14
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install SQLite headers
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libsqlite3-dev
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Download frontend export
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-out
+          path: frontend/out
+
+      - name: Build binary
+        env:
+          VERSION: ${{ needs.meta.outputs.version }}
+          COMMIT: ${{ needs.meta.outputs.commit }}
+          BUILD_TIME: ${{ needs.meta.outputs.build_time }}
+        run: |
+          set -euo pipefail
+          BIN="dist/firecortex-${{ matrix.target }}"
+          bash scripts/build-binary.sh --skip-frontend "${BIN}"
+          # The updater picks the asset by the running binary's GOOS/GOARCH.
+          [[ "$(go env GOOS)-$(go env GOARCH)" == "${{ matrix.target }}" ]]
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: firecortex-${{ matrix.target }}
+          path: dist/firecortex-${{ matrix.target }}
+          if-no-files-found: error
+          retention-days: 3
+
+  release-dev:
+    name: Publish dev-latest prerelease
+    needs:
+      - meta
+      - build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: firecortex-*
+          path: release
+          merge-multiple: true
+
+      - name: Add version metadata and license files
+        run: |
+          # Apache-2.0 redistribution ships LICENSE and NOTICE with the binaries.
+          cp LICENSE NOTICE release/
+          cat > release/version.json <<'EOF'
+          {
+            "version": "${{ needs.meta.outputs.version }}",
+            "commit": "${{ needs.meta.outputs.commit }}",
+            "build_time": "${{ needs.meta.outputs.build_time }}",
+            "tag": "dev-latest"
+          }
+          EOF
+
+      - name: Generate SHA256SUMS
+        run: |
+          set -euo pipefail
+          cd release
+          for binary in firecortex-linux-amd64 firecortex-linux-arm64 firecortex-darwin-arm64; do
+            test -f "${binary}" || { echo "missing ${binary}" >&2; exit 1; }
+          done
+          # Bare file names, binaries only: the updater matches entries by exact name.
+          sha256sum firecortex-* > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Refresh dev-latest tag and prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Recreate instead of editing so no stale assets survive.
+          gh release delete dev-latest --repo "${GITHUB_REPOSITORY}" --yes --cleanup-tag || true
+          git tag -f dev-latest "${GITHUB_SHA}"
+          git push --force origin refs/tags/dev-latest
+          # --latest=false keeps releases/latest pointing at the newest stable release.
+          gh release create dev-latest release/* \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "Dev build ${{ needs.meta.outputs.version }}" \
+            --notes "Rolling build of ${GITHUB_SHA} from the dev branch." \
+            --prerelease \
+            --target "${GITHUB_SHA}" \
+            --latest=false
+
+  release-prod:
+    name: Publish release
+    needs:
+      - meta
+      - build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: firecortex-*
+          path: release
+          merge-multiple: true
+
+      - name: Add version metadata and license files
+        run: |
+          # Apache-2.0 redistribution ships LICENSE and NOTICE with the binaries.
+          cp LICENSE NOTICE release/
+          cat > release/version.json <<'EOF'
+          {
+            "version": "${{ needs.meta.outputs.version }}",
+            "commit": "${{ needs.meta.outputs.commit }}",
+            "build_time": "${{ needs.meta.outputs.build_time }}",
+            "tag": "${{ github.ref_name }}"
+          }
+          EOF
+
+      - name: Generate SHA256SUMS
+        run: |
+          set -euo pipefail
+          cd release
+          for binary in firecortex-linux-amd64 firecortex-linux-arm64 firecortex-darwin-arm64; do
+            test -f "${binary}" || { echo "missing ${binary}" >&2; exit 1; }
+          done
+          sha256sum firecortex-* > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: FireCortex ${{ github.ref_name }}
+          prerelease: false
+          make_latest: true
+          generate_release_notes: true
+          files: release/*
+
+  cleanup-artifacts:
+    name: Clean up old artifacts
+    needs:
+      - build
+      - release-dev
+      - release-prod
+    if: ${{ always() && !cancelled() && needs.build.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Delete artifacts from previous completed runs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const artifacts = await github.paginate(
+              github.rest.actions.listArtifactsForRepo,
+              { owner, repo, per_page: 100 },
+            );
+            const runStatus = new Map();
+            for (const artifact of artifacts) {
+              const runId = artifact.workflow_run?.id;
+              if (!runId || runId === context.runId) continue;
+              if (!runStatus.has(runId)) {
+                const { data: run } = await github.rest.actions.getWorkflowRun({ owner, repo, run_id: runId });
+                runStatus.set(runId, run.status);
+              }
+              // Another queued or running release job may still need its artifacts.
+              if (runStatus.get(runId) !== 'completed') continue;
+              await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
+            }

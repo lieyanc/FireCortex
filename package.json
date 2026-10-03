@@ -7,6 +7,7 @@
     "api:check": "pnpm --filter @firecortex/api-contract check",
     "api:generate": "pnpm --filter @firecortex/api-contract generate",
     "build": "turbo run build",
+    "build:binary": "bash scripts/build-binary.sh",
     "check": "turbo run check",
     "clean": "turbo run clean",
     "dev": "turbo run dev",

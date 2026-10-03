@@ -166,6 +166,12 @@ frontend/public/vendor/modern-screenshot/
 frontend/public/pwa/generated/
 docker-compose.local.yml
 
+# Single-binary build output; the embedded web UI is staged at build time
+/dist/
+!/backend/internal/webui/dist/
+/backend/internal/webui/dist/*
+!/backend/internal/webui/dist/.gitkeep
+
 .DS_Store
 .idea
 .pnpm-store
