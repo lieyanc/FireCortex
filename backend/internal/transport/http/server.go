@@ -1,8 +1,11 @@
 package httpx
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path"
@@ -32,6 +35,7 @@ import (
 	uicomponenthttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/uicomponent"
 	userhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/user"
 	usersettingshttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/usersettings"
+	"github.com/lieyanc/FireCortex/backend/internal/webui"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -244,10 +248,29 @@ func NewEngine(cfg *config.Runtime, log *zap.Logger, modules Modules, hc HealthC
 	return engine, nil
 }
 
+// registerFrontendStatic serves the exported frontend: from distDir when it is
+// configured (development override), otherwise from the copy embedded in the binary.
 func registerFrontendStatic(engine *gin.Engine, distDir string, log *zap.Logger) {
+	fsys, source := resolveFrontendFS(distDir, log)
+	if fsys == nil {
+		return
+	}
+	if log != nil {
+		log.Info("frontend_static_enabled", zap.String("source", source))
+	}
+	serveFrontendFS(engine, fsys)
+}
+
+func resolveFrontendFS(distDir string, log *zap.Logger) (fs.FS, string) {
 	root := strings.TrimSpace(distDir)
 	if root == "" {
-		return
+		if embedded := webui.FS(); embedded != nil {
+			return embedded, "embedded"
+		}
+		if log != nil {
+			log.Warn("frontend_static_disabled", zap.String("reason", "binary built without embedded frontend"))
+		}
+		return nil, ""
 	}
 
 	absoluteRoot, err := filepath.Abs(root)
@@ -255,21 +278,19 @@ func registerFrontendStatic(engine *gin.Engine, distDir string, log *zap.Logger)
 		if log != nil {
 			log.Warn("frontend_static_path_invalid", zap.String("path", root), zap.Error(err))
 		}
-		return
+		return nil, ""
 	}
-
 	info, err := os.Stat(absoluteRoot)
 	if err != nil || !info.IsDir() {
 		if log != nil {
 			log.Warn("frontend_static_disabled", zap.String("path", absoluteRoot), zap.Error(err))
 		}
-		return
+		return nil, ""
 	}
+	return os.DirFS(absoluteRoot), absoluteRoot
+}
 
-	if log != nil {
-		log.Info("frontend_static_enabled", zap.String("path", absoluteRoot))
-	}
-
+func serveFrontendFS(engine *gin.Engine, fsys fs.FS) {
 	engine.NoRoute(func(c *gin.Context) {
 		requestPath := cleanFrontendPath(c.Request.URL.Path)
 		if isBackendOnlyPath(requestPath) {
@@ -277,27 +298,49 @@ func registerFrontendStatic(engine *gin.Engine, distDir string, log *zap.Logger)
 			return
 		}
 
-		if filePath, ok := resolveFrontendStaticFile(absoluteRoot, requestPath); ok {
+		if name, ok := resolveFrontendStaticFile(fsys, requestPath); ok {
 			applyFrontendCacheHeaders(c, requestPath)
-			c.File(filePath)
+			serveFrontendFile(c, fsys, name)
 			return
 		}
 
-		if filePath, ok := resolveFrontendPageFile(absoluteRoot, requestPath); ok {
+		if name, ok := resolveFrontendPageFile(fsys, requestPath); ok {
 			c.Header("Cache-Control", "no-cache")
-			c.File(filePath)
+			serveFrontendFile(c, fsys, name)
 			return
 		}
 
-		notFoundPath := filepath.Join(absoluteRoot, "404.html")
-		if isRegularFile(notFoundPath) {
-			c.Status(http.StatusNotFound)
-			c.File(notFoundPath)
+		if body, err := fs.ReadFile(fsys, "404.html"); err == nil {
+			c.Data(http.StatusNotFound, "text/html; charset=utf-8", body)
 			return
 		}
 
 		response.ErrorWithCode(c, http.StatusNotFound, response.CodeResourceNotFound)
 	})
+}
+
+func serveFrontendFile(c *gin.Context, fsys fs.FS, name string) {
+	file, err := fsys.Open(name)
+	if err != nil {
+		response.ErrorWithCode(c, http.StatusNotFound, response.CodeResourceNotFound)
+		return
+	}
+	defer file.Close()
+	info, err := file.Stat()
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+	content, ok := file.(io.ReadSeeker)
+	if !ok {
+		body, readErr := io.ReadAll(file)
+		if readErr != nil {
+			response.InternalError(c)
+			return
+		}
+		content = bytes.NewReader(body)
+	}
+	http.ServeContent(c.Writer, c.Request, info.Name(), info.ModTime(), content)
 }
 
 func swaggerEnabled(env string) bool {
@@ -325,41 +368,32 @@ func isBackendOnlyPath(requestPath string) bool {
 		requestPath == "/readyz"
 }
 
-func resolveFrontendStaticFile(root string, requestPath string) (string, bool) {
-	if requestPath == "/" {
+func resolveFrontendStaticFile(fsys fs.FS, requestPath string) (string, bool) {
+	name := strings.TrimPrefix(requestPath, "/")
+	if name == "" || !isRegularFile(fsys, name) {
 		return "", false
 	}
-	candidate := filepath.Join(root, filepath.FromSlash(strings.TrimPrefix(requestPath, "/")))
-	if !strings.HasPrefix(candidate, root) {
-		return "", false
-	}
-	if isRegularFile(candidate) {
-		return candidate, true
-	}
-	return "", false
+	return name, true
 }
 
-func resolveFrontendPageFile(root string, requestPath string) (string, bool) {
-	candidates := []string{filepath.Join(root, "index.html")}
-	if requestPath != "/" {
-		cleanPath := filepath.FromSlash(strings.TrimPrefix(requestPath, "/"))
-		candidates = []string{
-			filepath.Join(root, cleanPath+".html"),
-			filepath.Join(root, cleanPath, "index.html"),
-			filepath.Join(root, "index.html"),
-		}
+func resolveFrontendPageFile(fsys fs.FS, requestPath string) (string, bool) {
+	candidates := []string{"index.html"}
+	if name := strings.TrimPrefix(requestPath, "/"); name != "" {
+		candidates = []string{name + ".html", path.Join(name, "index.html"), "index.html"}
 	}
-
 	for _, candidate := range candidates {
-		if strings.HasPrefix(candidate, root) && isRegularFile(candidate) {
+		if isRegularFile(fsys, candidate) {
 			return candidate, true
 		}
 	}
 	return "", false
 }
 
-func isRegularFile(filePath string) bool {
-	info, err := os.Stat(filePath)
+func isRegularFile(fsys fs.FS, name string) bool {
+	if !fs.ValidPath(name) {
+		return false
+	}
+	info, err := fs.Stat(fsys, name)
 	return err == nil && !info.IsDir()
 }
 

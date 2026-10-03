@@ -1,12 +1,14 @@
 package httpx
 
 import (
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/gin-gonic/gin"
@@ -141,6 +143,55 @@ func TestFrontendStaticFallbackSkipsAPIPaths(t *testing.T) {
 	}
 	if strings.Contains(recorder.Body.String(), "index") {
 		t.Fatalf("api path should not serve frontend fallback: %q", recorder.Body.String())
+	}
+}
+
+func TestFrontendFSServesEmbeddedExport(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	engine := gin.New()
+	serveFrontendFS(engine, fstest.MapFS{
+		"index.html":                {Data: []byte("index")},
+		"admin/about.html":          {Data: []byte("about page")},
+		"_next/static/chunks/a.js":  {Data: []byte("chunk")},
+		"404.html":                  {Data: []byte("not found page")},
+		"settings/index.html":       {Data: []byte("settings index")},
+		"_next/static/chunks/dir/x": {Mode: fs.ModeDir},
+	})
+
+	cases := []struct {
+		path       string
+		wantStatus int
+		wantBody   string
+		wantCache  string
+	}{
+		{"/", http.StatusOK, "index", "no-cache"},
+		{"/admin/about", http.StatusOK, "about page", "no-cache"},
+		{"/settings", http.StatusOK, "settings index", "no-cache"},
+		{"/_next/static/chunks/a.js", http.StatusOK, "chunk", "public, max-age=31536000, immutable"},
+		{"/../../etc/passwd", http.StatusOK, "index", "no-cache"},
+		{"/_next/static/chunks/missing.js", http.StatusOK, "index", "no-cache"},
+	}
+	for _, tc := range cases {
+		recorder := httptest.NewRecorder()
+		engine.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, tc.path, nil))
+		if recorder.Code != tc.wantStatus || recorder.Body.String() != tc.wantBody {
+			t.Fatalf("%s: got %d %q, want %d %q", tc.path, recorder.Code, recorder.Body.String(), tc.wantStatus, tc.wantBody)
+		}
+		if got := recorder.Header().Get("Cache-Control"); got != tc.wantCache {
+			t.Fatalf("%s: Cache-Control = %q, want %q", tc.path, got, tc.wantCache)
+		}
+	}
+}
+
+func TestFrontendFSServesNotFoundPageWithStatus(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	engine := gin.New()
+	serveFrontendFS(engine, fstest.MapFS{"404.html": {Data: []byte("not found page")}})
+
+	recorder := httptest.NewRecorder()
+	engine.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/missing", nil))
+	if recorder.Code != http.StatusNotFound || recorder.Body.String() != "not found page" {
+		t.Fatalf("got %d %q, want 404 page", recorder.Code, recorder.Body.String())
 	}
 }
 

@@ -578,7 +578,7 @@ type Config struct {
 }
 
 // defaultYAMLPaths 固定读取仓库根目录的 config.yaml。
-// 从仓库根目录或 Docker /app 启动时读取 ./config.yaml；从 backend/ 启动时读取 ../config.yaml。
+// 从仓库根目录或二进制所在的工作目录启动时读取 ./config.yaml；从 backend/ 启动时读取 ../config.yaml。
 var defaultYAMLPaths = []string{
 	"config.yaml",
 	"../config.yaml",
@@ -606,7 +606,7 @@ func Load() Config {
 		TrustedProxies:               envOr("TRUSTED_PROXIES", yc.Server.TrustedProxies, ""),
 		PublicAPIBaseURL:             envOr("PUBLIC_API_BASE_URL", yc.Server.PublicAPIBaseURL, ""),
 		PublicWebBaseURL:             envOr("PUBLIC_WEB_BASE_URL", yc.Server.PublicWebBaseURL, ""),
-		FrontendDistDir:              envOrPath("FRONTEND_DIST_DIR", yc.Server.FrontendDistDir, "../frontend/out", yc.sourceDir),
+		FrontendDistDir:              envOrPath("FRONTEND_DIST_DIR", yc.Server.FrontendDistDir, "", yc.sourceDir),
 		HTTPReadHeaderTimeoutSeconds: envOrInt("HTTP_READ_HEADER_TIMEOUT_SECONDS", yc.Server.ReadHeaderTimeoutSeconds, defaultHTTPReadHeaderTimeoutSeconds),
 		HTTPReadTimeoutSeconds:       envOrInt("HTTP_READ_TIMEOUT_SECONDS", yc.Server.ReadTimeoutSeconds, defaultHTTPReadTimeoutSeconds),
 		HTTPIdleTimeoutSeconds:       envOrInt("HTTP_IDLE_TIMEOUT_SECONDS", yc.Server.IdleTimeoutSeconds, defaultHTTPIdleTimeoutSeconds),
