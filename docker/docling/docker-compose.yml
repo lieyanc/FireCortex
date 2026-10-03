@@ -6,7 +6,7 @@ services:
       context: ../../
       dockerfile: docker/docling/Dockerfile
     ports:
-      # Optional. Localhost-only by default. Configure the app to use http://host.docker.internal:8005/ocr when needed.
+      # Optional. Localhost-only by default. FireCortex on the same host reaches it at http://127.0.0.1:8005/ocr.
       - "127.0.0.1:8005:8005"
     restart: unless-stopped
     networks:
@@ -14,6 +14,6 @@ services:
 
 networks:
   firecortex:
-    # Required. Start a root compose profile first, or create this network manually.
+    # Required. Create it once with: docker network create firecortex-network
     external: true
     name: firecortex-network

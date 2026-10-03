@@ -16,7 +16,7 @@ FireCortex 后端是 Go API 服务，负责认证、用户、对话、模型渠�
 
 ## 运行时与目录结构
 
-后端是一个 Go 单运行时服务：开发时提供 API，生产镜像中还可以托管 `frontend/out` 静态资源。启动链路和请求链路如下：
+后端是一个 Go 单运行时服务：开发时提供 API；通过 `pnpm build:binary` 构建的发布二进制会以 `go:embed` 嵌入前端静态导出，由同一进程托管 Web 界面。启动链路和请求链路如下：
 
 ```text
 backend/cmd/server/main.go
@@ -40,6 +40,7 @@ backend/
 │   ├── repository/         # 持久化接口
 │   ├── infra/              # 数据库、缓存、存储和外部服务适配器
 │   ├── transport/http/     # Handler、DTO、中间件和路由
+│   ├── webui/              # 嵌入的前端静态资源（go:embed）
 │   ├── shared/             # 响应、安全、生命周期等共享能力
 │   └── pkg/                # 通用内部工具包
 ├── docs/                   # 生成的 Swagger 文件
@@ -110,7 +111,7 @@ backend/
 
 ## 配置
 
-默认读取仓库根目录下的 `config.yaml`，常用配置也支持环境变量覆盖。从 `backend/` 目录启动时会读取 `../config.yaml`。也可以通过 `CONFIG_FILE` 指定配置文件路径。下面的配置复制命令从仓库根目录执行，并选择其中一个方案。
+默认读取仓库根目录下的 `config.yaml`，常用配置也支持环境变量覆盖。从 `backend/` 目录启动时会读取 `../config.yaml`。也可以通过 `CONFIG_FILE` 指定配置文件路径。配置文件中的相对路径以配置文件所在目录为基准解析。下面的配置复制命令从仓库根目录执行，并选择其中一个方案。
 
 默认开发配置（外部 PostgreSQL + Redis）：
 
@@ -118,7 +119,7 @@ backend/
 cp config.example.yaml config.yaml
 ```
 
-完整 Compose 配置（应用、PostgreSQL、Redis）：
+PostgreSQL + Redis 同源部署配置（前端与 API 由同一个二进制提供）：
 
 ```bash
 cp config.full.example.yaml config.yaml
@@ -133,9 +134,9 @@ cp config.sqlite.example.yaml config.yaml
 关键配置：
 
 - `APP_ENV`：运行环境，支持 `dev`/`development` 和 `prod`/`production`；未配置时默认 `prod`
-- `CONFIG_FILE`：可选的配置文件路径；容器内路径应指向挂载后的文件
+- `CONFIG_FILE`：可选的配置文件路径
 - `HTTP_PORT`：HTTP 端口
-- `FRONTEND_DIST_DIR`：静态前端目录；Docker 镜像默认使用 `/app/frontend/out`
+- `FRONTEND_DIST_DIR`：可选的静态前端目录；默认为空，使用二进制内嵌的前端。设置后改为从磁盘提供前端，仅用于开发或调试
 - `JWT_SECRET`：JWT 签名密钥
 - `MCP_USER_CONTEXT_SECRET`：MCP 用户上下文签名密钥；启用 `${FIRECORTEX_SIGNED_USER_CONTEXT}` 时必须配置，并应与外部 MCP 网关共享
 - `POSTGRES_DSN`：PostgreSQL DSN
@@ -149,6 +150,7 @@ cp config.sqlite.example.yaml config.yaml
 - `OTEL_EXPORTER_OTLP_INSECURE`：是否使用明文传输
 - `OTEL_EXPORTER_OTLP_PROTOCOL`：OTLP exporter 协议，支持 `grpc`、`http`、`http/protobuf`，默认 `grpc`
 - `OTEL_TRACES_SAMPLER_ARG` / `OTEL_SAMPLING_RATE`：Trace 采样率，范围 `0~1`
+- `UPDATE_ENABLED` / `UPDATE_CHANNEL` / `UPDATE_CHECK_INTERVAL_SECONDS` / `UPDATE_SOURCE` / `UPDATE_PROXY_BASE_URL` / `UPDATE_REPO` / `UPDATE_DOWNLOAD_DIR`：OTA 自更新配置，对应 YAML `update.*`，行为说明见[项目主 README](../README.md#updating)
 
 对应 YAML：
 
@@ -221,27 +223,21 @@ https://pay.example.com/epay/submit.php
 
 ## 本地启动
 
-除 `make` 和 `go` 命令外，下面的 Docker 命令均从仓库根目录执行。根据使用场景选择一种依赖方案。
+配置复制命令从仓库根目录执行。根据使用场景选择一种依赖方案。
 
-使用本机或外部 PostgreSQL、Redis：
+使用本机或外部 PostgreSQL（需要 pgvector）、Redis：
 
 ```bash
 cp config.example.yaml config.yaml
 # 按本机环境修改 database.postgres.dsn 和 database.redis.*
 ```
 
-使用完整本地依赖栈：
+本机没有 PostgreSQL 和 Redis 时，可参考[项目主 README](../README.md#binary-deployment) 中的容器命令启动这两个依赖。
 
-```bash
-cp config.full.example.yaml config.yaml
-docker compose -f docker-compose.full.yml up -d
-```
-
-使用 SQLite 和进程内缓存：
+使用 SQLite 和进程内缓存，无需外部依赖：
 
 ```bash
 cp config.sqlite.example.yaml config.yaml
-docker compose -f docker-compose.sqlite.yml up -d
 ```
 
 启动后端：
@@ -484,7 +480,11 @@ Trace 不记录 prompt、文件内容、工具参数、API Key 或鉴权密钥�
 
 ## 可选文件处理服务
 
-以下 Docker 命令从仓库根目录执行：
+这些服务是可选的独立旁路服务，后端通过 URL 调用。以下 Docker 命令从仓库根目录执行，启动前先创建一次共享网络：
+
+```bash
+docker network create firecortex-network
+```
 
 Apache Tika：
 
@@ -507,10 +507,12 @@ docker compose -f docker/docling/docker-compose.yml up -d --build
 RapidOCR：
 
 ```bash
-docker build -t firecortex-rapidocr docker/rapidocr
+docker build -t firecortex-rapidocr:latest -f docker/rapidocr/Dockerfile .
+docker run -d --name firecortex-rapidocr --network firecortex-network \
+  -p 127.0.0.1:8002:8002 --restart unless-stopped firecortex-rapidocr:latest
 ```
 
-这些服务默认使用 `firecortex-network`。可先执行 `docker network create firecortex-network`，或先启动一次根目录 compose 创建基础网络。
+各服务端口仅绑定 `127.0.0.1`，后端在同一主机上通过 `http://127.0.0.1:<port>` 访问。
 
 ## 常用命令
 
@@ -531,6 +533,7 @@ go mod tidy
 ```bash
 pnpm dev:api
 pnpm api:check
+pnpm build:binary   # 构建内嵌前端的单二进制，输出 dist/firecortex
 ```
 
 接口或 DTO 变更后必须执行：

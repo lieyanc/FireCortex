@@ -55,11 +55,11 @@ The capabilities below are inherited from upstream and available today.
 | Billing and payments | Model pricing, per-call tool pricing, subscriptions, top-ups, balances, usage ledgers, billing snapshots, Stripe Checkout, EPay, and webhook validation. |
 | Identity and security | Local accounts, session management, HttpOnly refresh cookies, 2FA/TOTP, trusted devices, SSO/OIDC/OAuth, contact verification, and encrypted sensitive data. |
 | Administration and audit | Centralized management for users, roles, upstreams, models, routes, pricing, subscriptions, balances, usage logs, audit logs, auth events, and system events. |
-| Deployment and operations | Single-runtime frontend/API serving, Docker deployment, SQLite or PostgreSQL, in-memory cache or Redis, S3-compatible storage, Swagger, structured logs, version endpoint, GeoIP, and OpenTelemetry. |
+| Deployment and operations | Single self-contained binary serving the frontend and API, built-in OTA updates from GitHub Releases, SQLite or PostgreSQL, in-memory cache or Redis, S3-compatible storage, Swagger, structured logs, version endpoint, GeoIP, and OpenTelemetry. |
 
 ## Architecture and Tech Stack
 
-FireCortex uses a split frontend/backend development model with a single-runtime deployment path. The frontend is built into static assets and served by the Go service, while APIs, authorization, model routing, files, billing, and audit capabilities run in the same backend runtime. Heavy document extraction and OCR capabilities are optional services, keeping the base deployment lightweight.
+FireCortex uses a split frontend/backend development model with a single-runtime deployment path. The frontend is built into static assets that are embedded in the Go binary and served by it, while APIs, authorization, model routing, files, billing, and audit capabilities run in the same backend runtime. Heavy document extraction and OCR capabilities are optional services, keeping the base deployment lightweight.
 
 ```mermaid
 flowchart TB
@@ -70,7 +70,7 @@ flowchart TB
   end
 
   subgraph Backend["Go Single Runtime"]
-    Static["Static Asset Serving"]
+    Static["Embedded Static Assets"]
     HTTP["Gin HTTP API"]
     App["Application<br/>Auth / Routing / Files / Billing / Audit"]
     Infra["Infra Adapters<br/>Protocols / Data / Cache / Storage"]
@@ -109,7 +109,7 @@ flowchart TB
 | Files and storage | Uploaded files, generated files, object storage, and local persistence | Local filesystem, S3-compatible object storage |
 | File processing | Text extraction, OCR, document parsing, and LLM OCR fallback | Built-in extractors, Apache Tika, Docling, RapidOCR, Tesseract OCR, Paddle OCR, cloud OCR adapters, MinerU |
 | Tool protocol | MCP tool integration and provider-native official tools | MCP Streamable HTTP JSON-RPC, provider-native tools |
-| Deployment runtime | Lightweight single-node deployment or multi-node production deployment | Docker, Docker Compose, SQLite/in-memory cache, PostgreSQL/Redis |
+| Deployment runtime | Lightweight single-node deployment or multi-node production deployment | Single binary with embedded UI, systemd, OTA self-update, SQLite/in-memory cache, PostgreSQL/Redis |
 
 The backend keeps clear internal boundaries: `backend/cmd/server` is the executable entrypoint, `backend/internal/cli` owns process startup, `backend/internal/app` assembles and wires the application, and `backend/internal/transport/http` owns the HTTP boundary. Requests then flow through `application` use cases to consumer-owned `repository` or `ports` interfaces and their `infra` implementations. The data layer uses domain-prefixed tables, while financial records, audit trails, system events, and high-growth vector data remain separate sources of truth.
 
@@ -128,6 +128,7 @@ The backend keeps clear internal boundaries: `backend/cmd/server` is the executa
 │   │   ├── repository/         # persistence contracts
 │   │   ├── infra/              # persistence, cache, storage, providers
 │   │   ├── transport/http/     # handlers, DTOs, middleware, routes
+│   │   ├── webui/              # embedded web UI (go:embed)
 │   │   └── shared/             # cross-cutting response and security code
 │   └── docs/                  # generated Swagger artifacts
 ├── frontend/                 # Next.js App Router and static export
@@ -139,22 +140,23 @@ The backend keeps clear internal boundaries: `backend/cmd/server` is the executa
 │   └── public/                # static assets
 ├── packages/api-contract/     # generated TypeScript API contract
 ├── docker/                    # optional extraction and OCR services
+├── deploy/                    # systemd unit example
 ├── docs/                      # project guides
-├── config*.example.yaml       # deployment profile templates
-├── docker-compose*.yml        # deployment profiles
-└── Dockerfile                 # frontend + backend production image
+├── scripts/                   # binary build, rebrand, and upstream sync scripts
+└── config*.example.yaml       # deployment profile templates
 ```
 
 `frontend/` and `backend/` are independent workspaces managed by pnpm and Turborepo. `packages/api-contract/` connects them through generated Swagger types; update the Go transport contract first, then regenerate the shared package.
 
 ## Prerequisites
 
-- Node.js 20.9 or newer (the repository Docker image and CI use Node.js 24).
+- Node.js 20.9 or newer for development (release builds and CI use Node.js 24).
 - pnpm 10.17.0, normally enabled through Corepack.
 - Go 1.26.8 for backend development.
-- Docker Engine with Docker Compose v2 for container deployments or local PostgreSQL/Redis services.
+- A C compiler and SQLite headers (`libsqlite3-dev` on Debian/Ubuntu), because the backend builds with CGO.
+- PostgreSQL with pgvector and Redis for the default development configuration.
 
-The SQLite profile does not require a separately managed database or cache. The default development configuration uses PostgreSQL and Redis; the full Compose profile starts both services for you.
+Running a release binary needs none of these. The SQLite profile does not require a separately managed database or cache. The default development configuration uses PostgreSQL and Redis.
 
 ## Quick Start
 
@@ -162,7 +164,7 @@ The SQLite profile does not require a separately managed database or cache. The 
 
 ### Local Development
 
-Local development is intended for editing source code and running the frontend and backend separately. The default config connects to local PostgreSQL and Redis. If you only want a low-dependency trial, use the lightweight Docker installation below.
+Local development is intended for editing source code and running the frontend and backend separately. The default config connects to local PostgreSQL and Redis. If you only want a low-dependency trial, use a release binary with the lightweight SQLite profile below.
 
 1. Prepare backend configuration:
 
@@ -218,86 +220,121 @@ Run workspace commands from the repository root:
 | `pnpm check` | Run workspace lint, type, backend version, and API contract checks. |
 | `pnpm test` | Run workspace tests. |
 | `pnpm build` | Build the static frontend and backend binary. |
+| `pnpm build:binary` | Build the single self-contained binary with the embedded UI into `dist/firecortex`. |
 | `pnpm verify` | Run checks, tests, and builds together. |
 | `pnpm api:generate` | Regenerate Swagger artifacts and TypeScript API types. |
 | `pnpm api:check` | Check that generated API artifacts are up to date. |
 
-The frontend is exported as static files, so `pnpm build` writes the browser artifact to `frontend/out`. The Go service can serve that directory in the production image or through `server.frontend_dist_dir`.
+The frontend is exported as static files, so `pnpm build` writes the browser artifact to `frontend/out`. `pnpm build:binary` embeds that output into the Go binary; see [Build from Source](#build-from-source).
 
-### Docker Deployment
+### Binary Deployment
 
-Run the following Docker commands from the repository root. Choose one installation profile first, then copy the matching config file. All root compose profiles expose the app at `http://localhost:8080` by default and mount the repository-level `config.yaml` to `/app/config.yaml` inside the container.
+FireCortex ships as a single self-contained binary. The web UI is embedded in the executable, and one process serves both the API and the UI on `server.http_port` (default `8080`). Each [GitHub Release](https://github.com/lieyanc/FireCortex/releases) provides:
 
-| Profile | Use case | Config file | Compose file | Built-in dependencies |
-| --- | --- | --- | --- | --- |
-| Lightweight | Local evaluation, personal use, small single-node deployments | `config.sqlite.example.yaml` | `docker-compose.sqlite.yml` | App only, SQLite + sqlite-vec + in-memory cache |
-| Default | External PostgreSQL and Redis already exist | `config.example.yaml` | `docker-compose.yml` | App only |
-| Full | Single-machine stack with app, PostgreSQL, and Redis | `config.full.example.yaml` | `docker-compose.full.yml` | App, PostgreSQL, Redis |
+| Asset | Platform |
+| --- | --- |
+| `firecortex-linux-amd64` | Linux x86-64, glibc 2.35 or newer (Debian 12+, Ubuntu 22.04+) |
+| `firecortex-linux-arm64` | Linux ARM64, glibc 2.35 or newer (Debian 12+, Ubuntu 22.04+) |
+| `firecortex-darwin-arm64` | macOS on Apple silicon |
+| `SHA256SUMS` | SHA-256 checksums for the binaries |
+| `version.json` | Release metadata used by the built-in updater |
 
-#### 1. Lightweight Installation: SQLite
+Stable releases are published from `vX.Y.Z` tags. Every push to the `dev` branch also publishes a rolling prerelease under the `dev-latest` tag. Windows builds are not provided.
 
-This is the lowest-dependency deployment. It starts only the `app` container, stores data and local vector indexes in SQLite, and uses the in-process memory cache. Use it for local evaluation, personal deployments, and small single-node setups.
+Choose a configuration profile first:
 
-```bash
-cp config.sqlite.example.yaml config.yaml
-docker compose -f docker-compose.sqlite.yml up -d
-```
+| Profile | Use case | Config file | External services |
+| --- | --- | --- | --- |
+| Lightweight | Local evaluation, personal use, small single-node deployments | `config.sqlite.example.yaml` | None. SQLite + sqlite-vec + in-memory cache |
+| PostgreSQL + Redis | Multi-node or high-concurrency production deployments | `config.full.example.yaml` | PostgreSQL with pgvector, Redis |
+| Development | Source development with `pnpm dev` | `config.example.yaml` | PostgreSQL with pgvector, Redis |
 
 SQLite + memory cache is single-process only. It is good for local use, evaluation, and small single-node deployments. Use PostgreSQL + Redis for multi-node or high-concurrency production deployments.
 
-#### 2. Default Installation: External PostgreSQL + Redis
+#### 1. Install the Binary
 
-Use this when PostgreSQL and Redis are already managed outside this compose stack. Before starting, set database and Redis addresses to values reachable from inside the container; if the services run on the Docker host, `host.docker.internal` is usually the right hostname.
-
-```bash
-cp config.example.yaml config.yaml
-# Edit database.postgres.dsn, database.redis.*, and public URLs.
-docker compose up -d
-```
-
-The default `docker-compose.yml` starts only the application container. Keep compose `environment` empty unless you intentionally want environment variables to override `config.yaml`.
-
-#### 3. Full Installation: PostgreSQL + Redis Containers
-
-Use this when you want compose to start the app, PostgreSQL, and Redis together.
+The commands below install the latest stable release for Linux x86-64 into `/opt/firecortex`. Replace the asset name for other platforms, or replace `latest/download` with `download/dev-latest` to follow the `dev` prerelease.
 
 ```bash
-cp config.full.example.yaml config.yaml
-docker compose -f docker-compose.full.yml up -d
+sudo install -d /opt/firecortex && cd /opt/firecortex
+base=https://github.com/lieyanc/FireCortex/releases/latest/download
+sudo curl -fLO "$base/firecortex-linux-amd64"
+sudo curl -fLO "$base/SHA256SUMS"
+sha256sum -c SHA256SUMS --ignore-missing
+sudo mv firecortex-linux-amd64 firecortex
+sudo chmod +x firecortex
 ```
 
-`docker-compose.full.yml` sets `POSTGRES_DSN`, `REDIS_ADDR`, `REDIS_USERNAME`, and `REDIS_PASSWORD` in compose `environment`, so those values override the database and Redis values in `config.yaml`.
+On macOS, verify with `shasum -a 256 -c SHA256SUMS --ignore-missing`.
 
-#### Configuration, Persistence, and Image
+#### 2. Prepare `config.yaml`
 
-Configuration priority is `environment variables > config.yaml > built-in defaults`. `config.yaml` is for static infrastructure and security configuration such as server URLs, database, cache, storage, GeoIP, tracing, JWT, and encryption keys. Runtime business settings are stored in the database and managed in the admin console.
+The binary reads `./config.yaml` or `../config.yaml` relative to its working directory, or the file named by `CONFIG_FILE`. Relative paths inside the config file, such as `./data/firecortex.db` and `./storage`, resolve against the directory that contains the config file.
 
-The default compose files persist application data:
+```bash
+ref=dev   # or the release tag you installed
+sudo curl -fL -o config.yaml "https://raw.githubusercontent.com/lieyanc/FireCortex/$ref/config.sqlite.example.yaml"
+```
 
-| Data | Container path |
+Use `config.full.example.yaml` instead for the PostgreSQL + Redis profile. Before exposing the service, set `app.env: prod`, replace `security.jwt_secret` and `security.data_encryption_key` with strong random values, and set `server.public_api_base_url`, `server.public_web_base_url`, and `server.cors_allow_origin` to your public HTTPS origin.
+
+The PostgreSQL + Redis profile needs both services reachable from the host. PostgreSQL needs the pgvector extension for embeddings, RAG, and semantic context; FireCortex runs `CREATE EXTENSION IF NOT EXISTS vector` on startup, so run it once as a superuser if the application role cannot create extensions. If you prefer containers for these dependencies, the following commands match the credentials in `config.full.example.yaml` (change the passwords for real deployments):
+
+```bash
+docker run -d --name firecortex-postgres --restart unless-stopped \
+  -e POSTGRES_USER=firecortex -e POSTGRES_PASSWORD=firecortex_2026 -e POSTGRES_DB=firecortex \
+  -p 127.0.0.1:5432:5432 -v firecortex-postgres-data:/var/lib/postgresql/data \
+  pgvector/pgvector:pg16
+docker run -d --name firecortex-redis --restart unless-stopped \
+  -p 127.0.0.1:6379:6379 -v firecortex-redis-data:/data \
+  redis:7 redis-server --requirepass firecortex_2026
+```
+
+#### 3. Run
+
+For a quick trial, run the binary from the directory that contains `config.yaml`:
+
+```bash
+./firecortex
+```
+
+For long-running deployments, use the systemd unit in [`deploy/firecortex.service`](./deploy/firecortex.service). It runs FireCortex as a dedicated `firecortex` user from `/opt/firecortex` with `Restart=always` and filesystem hardening that keeps `/opt/firecortex` writable for self-update:
+
+```bash
+sudo useradd --system --home-dir /opt/firecortex --shell /usr/sbin/nologin firecortex
+sudo chown -R firecortex:firecortex /opt/firecortex
+sudo chmod 600 /opt/firecortex/config.yaml
+sudo curl -fL -o /etc/systemd/system/firecortex.service \
+  "https://raw.githubusercontent.com/lieyanc/FireCortex/$ref/deploy/firecortex.service"
+sudo systemctl daemon-reload
+sudo systemctl enable --now firecortex
+```
+
+The server listens on all interfaces on `server.http_port`. For public access, restrict the port with a firewall and put a TLS-terminating reverse proxy in front.
+
+#### Configuration and Persistence
+
+Configuration priority is `environment variables > config.yaml > built-in defaults`. `config.yaml` is for static infrastructure and security configuration such as server URLs, database, cache, storage, GeoIP, tracing, updates, JWT, and encryption keys. Runtime business settings are stored in the database and managed in the admin console.
+
+With the example configs, persistent data lives next to `config.yaml`:
+
+| Data | Default path |
 | --- | --- |
-| SQLite database | `/app/data/firecortex.db` |
-| Uploaded and generated files | `/app/storage` |
-| PostgreSQL data | `/var/lib/postgresql/data`, full installation only |
-| Redis data | `/data`, full installation only |
+| SQLite database | `./data/firecortex.db`, lightweight profile only |
+| Uploaded and generated files | `./storage` |
+| GeoIP MMDB cache | `./data/geoip/` |
+| Downloaded updates | `./data/updates` |
 
-The default application image is `ghcr.io/lieyanc/firecortex:latest`. Compose files reference an image and do not define a build step. Build a local image first, then select it with `FIRECORTEX_IMAGE`:
-
-```bash
-docker build -t firecortex:local .
-FIRECORTEX_IMAGE=firecortex:local docker compose up -d
-```
-
-Use the matching `-f docker-compose.sqlite.yml` or `-f docker-compose.full.yml` option when starting another profile.
+Back up `config.yaml`, `data/`, and `storage/` (or your PostgreSQL database and S3 bucket). `data_encryption_key` must stay the same across restarts and upgrades; without it, encrypted secrets stored in the database cannot be read.
 
 `APP_ENV` accepts `dev`/`development` and `prod`/`production`, normalizes them to `dev` or `prod`, and defaults to `prod` when omitted. Use `dev` only for local development. Public production deployments should keep `APP_ENV=prod` or `APP_ENV=production` and use production secrets.
 
 #### Optional Installation Services
 
-These services are optional. Start only the ones you enable in the admin console or `config.yaml`.
-They attach to `firecortex-network`; start one root compose profile first, or create the network manually with `docker network create firecortex-network`.
+These document extraction and OCR services are optional standalone sidecars. FireCortex calls them by URL, so run only the ones you enable in the admin console. The compose files under `docker/` attach to an external `firecortex-network` Docker network; create it once before starting them:
 
 ```bash
+docker network create firecortex-network
 docker compose -f docker/tika/docker-compose.yml up -d
 docker compose -f docker/tesseract/docker-compose.yml up -d --build
 docker compose -f docker/docling/docker-compose.yml up -d --build
@@ -310,8 +347,64 @@ Default local endpoints:
 | Tika | `http://127.0.0.1:9998` | Document text extraction |
 | Tesseract OCR | `http://127.0.0.1:8004/ocr` | OCR service |
 | Docling | `http://127.0.0.1:8005/ocr` | Document/OCR extraction |
+| RapidOCR | `http://127.0.0.1:8002/ocr` | OCR service |
 
-`docker/rapidocr` currently provides a Dockerfile and app entrypoint, but no compose file. Add a compose file or run it manually if you choose RapidOCR.
+`docker/rapidocr` provides a Dockerfile and app entrypoint, but no compose file. Build and run it from the repository root:
+
+```bash
+docker build -t firecortex-rapidocr:latest -f docker/rapidocr/Dockerfile .
+docker run -d --name firecortex-rapidocr --network firecortex-network \
+  -p 127.0.0.1:8002:8002 --restart unless-stopped firecortex-rapidocr:latest
+```
+
+### Updating
+
+FireCortex updates itself from GitHub Releases. Administrators see the running version and update status under **Admin console → About**, where **Check for updates** queries the configured channel and offers to download and apply a newer build. Manual checks work whether or not automatic checks are enabled.
+
+| Channel | Follows | Automatic behavior |
+| --- | --- | --- |
+| `stable` | `vX.Y.Z` releases | Downloads a newer release and restarts once it is verified. |
+| `dev` | The rolling `dev-latest` prerelease | Downloads a newer build, then waits for an administrator to confirm the restart. |
+
+Set `update.enabled: true` to check in the background every `update.check_interval_seconds` (minimum `60`).
+
+Applying an update works as follows:
+
+1. The binary for the current platform is downloaded into `update.download_dir` and verified against the release's `SHA256SUMS`. Verification is mandatory: a release without `SHA256SUMS`, without an entry for this platform, or with a mismatching hash is refused.
+2. The server waits up to 10 minutes for in-flight chat generations to finish, then drains HTTP connections the same way as a `SIGTERM` shutdown.
+3. It replaces its own executable in place and re-execs itself under the same PID, so systemd does not see a restart.
+
+Requirements and caveats:
+
+- The process needs write permission on the directory that contains the executable and on `update.download_dir`. The provided systemd unit satisfies this for `/opt/firecortex`.
+- Integrity relies on SHA-256 checksums only; releases are not signed. Trust rests on HTTPS and GitHub. With `update.source: proxy`, downloads go through `update.proxy_base_url`, so use only a mirror host you control.
+- There is no automatic rollback if a new version fails to start. Keep `Restart=always` in systemd so a crash at least restarts the service. To roll back or update by hand, repeat the install steps with the release you want and run `sudo systemctl restart firecortex`.
+
+```yaml
+update:
+  enabled: false
+  channel: stable                 # stable or dev
+  check_interval_seconds: 3600
+  source: github                  # github or proxy
+  proxy_base_url: "https://dl.repo.chycloud.top"
+  repo: lieyanc/FireCortex
+  download_dir: ./data/updates
+```
+
+### Build from Source
+
+Building a binary requires Go (the version in `backend/go.mod`), Node.js 24 with pnpm, a C compiler, and SQLite headers (`libsqlite3-dev` on Debian/Ubuntu), because the backend uses CGO for go-sqlite3 and sqlite-vec.
+
+```bash
+pnpm install
+pnpm build:binary
+```
+
+The script builds the Next.js static export, stages it into `backend/internal/webui/dist`, and runs `go build` with CGO enabled. The result is `dist/firecortex`, which runs exactly like a release binary. Because of CGO, build on the target operating system and architecture.
+
+The embedded UI calls the API on the same origin. Leave `NEXT_PUBLIC_API_BASE_URL` unset (including in `frontend/.env.local`) when building a binary for deployment.
+
+`server.frontend_dist_dir` (`FRONTEND_DIST_DIR`) is empty by default, which serves the embedded UI. Setting it to a directory such as `./frontend/out` serves the UI from disk instead; use this only for development or debugging.
 
 ### Separated Deployment
 
@@ -324,12 +417,6 @@ Use this mode when the frontend and backend are served from different public ori
    - Backend config: `server.public_web_base_url=https://chat.example.com`
    - Backend config: `server.cors_allow_origin=https://chat.example.com`
 
-   For Docker image builds, pass the frontend API URL at build time:
-
-   ```bash
-   docker build --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.example.com -t firecortex .
-   ```
-
 2. Build and publish the frontend.
 
    ```bash
@@ -337,7 +424,7 @@ Use this mode when the frontend and backend are served from different public ori
    NEXT_PUBLIC_API_BASE_URL=https://api.example.com pnpm --filter @firecortex/web build
    ```
 
-   The static output is `frontend/out`. Serve it with Nginx, CDN, object storage, or any static web server. To let the Go backend serve the frontend, place `frontend/out` under `server.frontend_dist_dir`; the Docker image defaults to `/app/frontend/out`.
+   The static output is `frontend/out`. Serve it with Nginx, CDN, object storage, or any static web server. The backend binary still serves its own embedded UI on the API origin, which does not affect the separately hosted copy.
 
 3. Apply CDN rules.
 
@@ -352,13 +439,14 @@ Use this mode when the frontend and backend are served from different public ori
 
 ### Startup Check and First Login
 
-After the application starts, verify liveness, readiness, the mounted config file, and startup logs. For Docker deployments:
+After the application starts, verify liveness, readiness, the version, and startup logs. For systemd deployments:
 
 ```bash
 curl http://localhost:8080/healthz
 curl http://localhost:8080/readyz
-docker compose exec app ls -l /app/config.yaml
-docker compose logs app
+curl http://localhost:8080/api/v1/version
+systemctl status firecortex
+journalctl -u firecortex -e
 ```
 
 Swagger is registered only when `APP_ENV=dev` or `APP_ENV=development`; production deployments intentionally do not expose the Swagger UI route.
@@ -378,18 +466,18 @@ If a superadmin already exists, the service does not regenerate or print the ini
 
 > Full configuration guide: [Configuration](https://github.com/lieyanc/FireCortex).
 
-Backend configuration is split into static runtime configuration and runtime business settings. Static runtime configuration describes branding and the infrastructure, security, and storage parameters required to start the service, and is provided through `config.yaml` and environment variables. Runtime business settings cover product capabilities such as authentication, conversations, models, files, and billing; they are stored in `system_settings` and maintained from the admin console. Environment variables override matching config-file values, which is useful for containerized deployments, separated deployments, and secret injection.
+Backend configuration is split into static runtime configuration and runtime business settings. Static runtime configuration describes branding and the infrastructure, security, and storage parameters required to start the service, and is provided through `config.yaml` and environment variables. Runtime business settings cover product capabilities such as authentication, conversations, models, files, and billing; they are stored in `system_settings` and maintained from the admin console. Environment variables override matching config-file values, which is useful for systemd `Environment=` overrides, separated deployments, and secret injection.
 
-At startup, the backend resolves the default config file from the working directory: starting from the repository root reads `config.yaml`, while starting from `backend/` reads `../config.yaml`. Docker deployments usually mount host `./config.yaml` as read-only `/app/config.yaml` inside the container. If the config file is stored elsewhere, set `CONFIG_FILE` to a path accessible from the running process or container. The effective priority is `environment variables > config.yaml > built-in defaults`.
+At startup, the backend resolves the default config file from the working directory: starting from the repository root reads `config.yaml`, while starting from `backend/` reads `../config.yaml`. Relative paths inside the config file resolve against the directory containing it. If the config file is stored elsewhere, set `CONFIG_FILE` to a path accessible from the running process. The effective priority is `environment variables > config.yaml > built-in defaults`.
 
-Frontend branding is also runtime configuration. Set the `branding` section in `config.yaml`, then restart the application; rebuilding the frontend or Docker image is not required. See [Custom branding](docs/BRANDING.md).
+Frontend branding is also runtime configuration. Set the `branding` section in `config.yaml`, then restart the application; rebuilding the frontend or binary is not required. See [Custom branding](docs/BRANDING.md).
 
 Static configuration environment variables:
 
 | Area | Environment variable | Purpose |
 | --- | --- | --- |
 | Frontend build | `NEXT_PUBLIC_API_BASE_URL` | Browser API base URL; set in `frontend/.env.local` for local dev or at build time for separated deployment. |
-| Config file | `CONFIG_FILE` | Optional config file path; Docker values should use the container path. |
+| Config file | `CONFIG_FILE` | Optional config file path. |
 | Application | `APP_NAME` | Application name. |
 | Application | `APP_ENV` | Runtime environment: `dev`/`development` or `prod`/`production`; omitted values default to `prod`. |
 | HTTP service | `HTTP_PORT` | API/runtime port. |
@@ -397,7 +485,7 @@ Static configuration environment variables:
 | HTTP service | `TRUSTED_PROXIES` | Trusted proxy CIDR list. |
 | HTTP service | `PUBLIC_API_BASE_URL` | Public API URL for links, callbacks, and public URL generation. |
 | HTTP service | `PUBLIC_WEB_BASE_URL` | Public Web URL for links, callbacks, and public URL generation. |
-| HTTP service | `FRONTEND_DIST_DIR` | Frontend static output directory. |
+| HTTP service | `FRONTEND_DIST_DIR` | Optional directory that overrides the embedded web UI; empty serves the embedded UI. For development or debugging only. |
 | HTTP service | `HTTP_READ_HEADER_TIMEOUT_SECONDS` | HTTP read-header timeout. |
 | HTTP service | `HTTP_READ_TIMEOUT_SECONDS` | HTTP request read timeout. |
 | HTTP service | `HTTP_IDLE_TIMEOUT_SECONDS` | HTTP keep-alive idle timeout. |
@@ -452,6 +540,13 @@ Static configuration environment variables:
 | OpenTelemetry | `OTEL_EXPORTER_OTLP_INSECURE` | Whether to use plaintext transport. |
 | OpenTelemetry | `OTEL_EXPORTER_OTLP_PROTOCOL` | OTLP exporter protocol: `grpc`, `http`, or `http/protobuf`; defaults to `grpc`. |
 | OpenTelemetry | `OTEL_TRACES_SAMPLER_ARG` / `OTEL_SAMPLING_RATE` | Trace sampling rate from `0` to `1`; `OTEL_TRACES_SAMPLER_ARG` takes priority. |
+| Updates | `UPDATE_ENABLED` | Enables automatic background update checks; manual checks from the admin console work regardless. |
+| Updates | `UPDATE_CHANNEL` | `stable` for `vX.Y.Z` releases or `dev` for the rolling `dev-latest` prerelease. |
+| Updates | `UPDATE_CHECK_INTERVAL_SECONDS` | Seconds between automatic checks; minimum `60`. |
+| Updates | `UPDATE_SOURCE` | `github` for direct GitHub downloads or `proxy` for `UPDATE_PROXY_BASE_URL`. |
+| Updates | `UPDATE_PROXY_BASE_URL` | Download mirror used when `UPDATE_SOURCE=proxy`. |
+| Updates | `UPDATE_REPO` | GitHub repository that publishes releases, default `lieyanc/FireCortex`. |
+| Updates | `UPDATE_DOWNLOAD_DIR` | Directory for downloaded update binaries, default `./data/updates`. |
 
 Authentication, registration, conversation settings, model option policies, file processing, RAG, embedding, MCP, billing, payments, and announcements are runtime business settings, not static YAML configuration. Their defaults are seeded by the backend and maintained in the admin console.
 

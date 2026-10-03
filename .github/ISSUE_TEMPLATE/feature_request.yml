@@ -23,7 +23,7 @@ body:
         - MCP / tools
         - Billing / payments
         - Admin console
-        - Deployment / Docker / configuration
+        - Deployment / updates / configuration
         - Documentation
         - Other
     validations:
@@ -54,7 +54,7 @@ body:
     id: compatibility
     attributes:
       label: Compatibility, deployment, or migration impact
-      description: Note whether this affects configuration, Docker deployment, API contracts, database schema, existing conversations, billing, or authentication.
+      description: Note whether this affects configuration, binary deployment or self-update, API contracts, database schema, existing conversations, billing, or authentication.
       placeholder: |
         Configuration changes:
         API changes:

@@ -52,3 +52,15 @@ pnpm verify
 - Upstream attribution that must keep the DEEIX name lives in excluded files (`NOTICE`, `LICENSE`, this file, `frontend/shared/config/upstream.ts`) or on lines ending with a `rebrand:keep` marker (for example `<!-- rebrand:keep -->` in Markdown or `// rebrand:keep` in code).
 - Keep hand edits to upstream files small and prefer new files for FireCortex-only features. Every line changed in an upstream file is a potential conflict on the next sync.
 - Upstream contact addresses (`support@deeix.com`) are skipped by the script and must be rewritten by hand when they appear.
+
+## Deployment divergence
+
+FireCortex ships only as a single binary with the web UI embedded, so the fork deleted upstream's `Dockerfile`, `.dockerignore`, root `docker-compose.yml`, `docker-compose.sqlite.yml`, `docker-compose.full.yml`, and the image workflows `.github/workflows/ghcr-image.yml` and `.github/workflows/dockerhub-image.yml`. An upstream sync that touches any of them stops with a modify/delete conflict. Resolve it by keeping them deleted:
+
+```bash
+git rm Dockerfile docker-compose.full.yml   # whichever deleted paths conflict
+```
+
+Before discarding such a change, check whether it carries something the binary still needs, such as a new build dependency, a Go or Node.js version bump, or a new persistent path, and port it to `scripts/build-binary.sh`, `.github/workflows/release.yml`, the config examples, or the README. The optional extraction services under `docker/` are kept and merge normally.
+
+Upstream serves the static frontend from disk through `registerFrontendStatic` in `backend/internal/transport/http/server.go`, driven by `server.frontend_dist_dir`. FireCortex serves the UI embedded from `backend/internal/webui` and treats `frontend_dist_dir` only as an optional disk override. Upstream changes to `registerFrontendStatic` or `frontend_dist_dir` (routing, fallbacks, cache headers, manifest handling) do not carry over automatically; port them by hand to the embedded-filesystem implementation.

@@ -10,7 +10,8 @@ server:
   trusted_proxies: "127.0.0.1/32,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fc00::/7"
   public_api_base_url: "http://127.0.0.1:8080"
   public_web_base_url: "http://localhost:3000"
-  frontend_dist_dir: "./frontend/out"
+  # Optional. Leave unset to serve the web UI embedded in the binary. Set a directory only to override it from disk for development or debugging.
+  # frontend_dist_dir: "./frontend/out"
   read_header_timeout_seconds: 10
   read_timeout_seconds: 120
   idle_timeout_seconds: 120
@@ -26,9 +27,9 @@ security:
   data_encryption_key: "change-me-dev-data-encryption-key-32-bytes-min"
   # Optional. Enable in production to block outbound requests to private or metadata networks.
   ssrf_protection_enabled: false
-  # Optional. Exact hostnames for deployment-level integrations and trusted private redirect targets, comma-separated (for example: geoip.internal,host.docker.internal). Administrator-saved endpoints are trusted locally by exact origin and need this list only when they redirect to another private origin.
+  # Optional. Exact hostnames for deployment-level integrations and trusted private redirect targets, comma-separated (for example: geoip.internal,ocr.internal). Administrator-saved endpoints are trusted locally by exact origin and need this list only when they redirect to another private origin.
   ssrf_allowed_hosts: ""
-  # Optional. Trusted integration and private redirect ranges in CIDR notation, comma-separated (for example: 172.17.0.0/16). Prefer administrator-saved exact endpoints when the integration supports them.
+  # Optional. Trusted integration and private redirect ranges in CIDR notation, comma-separated (for example: 10.0.0.0/24). Prefer administrator-saved exact endpoints when the integration supports them.
   ssrf_allowed_cidrs: ""
   # Optional. Override only when using a compatible Turnstile verification proxy. This exact administrator-configured origin is locally trusted and does not require the global SSRF allowlist.
   turnstile_siteverify_url: "https://challenges.cloudflare.com/turnstile/v0/siteverify"
@@ -37,7 +38,7 @@ branding:
   # Optional. Frontend product branding; changes take effect after restarting the app.
   title: FireCortex
   short_name: FireCortex
-  description: FireCortex is your external brain: one chat box to get anything done.
+  description: "FireCortex is your external brain: one chat box to get anything done."
   logo_url: ""
   favicon_url: /favicon.ico
   pwa_icon_192_url: /pwa/icon-192.png
@@ -105,3 +106,19 @@ observability:
     insecure: false
     protocol: grpc
     sampling_rate: 1
+
+update:
+  # Optional. Automatic background update checks. Manual check and apply from Admin console > About work regardless.
+  enabled: false
+  # Optional. stable follows vX.Y.Z releases and restarts automatically once a verified update is downloaded.
+  # Optional. dev follows the rolling dev-latest prerelease; downloads wait for administrator confirmation before restart.
+  channel: stable
+  # Optional. Seconds between automatic checks; minimum 60.
+  check_interval_seconds: 3600
+  # Optional. github downloads straight from github.com release links; proxy downloads through proxy_base_url.
+  # Optional. Updates are verified by SHA-256 checksums only, so use proxy only with a mirror you control.
+  source: github
+  proxy_base_url: "https://dl.repo.chycloud.top"
+  repo: lieyanc/FireCortex
+  # Optional. The service user needs write access here and to the directory containing the executable.
+  download_dir: ./data/updates

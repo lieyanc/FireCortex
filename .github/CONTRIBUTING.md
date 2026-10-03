@@ -26,6 +26,8 @@ pnpm build
 
 Use `pnpm dev`, `pnpm dev:web`, or `pnpm dev:api` for local development.
 
+FireCortex is deployed only as a single binary with the web UI embedded. Run `pnpm build:binary` to build it into `dist/firecortex`; this needs a C compiler and SQLite headers because the backend uses CGO. Do not add Docker images or compose files for the application itself.
+
 Use the example configuration files for local development. Do not commit local secrets or production credentials.
 
 ## Pull Request Guidelines
@@ -67,7 +69,8 @@ Commit message subjects that do not match this format will fail CI.
 
 - `frontend/` owns the user interface, client-side state, message rendering, and admin/user workflows.
 - `backend/` owns business APIs, authentication, authorization, model routing, file processing, billing, audit logs, and persistence.
-- `docker/` contains optional local services for document extraction, OCR, and related runtime dependencies.
+- `docker/` contains optional sidecar services for document extraction, OCR, and related runtime dependencies. The application calls them by URL.
+- `deploy/` contains deployment examples such as the systemd unit.
 - The frontend should not duplicate backend authorization, billing, provider routing, or file-processing business rules.
 - Keep cross-cutting concerns such as security, tracing, storage, and provider clients behind backend infrastructure boundaries.
 - Backend startup flows through `cmd -> internal/cli -> internal/app`.

@@ -23,7 +23,7 @@
 - [ ] MCP / tools
 - [ ] Billing / payments
 - [ ] Admin console
-- [ ] Deployment / Docker / configuration
+- [ ] Deployment / updates / configuration
 - [ ] Documentation
 
 ## Verification
@@ -38,7 +38,7 @@
 
 ## Configuration, migration, and compatibility notes
 
-<!-- Note changes to config files, environment variables, database schema, Docker deployment, public URLs, CORS, API contracts, generated Swagger, or backward compatibility. -->
+<!-- Note changes to config files, environment variables, database schema, binary deployment or self-update, public URLs, CORS, API contracts, generated Swagger, or backward compatibility. -->
 
 ## Documentation
 

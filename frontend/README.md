@@ -2,7 +2,7 @@
 
 `@firecortex/web` 是 FireCortex 的浏览器端工作区，基于 Next.js App Router 实现对话、文件、知识库、提示词、用户设置和管理员后台。前端负责界面、客户端状态和展示层流程；认证授权、模型路由、文件处理、计费、持久化和审计等业务规则由 Go 后端负责。
 
-前端采用 Next.js 静态导出模式（`output: "export"`）。开发时使用 Next.js 开发服务器，构建后生成 `frontend/out`，生产环境可由 Go 服务托管，也可以交给 Nginx、CDN 或其他静态文件服务。
+前端采用 Next.js 静态导出模式（`output: "export"`）。开发时使用 Next.js 开发服务器，构建后生成 `frontend/out`，发布时由 `pnpm build:binary` 嵌入 Go 二进制、由同一进程托管，也可以交给 Nginx、CDN 或其他静态文件服务。
 
 相关文档：[项目主 README](../README.md) · [后端 README](../backend/README.md) · [API 文档索引](../backend/docs/README.md)
 
@@ -159,7 +159,7 @@ NEXT_PUBLIC_API_BASE_URL=https://api.example.com pnpm --filter @firecortex/web b
 
 `NEXT_PUBLIC_DEV_AUTO_LOGIN`、`NEXT_PUBLIC_DEV_USERNAME` 和 `NEXT_PUBLIC_DEV_PASSWORD` 只用于本地开发调试，不应带入生产构建。产品品牌和其他浏览器运行时配置由后端公开接口提供，因此修改品牌通常只需要更新后端配置并重启服务。
 
-构建后的 `frontend/out` 可以交给静态服务器或 Go 后端托管。静态服务器需要把无扩展名页面映射到对应的 `index.html`；使用 Go 服务时由 `server.frontend_dist_dir` 指向该目录。由于这是静态导出应用，不使用 `next start` 作为生产启动方式。
+构建后的 `frontend/out` 可以交给静态服务器托管，也可以由仓库根目录的 `pnpm build:binary` 放入 `backend/internal/webui/dist` 并嵌入 Go 二进制。嵌入的前端以同源方式请求 API，因此构建用于部署的二进制时不要设置 `NEXT_PUBLIC_API_BASE_URL`（包括 `frontend/.env.local` 中的值）。静态服务器需要把无扩展名页面映射到对应的 `index.html`；开发调试时也可以用 `server.frontend_dist_dir` 让 Go 服务直接从磁盘提供该目录，覆盖内嵌前端。由于这是静态导出应用，不使用 `next start` 作为生产启动方式。
 
 ## 本地开发
 
@@ -178,10 +178,10 @@ cp config.example.yaml config.yaml
 pnpm dev
 ```
 
-如果本机没有 PostgreSQL 和 Redis，可以启动完整本地依赖：
+如果本机没有 PostgreSQL 和 Redis，可以改用不需要外部依赖的 SQLite 配置，并在 `server.cors_allow_origin` 中加入 `http://localhost:3000,http://127.0.0.1:3000`、把 `server.public_web_base_url` 改为 `http://localhost:3000`：
 
 ```bash
-docker compose -f docker-compose.full.yml up -d
+cp config.sqlite.example.yaml config.yaml
 ```
 
 只启动前端时访问 `http://localhost:3000`。后端默认监听 `http://localhost:8080`；未设置 `NEXT_PUBLIC_API_BASE_URL` 时，开发配置默认使用该地址。

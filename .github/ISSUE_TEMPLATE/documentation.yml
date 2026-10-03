@@ -18,7 +18,7 @@ body:
         - Frontend docs
         - Swagger / API contract
         - Configuration examples
-        - Docker / deployment
+        - Deployment / updates
         - Other
     validations:
       required: true
@@ -27,7 +27,7 @@ body:
     attributes:
       label: Location
       description: Link to the page, file, section, or API path that needs a documentation update.
-      placeholder: "README.md#docker-deployment, backend/docs/README.md, /api/v1/..."
+      placeholder: "README.md#binary-deployment, backend/docs/README.md, /api/v1/..."
     validations:
       required: true
   - type: textarea

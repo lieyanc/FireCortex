@@ -23,7 +23,7 @@ body:
         - MCP / tools
         - Billing / payments
         - Admin console
-        - Deployment / Docker / configuration
+        - Deployment / updates / configuration
         - Documentation
         - Other
     validations:
@@ -32,8 +32,8 @@ body:
     id: version
     attributes:
       label: Version or commit
-      description: Provide the release version, Docker image tag, branch, or commit SHA where the issue occurs.
-      placeholder: "v0.1.0, ghcr.io/lieyanc/firecortex:latest, main@abcdef1"
+      description: Provide the release version (shown in Admin console > About or /api/v1/version), branch, or commit SHA where the issue occurs.
+      placeholder: "v0.1.0, dev-latest@abcdef1, dev@abcdef1"
     validations:
       required: true
   - type: textarea
@@ -44,7 +44,7 @@ body:
       placeholder: |
         OS:
         Browser:
-        Deployment: local / Docker / separated frontend-backend / other
+        Deployment: local / release binary / separated frontend-backend / other
         PostgreSQL:
         Redis:
         Object storage:

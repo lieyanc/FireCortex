@@ -4,7 +4,7 @@
 >
 > FireCortex 基于 [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat)（Copyright 2026 DEEIX）二次开发，源代码依据 [Apache License 2.0](../LICENSE) 授权。品牌配置不会移除或替换仓库及分发产物中的 [NOTICE](../NOTICE)、许可证副本或版权声明。Apache License 2.0 不授予 FireCortex 或 DEEIX 名称、Logo 及其他商标的使用权。 <!-- rebrand:keep -->
 
-FireCortex 的产品标题、HTML Meta Description、Logo、浏览器图标和 PWA 图标由根目录 `config.yaml` 统一配置。后端启动时读取配置并通过公开品牌接口提供给静态前端，因此修改品牌不需要重新构建前端或 Docker 镜像，只需更新配置并重启应用。
+FireCortex 的产品标题、HTML Meta Description、Logo、浏览器图标和 PWA 图标由根目录 `config.yaml` 统一配置。后端启动时读取配置并通过公开品牌接口提供给静态前端，因此修改品牌不需要重新构建前端或二进制文件，只需更新配置并重启应用。
 
 未配置或配置为空时，对应位置使用仓库内置品牌资源。品牌接口不可用时，前端也会保留内置品牌，不阻塞页面加载。
 
@@ -51,7 +51,7 @@ branding:
 
 - 用户端和管理端“关于”页面中的 FireCortex Logo、产品介绍、版权、仓库、上游项目署名和许可证信息。
 - 自定义 Logo 场景下的 `Powered by FireCortex` 来源标识和固定 FireCortex Logo。
-- 仓库及 Docker 镜像中的 `LICENSE` 和 `NOTICE` 文件。
+- 仓库中的 `LICENSE` 和 `NOTICE` 文件。
 
 这些限制只描述仓库内置品牌配置的行为，不改变许可证授权与商标边界。
 
@@ -80,7 +80,7 @@ branding:
 
 ### 同源部署
 
-Docker 镜像内的前端仍是 Next.js 静态导出文件，由同一个 Go 服务提供。品牌接口和 manifest 使用相对地址，浏览器不会产生跨域请求。后端同时在 `/manifest.webmanifest` 返回动态品牌 manifest，使使用旧根路径安装的 PWA 仍有机会按浏览器更新周期获取新配置。
+发布二进制内嵌的前端仍是 Next.js 静态导出文件，由同一个 Go 服务提供。品牌接口和 manifest 使用相对地址，浏览器不会产生跨域请求。后端同时在 `/manifest.webmanifest` 返回动态品牌 manifest，使使用旧根路径安装的 PWA 仍有机会按浏览器更新周期获取新配置。
 
 ### 分离部署
 

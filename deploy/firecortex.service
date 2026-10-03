@@ -1,0 +1,49 @@
+# Example systemd unit for a FireCortex binary installed in /opt/firecortex.
+#
+#   sudo useradd --system --home-dir /opt/firecortex --shell /usr/sbin/nologin firecortex
+#   sudo install -d -o firecortex -g firecortex /opt/firecortex
+#   # Place the firecortex binary and config.yaml in /opt/firecortex, owned by firecortex.
+#   sudo cp deploy/firecortex.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now firecortex
+#
+# Self-update replaces /opt/firecortex/firecortex in place and re-execs it under
+# the same PID, so the service user must be able to write /opt/firecortex.
+
+[Unit]
+Description=FireCortex
+Documentation=https://github.com/lieyanc/FireCortex
+Wants=network-online.target
+After=network-online.target
+# Uncomment when PostgreSQL or Redis run on the same host.
+# After=postgresql.service redis-server.service
+
+[Service]
+Type=simple
+User=firecortex
+Group=firecortex
+WorkingDirectory=/opt/firecortex
+ExecStart=/opt/firecortex/firecortex
+# There is no automatic rollback; restarting at least recovers from a crash.
+Restart=always
+RestartSec=5
+LimitNOFILE=65535
+
+# Hardening. The filesystem is read-only except for /opt/firecortex, which holds
+# the binary, config.yaml, data/ (SQLite, updates) and storage/. Add any other
+# writable paths configured in config.yaml to ReadWritePaths.
+ProtectSystem=strict
+ReadWritePaths=/opt/firecortex
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+NoNewPrivileges=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target
