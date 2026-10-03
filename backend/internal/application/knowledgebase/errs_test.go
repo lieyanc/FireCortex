@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 )
 
 func TestErrorsExposeStableContracts(t *testing.T) {

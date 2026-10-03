@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/go-redis/redis/v8"
 )
 

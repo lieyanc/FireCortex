@@ -8,15 +8,15 @@ import (
 	"net/url"
 	"strings"
 
-	systemeventapp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/systemevent"
-	domainmcp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/mcp"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/mcpauth"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/secretbox"
-	portmcp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/mcp"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	systemeventapp "github.com/lieyanc/FireCortex/backend/internal/application/systemevent"
+	domainmcp "github.com/lieyanc/FireCortex/backend/internal/domain/mcp"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/mcpauth"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/secretbox"
+	portmcp "github.com/lieyanc/FireCortex/backend/internal/ports/mcp"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 )
 
 var (

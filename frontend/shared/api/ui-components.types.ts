@@ -5,7 +5,7 @@ import type {
   UIComponentPageResponseDoc,
   UIComponentResponse,
   WriteUIComponentRequest as ContractWriteUIComponentRequest,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 
 export type UIComponentScope = "builtin" | "platform" | "user";
 export type UIComponentRendererKind = "builtin" | "sandbox";

@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/tokenestimate"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
 )
 
 type initialFallbackTitleRepositoryStub struct {
@@ -119,7 +119,7 @@ func TestParseGeneratedConversationLabelsHandlesLooseJSON(t *testing.T) {
 func TestConversationTitleFromFirstUserMessage(t *testing.T) {
 	cases := map[string]string{
 		"  这是一条很长的第一条用户消息，用来测试标题截断  ":        "这是一条很长的第一条用户消息，用",
-		"\n\nhello   world   from   DEEIX\n": "hello world from",
+		"\n\nhello   world   from   FireCortex\n": "hello world from",
 		"\"简短标题\"":                           "简短标题",
 		"   ":                                "",
 	}

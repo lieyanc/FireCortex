@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 	"github.com/google/uuid"
 )
 
@@ -349,8 +349,8 @@ func TestSetOpenRouterAttributionHeadersRespectsConfiguredHeaders(t *testing.T) 
 func TestSetAdditionalHeadersExpandsConversationIdentityTemplates(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "https://relay.example.com/v1/chat/completions", nil)
 	setAdditionalHeadersForInput(req, `{
-		"X-Conversation-Id":"${DEEIX_CONVERSATION_ID}",
-		"X-Session-Id":"session:${DEEIX_SESSION_ID}",
+		"X-Conversation-Id":"${FIRECORTEX_CONVERSATION_ID}",
+		"X-Session-Id":"session:${FIRECORTEX_SESSION_ID}",
 		"X-Static":"fixed"
 	}`, &portllm.GenerateInput{
 		ConversationPublicID:   "conversation-1",
@@ -370,8 +370,8 @@ func TestSetAdditionalHeadersExpandsConversationIdentityTemplates(t *testing.T) 
 
 func TestSetAdditionalHeadersExpandsRequestIdentityTemplates(t *testing.T) {
 	headersJSON := `{
-		"X-Request-Id":"${DEEIX_REQUEST_ID}",
-		"X-Client-Request-Id":"${DEEIX_UPSTREAM_REQUEST_ID}"
+		"X-Request-Id":"${FIRECORTEX_REQUEST_ID}",
+		"X-Client-Request-Id":"${FIRECORTEX_UPSTREAM_REQUEST_ID}"
 	}`
 	input := &portllm.GenerateInput{
 		RequestID:            "request-1",
@@ -381,7 +381,7 @@ func TestSetAdditionalHeadersExpandsRequestIdentityTemplates(t *testing.T) {
 	firstRequest := httptest.NewRequest(http.MethodPost, "https://relay.example.com/v1/chat/completions", nil)
 	setAdditionalHeadersForInput(firstRequest, headersJSON, input)
 	if got := firstRequest.Header.Get("X-Request-Id"); got != "request-1" {
-		t.Fatalf("expected DEEIX request ID header, got %q", got)
+		t.Fatalf("expected FireCortex request ID header, got %q", got)
 	}
 	firstUpstreamRequestID := firstRequest.Header.Get("X-Client-Request-Id")
 	if _, err := uuid.Parse(firstUpstreamRequestID); err != nil {
@@ -399,8 +399,8 @@ func TestSetAdditionalHeadersExpandsRequestIdentityTemplates(t *testing.T) {
 func TestSetAdditionalHeadersOmitsDynamicTemplatesForAuxiliaryTasks(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "https://relay.example.com/v1/chat/completions", nil)
 	setAdditionalHeadersForInput(req, `{
-		"X-Request-Id":"${DEEIX_REQUEST_ID}",
-		"X-Client-Request-Id":"${DEEIX_UPSTREAM_REQUEST_ID}",
+		"X-Request-Id":"${FIRECORTEX_REQUEST_ID}",
+		"X-Client-Request-Id":"${FIRECORTEX_UPSTREAM_REQUEST_ID}",
 		"X-Static":"fixed"
 	}`, &portllm.GenerateInput{RequestID: "request-1"})
 
@@ -418,10 +418,10 @@ func TestSetAdditionalHeadersOmitsDynamicTemplatesForAuxiliaryTasks(t *testing.T
 func TestSetAdditionalHeadersOmitsDynamicTemplatesWithoutContext(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "https://relay.example.com/v1/models", nil)
 	setAdditionalHeaders(req, `{
-		"X-Conversation-Id":"${DEEIX_CONVERSATION_ID}",
-		"X-Prefixed-Conversation-Id":"conversation:${DEEIX_CONVERSATION_ID}",
-		"X-Request-Id":"${DEEIX_REQUEST_ID}",
-		"X-Client-Request-Id":"${DEEIX_UPSTREAM_REQUEST_ID}",
+		"X-Conversation-Id":"${FIRECORTEX_CONVERSATION_ID}",
+		"X-Prefixed-Conversation-Id":"conversation:${FIRECORTEX_CONVERSATION_ID}",
+		"X-Request-Id":"${FIRECORTEX_REQUEST_ID}",
+		"X-Client-Request-Id":"${FIRECORTEX_UPSTREAM_REQUEST_ID}",
 		"X-Static":"fixed"
 	}`)
 
@@ -449,8 +449,8 @@ func TestProviderRequestBuildersExpandConversationIdentityHeaders(t *testing.T) 
 		ConversationSessionKey: "session-1",
 	}
 	route := portllm.RouteConfig{HeadersJSON: `{
-		"X-Conversation-Id":"${DEEIX_CONVERSATION_ID}",
-		"X-Session-Id":"${DEEIX_SESSION_ID}"
+		"X-Conversation-Id":"${FIRECORTEX_CONVERSATION_ID}",
+		"X-Session-Id":"${FIRECORTEX_SESSION_ID}"
 	}`}
 
 	requests := make([]*http.Request, 0, 2)
@@ -493,7 +493,7 @@ func TestOpenAIGenerationExpandsConversationIdentityHeader(t *testing.T) {
 		Protocol:      portllm.AdapterOpenAIChatCompletions,
 		BaseURL:       server.URL,
 		UpstreamModel: "test-model",
-		HeadersJSON:   `{"X-Conversation-Id":"${DEEIX_CONVERSATION_ID}"}`,
+		HeadersJSON:   `{"X-Conversation-Id":"${FIRECORTEX_CONVERSATION_ID}"}`,
 	}, portllm.GenerateInput{
 		ConversationPublicID: "conversation-1",
 		Messages:             []portllm.Message{{Role: "user", Content: "hello"}},

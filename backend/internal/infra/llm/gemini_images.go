@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 // geminiImageGenerationAdapter 实现 Google Gemini 图片生成/编辑协议。

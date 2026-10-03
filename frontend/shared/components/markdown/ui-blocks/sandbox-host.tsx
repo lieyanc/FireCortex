@@ -7,8 +7,8 @@ import { captureHTMLVisualThemeSnapshot, type HTMLVisualThemeSnapshot } from "@/
 import { SANDBOX_IFRAME_PERMISSIONS, sandboxDocumentHead } from "@/shared/lib/sandbox-document";
 import type { UIBlockRenderProps } from "./block";
 
-const HOST_MESSAGE_SOURCE = "deeix-ui-block-host";
-const FRAME_MESSAGE_SOURCE = "deeix-ui-block-frame";
+const HOST_MESSAGE_SOURCE = "firecortex-ui-block-host";
+const FRAME_MESSAGE_SOURCE = "firecortex-ui-block-frame";
 const MIN_FRAME_HEIGHT = 96;
 const MAX_FRAME_HEIGHT = 720;
 
@@ -18,7 +18,7 @@ type HostMessage =
 
 type FrameMessage = { source: typeof FRAME_MESSAGE_SOURCE; type: "ready" } | { source: typeof FRAME_MESSAGE_SOURCE; type: "resize"; height: number };
 
-// Injected before the component source. Exposes window.deeix with the P1 subset
+// Injected before the component source. Exposes window.firecortex with the P1 subset
 // (props and theme in, resize out). emit/setState arrive with actions in P2.
 function runtimeScript(): string {
   return `<script>
@@ -46,7 +46,7 @@ function runtimeScript(): string {
   });
   const reportHeight = () => post({ type: "resize", height: Math.ceil(document.documentElement.scrollHeight) });
   new ResizeObserver(reportHeight).observe(document.documentElement);
-  window.deeix = Object.freeze({
+  window.firecortex = Object.freeze({
     onProps(listener) { propsListeners.add(listener); if (currentProps !== undefined) listener(currentProps); return () => propsListeners.delete(listener); },
     onTheme(listener) { themeListeners.add(listener); if (currentTheme) listener(Object.fromEntries(currentTheme.variables)); return () => themeListeners.delete(listener); },
   });

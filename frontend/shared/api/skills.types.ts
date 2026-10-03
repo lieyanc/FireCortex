@@ -7,7 +7,7 @@ import type {
   SkillSummaryResponse,
   SkillSummaryPageResponseDoc,
   WriteSkillRequest as ContractWriteSkillRequest,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 
 export type SkillScope = "builtin" | "user";
 

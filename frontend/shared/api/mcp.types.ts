@@ -1,4 +1,4 @@
-import type { ToolListResponse, ToolResponse } from "@deeix/api-contract";
+import type { ToolListResponse, ToolResponse } from "@firecortex/api-contract";
 
 export type MCPToolDTO = ToolResponse;
 

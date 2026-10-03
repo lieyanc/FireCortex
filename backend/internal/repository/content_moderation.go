@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	domaincm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/contentmoderation"
+	domaincm "github.com/lieyanc/FireCortex/backend/internal/domain/contentmoderation"
 )
 
 // ContentModerationRepository persists moderation events and daily stats.

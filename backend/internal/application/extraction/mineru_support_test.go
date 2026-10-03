@@ -3,8 +3,8 @@ package extraction
 import (
 	"testing"
 
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	mineruextract "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/extract"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	mineruextract "github.com/lieyanc/FireCortex/backend/internal/ports/extract"
 )
 
 func TestSupportsMinerUFileUsesSourceSpecificOfficeFormats(t *testing.T) {

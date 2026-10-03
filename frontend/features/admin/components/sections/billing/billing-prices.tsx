@@ -111,7 +111,7 @@ function parseOfficialPricingMultiplier(value: string): number {
 
 function modelPricingExportFilename(): string {
   const date = new Date().toISOString().slice(0, 10);
-  return `deeix-chat-model-pricing-${date}.json`;
+  return `firecortex-model-pricing-${date}.json`;
 }
 
 export function BillingPricesSection({ models, pricingItems, setPricingItems, loading }: BillingPricesSectionProps) {

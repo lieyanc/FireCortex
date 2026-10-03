@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"strings"
 
-	domainsettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/settings"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/secretbox"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainsettings "github.com/lieyanc/FireCortex/backend/internal/domain/settings"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/secretbox"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 const (

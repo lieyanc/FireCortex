@@ -15,10 +15,10 @@ import (
 	"strings"
 	"time"
 
-	extractinfra "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/extract"
-	platformtracing "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/observability/tracing"
-	extractport "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/extract"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	extractinfra "github.com/lieyanc/FireCortex/backend/internal/infra/extract"
+	platformtracing "github.com/lieyanc/FireCortex/backend/internal/infra/observability/tracing"
+	extractport "github.com/lieyanc/FireCortex/backend/internal/ports/extract"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 )
 
 const (

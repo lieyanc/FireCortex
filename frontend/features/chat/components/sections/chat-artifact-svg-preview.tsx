@@ -42,7 +42,7 @@ function applyPreviewTheme(source: string, theme: HTMLVisualThemeSnapshot): stri
 
   const style = root.ownerDocument.createElementNS(SVG_NAMESPACE, "style");
   const variables = theme.variables.map(([name, value]) => `${name}:${value}`).join(";");
-  style.setAttribute("data-deeix-artifact-theme", "");
+  style.setAttribute("data-firecortex-artifact-theme", "");
   style.textContent = `:root{color-scheme:${theme.colorScheme};${variables}}`;
   root.prepend(style);
 

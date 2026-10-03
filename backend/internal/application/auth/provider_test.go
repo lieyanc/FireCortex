@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/secretbox"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/requestmeta"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/secretbox"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/requestmeta"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 )
 
 func boolPtr(value bool) *bool {

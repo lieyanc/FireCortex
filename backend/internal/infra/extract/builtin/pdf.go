@@ -9,7 +9,7 @@ import (
 	"github.com/coregx/gxpdf"
 	"golang.org/x/text/unicode/norm"
 
-	extractport "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/extract"
+	extractport "github.com/lieyanc/FireCortex/backend/internal/ports/extract"
 )
 
 // PDF 原生提取数据契约定义在 ports/extract，此处保留同名引用供实现使用。

@@ -7,15 +7,15 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 	"math"
 	"strings"
 	"time"
 
-	auditapp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/audit"
-	userapp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/user"
-	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	auditapp "github.com/lieyanc/FireCortex/backend/internal/application/audit"
+	userapp "github.com/lieyanc/FireCortex/backend/internal/application/user"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 

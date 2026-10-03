@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 func TestEstimateUsageNanousdFollowsPricingMode(t *testing.T) {

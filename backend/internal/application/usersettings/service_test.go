@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 )
 
 func TestSettingValidationErrorKeepsStablePublicContract(t *testing.T) {

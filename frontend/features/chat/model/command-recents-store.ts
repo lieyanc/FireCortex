@@ -1,4 +1,4 @@
-const COMMAND_RECENTS_STORAGE_KEY = "deeix.chat.command.recents.v1";
+const COMMAND_RECENTS_STORAGE_KEY = "firecortex.chat.command.recents.v1";
 const COMMAND_RECENTS_MAX_ENTRIES_PER_KIND = 20;
 
 export type CommandRecentsKind = "model" | "file" | "tool" | "skill" | "prompt";

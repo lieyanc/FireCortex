@@ -4,7 +4,7 @@ package uicomponent
 import "time"
 
 // FenceLanguage 是模型输出组件时使用的 Markdown 围栏语言标识。
-const FenceLanguage = "deeix-ui"
+const FenceLanguage = "firecortex-ui"
 
 const (
 	// ScopeBuiltin 表示仓库内置组件；启动时播种，受保护不可删除。

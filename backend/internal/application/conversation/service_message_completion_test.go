@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/tokenestimate"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
 )
 
 func TestCanceledGenerationWithObservedUsageIsRetainedForBilling(t *testing.T) {

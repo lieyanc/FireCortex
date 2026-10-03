@@ -4,10 +4,10 @@ import (
 	"context"
 	"strings"
 
-	domainpromptpreset "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/promptpreset"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/dberror"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainpromptpreset "github.com/lieyanc/FireCortex/backend/internal/domain/promptpreset"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/dberror"
+	model "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

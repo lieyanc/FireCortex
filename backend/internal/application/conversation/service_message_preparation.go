@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/background"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/tokenestimate"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )

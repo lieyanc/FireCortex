@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/tokenestimate"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
 )
 
 // SnapshotBoundaryIndex returns the covered boundary index when a snapshot can

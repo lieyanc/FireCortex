@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/channelconfig"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/channelconfig"
 )
 
 // ---------------------------------------------------------------------------

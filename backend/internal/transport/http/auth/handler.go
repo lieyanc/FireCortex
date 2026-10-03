@@ -8,15 +8,15 @@ import (
 	"strconv"
 	"time"
 
-	appauth "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/auth"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/user"
-	domainknowledgebase "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/knowledgebase"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/middleware"
+	appauth "github.com/lieyanc/FireCortex/backend/internal/application/auth"
+	"github.com/lieyanc/FireCortex/backend/internal/application/user"
+	domainknowledgebase "github.com/lieyanc/FireCortex/backend/internal/domain/knowledgebase"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
+	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 )
 
-const refreshTokenCookieName = "deeix_chat_refresh_token"
+const refreshTokenCookieName = "firecortex_refresh_token"
 
 // Handler 封装认证 HTTP 处理。
 type Handler struct {
@@ -560,7 +560,7 @@ func (h *Handler) StartProviderLogin(c *gin.Context) {
 
 // StartProviderAuthBridge godoc
 // @Summary 创建第三方登录授权桥事务
-// @Description 为 Web、App 或桌面公共客户端创建 PKCE 保护的 OAuth 授权事务；外部身份源仅回调当前 DEEIX 实例
+// @Description 为 Web、App 或桌面公共客户端创建 PKCE 保护的 OAuth 授权事务；外部身份源仅回调当前 FireCortex 实例
 // @Tags auth
 // @Accept json
 // @Produce json

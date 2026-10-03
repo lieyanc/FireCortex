@@ -10,7 +10,7 @@ import type {
   ContentModerationServiceConfigResponse,
   ContentModerationStatsDataResponse,
   ContentModerationUpdateConfigRequest,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 
 import { authedFetch, authedRequest } from "@/shared/api/authed-client";
 

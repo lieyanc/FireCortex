@@ -1,6 +1,6 @@
-# DEEIX Chat Backend
+# FireCortex Backend
 
-DEEIX Chat 后端是 Go API 服务，负责认证、用户、对话、模型渠道、模型能力、文件处理、知识库、MCP 工具、官方原生工具、记忆、计费、支付、系统设置、审计日志与可观测性等核心业务。
+FireCortex 后端是 Go API 服务，负责认证、用户、对话、模型渠道、模型能力、文件处理、知识库、MCP 工具、官方原生工具、记忆、计费、支付、系统设置、审计日志与可观测性等核心业务。
 
 ## 技术栈
 
@@ -137,7 +137,7 @@ cp config.sqlite.example.yaml config.yaml
 - `HTTP_PORT`：HTTP 端口
 - `FRONTEND_DIST_DIR`：静态前端目录；Docker 镜像默认使用 `/app/frontend/out`
 - `JWT_SECRET`：JWT 签名密钥
-- `MCP_USER_CONTEXT_SECRET`：MCP 用户上下文签名密钥；启用 `${DEEIX_SIGNED_USER_CONTEXT}` 时必须配置，并应与外部 MCP 网关共享
+- `MCP_USER_CONTEXT_SECRET`：MCP 用户上下文签名密钥；启用 `${FIRECORTEX_SIGNED_USER_CONTEXT}` 时必须配置，并应与外部 MCP 网关共享
 - `POSTGRES_DSN`：PostgreSQL DSN
 - `REDIS_ADDR` / `REDIS_USERNAME` / `REDIS_PASSWORD` / `REDIS_DB` / `REDIS_TLS_ENABLED` / `REDIS_TLS_INSECURE_SKIP_VERIFY`：Redis 连接配置；`REDIS_TLS_INSECURE_SKIP_VERIFY` 会跳过证书校验，除非非标准 TLS 端点要求，否则保持关闭
 - `STORAGE_BACKEND`：`local` 或 `s3`
@@ -192,7 +192,7 @@ Web、App 和桌面端统一通过当前实例完成第三方 OAuth 回调。部
 <PUBLIC_API_BASE_URL>/api/v1/auth/providers/<provider-slug>/callback
 ```
 
-`POST /auth/providers/:slug/authorize` 创建短时事务并使用服务端独立 PKCE 访问上游；`GET /auth/providers/:slug/callback` 在服务端兑换上游授权码；`POST /auth/providers/:slug/exchange` 使用公共客户端 PKCE verifier 原子兑换一次性 DEEIX grant。事务与 grant 使用现有 Redis/内存缓存后端，外部 provider code、Client Secret 和 Token 均不会进入公共客户端。旧 `/start` 与 `POST /callback` 流程继续保留，用于账号身份绑定与旧版 Web 客户端兼容。
+`POST /auth/providers/:slug/authorize` 创建短时事务并使用服务端独立 PKCE 访问上游；`GET /auth/providers/:slug/callback` 在服务端兑换上游授权码；`POST /auth/providers/:slug/exchange` 使用公共客户端 PKCE verifier 原子兑换一次性 FireCortex grant。事务与 grant 使用现有 Redis/内存缓存后端，外部 provider code、Client Secret 和 Token 均不会进入公共客户端。旧 `/start` 与 `POST /callback` 流程继续保留，用于账号身份绑定与旧版 Web 客户端兼容。
 
 生产环境安全校验：
 
@@ -375,34 +375,34 @@ OCR 引擎配置由后台文件设置管理，当前支持 RapidOCR、Tesseract 
 
 上游和路由的附加请求头支持动态变量模板。变量仅在真实会话生成请求中展开；模型列表、渠道探测、标题与标签生成、上下文压缩和媒体任务不会携带这些标识。
 
-- `${DEEIX_CONVERSATION_ID}`：公开会话 ID，适合自建网关按会话关联日志、缓存和长期记忆。
-- `${DEEIX_SESSION_ID}`：会话上下文键，适合需要独立会话亲和键的自建网关。
-- `${DEEIX_REQUEST_ID}`：DEEIX 当前请求 ID，同一轮生成、工具调用和路由重试保持一致，适合关联完整请求链路。
-- `${DEEIX_UPSTREAM_REQUEST_ID}`：每次上游 HTTP 请求单独生成的 UUID，适合要求请求级唯一标识的 Provider。
+- `${FIRECORTEX_CONVERSATION_ID}`：公开会话 ID，适合自建网关按会话关联日志、缓存和长期记忆。
+- `${FIRECORTEX_SESSION_ID}`：会话上下文键，适合需要独立会话亲和键的自建网关。
+- `${FIRECORTEX_REQUEST_ID}`：FireCortex 当前请求 ID，同一轮生成、工具调用和路由重试保持一致，适合关联完整请求链路。
+- `${FIRECORTEX_UPSTREAM_REQUEST_ID}`：每次上游 HTTP 请求单独生成的 UUID，适合要求请求级唯一标识的 Provider。
 
 功能默认关闭。管理员可在目标上游或路由的附加请求头中显式配置；未配置的官方 Provider 不会收到额外动态标识：
 
 ```json
 {
-  "X-Conversation-Id": "${DEEIX_CONVERSATION_ID}",
-  "X-Session-Id": "${DEEIX_SESSION_ID}",
-  "X-Request-Id": "${DEEIX_REQUEST_ID}"
+  "X-Conversation-Id": "${FIRECORTEX_CONVERSATION_ID}",
+  "X-Session-Id": "${FIRECORTEX_SESSION_ID}",
+  "X-Request-Id": "${FIRECORTEX_REQUEST_ID}"
 }
 ```
 
-OpenAI 的 `X-Client-Request-Id` 要求每次请求使用唯一值，应配置为 `${DEEIX_UPSTREAM_REQUEST_ID}`，不要使用稳定的会话或链路标识。
+OpenAI 的 `X-Client-Request-Id` 要求每次请求使用唯一值，应配置为 `${FIRECORTEX_UPSTREAM_REQUEST_ID}`，不要使用稳定的会话或链路标识。
 
 部分 Codex 兼容中转站会把 Codex CLI 使用的会话头作为账号或缓存分片的亲和键。仅在中转站明确支持该约定时，可在目标路由（不要在官方 OpenAI 上游）配置：
 
 ```json
 {
-  "session-id": "${DEEIX_SESSION_ID}",
-  "thread-id": "${DEEIX_CONVERSATION_ID}",
-  "x-client-request-id": "${DEEIX_CONVERSATION_ID}"
+  "session-id": "${FIRECORTEX_SESSION_ID}",
+  "thread-id": "${FIRECORTEX_CONVERSATION_ID}",
+  "x-client-request-id": "${FIRECORTEX_CONVERSATION_ID}"
 }
 ```
 
-其中 `session-id` 与 DEEIX 发送的 `prompt_cache_key` 使用同一个会话上下文键。该配置只提供中转站亲和提示，不能替代 `promptCache` 能力声明，也不应作为所有 OpenAI 兼容上游的全局默认值。
+其中 `session-id` 与 FireCortex 发送的 `prompt_cache_key` 使用同一个会话上下文键。该配置只提供中转站亲和提示，不能替代 `promptCache` 能力声明，也不应作为所有 OpenAI 兼容上游的全局默认值。
 
 ## OpenAI Prompt Cache
 
@@ -416,7 +416,7 @@ OpenAI 的 `X-Client-Request-Id` 要求每次请求使用唯一值，应配置�
 }
 ```
 
-官方 OpenAI 也可以用 `promptCache.enabled=false` 显式关闭。缓存策略完全由模型能力配置控制，用户消息请求中的同名 Options 会被忽略。启用显式缓存时，官方 OpenAI 默认发送消息块断点；兼容中转站必须再声明 `messageBreakpoints=true` 才会收到 `prompt_cache_breakpoint`。DEEIX 会把最后一条非空的前导 system 消息和每条非空历史 user 消息保留为断点；本轮 user、动态 RAG、本轮图片及其他当前轮上下文始终不标记。旧轮次断点必须继续保留，避免删除 marker 后改写后续缓存前缀；正常连续对话每轮只为上一轮 user 新增一个断点。OpenAI 每个请求最多创建 4 个新写入，并从最近 50 个对话断点中读取最长匹配前缀。该历史策略只作用于 explicit 模式，不改变仅使用稳定 `prompt_cache_key` 的 implicit 行为：
+官方 OpenAI 也可以用 `promptCache.enabled=false` 显式关闭。缓存策略完全由模型能力配置控制，用户消息请求中的同名 Options 会被忽略。启用显式缓存时，官方 OpenAI 默认发送消息块断点；兼容中转站必须再声明 `messageBreakpoints=true` 才会收到 `prompt_cache_breakpoint`。FireCortex 会把最后一条非空的前导 system 消息和每条非空历史 user 消息保留为断点；本轮 user、动态 RAG、本轮图片及其他当前轮上下文始终不标记。旧轮次断点必须继续保留，避免删除 marker 后改写后续缓存前缀；正常连续对话每轮只为上一轮 user 新增一个断点。OpenAI 每个请求最多创建 4 个新写入，并从最近 50 个对话断点中读取最长匹配前缀。该历史策略只作用于 explicit 模式，不改变仅使用稳定 `prompt_cache_key` 的 implicit 行为：
 
 ```json
 {
@@ -429,9 +429,9 @@ OpenAI 的 `X-Client-Request-Id` 要求每次请求使用唯一值，应配置�
 }
 ```
 
-若中转站接受顶层 `prompt_cache_options`，但拒绝消息内容中的 `prompt_cache_breakpoint`，省略 `messageBreakpoints` 或将其设为 `false`。此时 DEEIX 仍发送稳定的 `prompt_cache_key` 和显式缓存选项，由中转站选择缓存边界。
+若中转站接受顶层 `prompt_cache_options`，但拒绝消息内容中的 `prompt_cache_breakpoint`，省略 `messageBreakpoints` 或将其设为 `false`。此时 FireCortex 仍发送稳定的 `prompt_cache_key` 和显式缓存选项，由中转站选择缓存边界。
 
-显式缓存当前只接受 `ttl=30m`。隐式缓存使用上游默认保留策略；DEEIX 不配置或透传保留策略。未声明能力的兼容中转站不会收到 `prompt_cache_key`、`prompt_cache_options` 或 `prompt_cache_breakpoint`。DEEIX 不再依赖上游错误文本执行无记忆缓存重试。
+显式缓存当前只接受 `ttl=30m`。隐式缓存使用上游默认保留策略；FireCortex 不配置或透传保留策略。未声明能力的兼容中转站不会收到 `prompt_cache_key`、`prompt_cache_options` 或 `prompt_cache_breakpoint`。FireCortex 不再依赖上游错误文本执行无记忆缓存重试。
 
 ## MCP 工具
 
@@ -443,14 +443,14 @@ MCP 能力由后台工具设置管理：
 - 单次 run 支持最大 LLM 调用轮数、最大工具调用次数、并发数、超时和失败重试配置。
 - 工具调用结果会进入消息处理轨迹，前端与“处理链路 / 思考链路”并列展示工具链路。
 
-管理员可在 MCP Server 的请求头中配置签名用户上下文头：把某个请求头的值填为占位符 `${DEEIX_SIGNED_USER_CONTEXT}`，每次用户工具调用时该头会被替换为 HMAC-SHA256 签名的 token，签名密钥来自独立的 `MCP_USER_CONTEXT_SECRET`，默认有效期 5 分钟。MCP 服务端或外部网关可用同一 MCP 密钥校验，按用户隔离单租户 MCP 工具。工具同步时会忽略该占位符，不会把占位符原文发送给 MCP。启用了占位符但未配置签名密钥时，工具调用会失败并不会发送请求。未配置占位符的服务端不会收到任何额外请求头。
+管理员可在 MCP Server 的请求头中配置签名用户上下文头：把某个请求头的值填为占位符 `${FIRECORTEX_SIGNED_USER_CONTEXT}`，每次用户工具调用时该头会被替换为 HMAC-SHA256 签名的 token，签名密钥来自独立的 `MCP_USER_CONTEXT_SECRET`，默认有效期 5 分钟。MCP 服务端或外部网关可用同一 MCP 密钥校验，按用户隔离单租户 MCP 工具。工具同步时会忽略该占位符，不会把占位符原文发送给 MCP。启用了占位符但未配置签名密钥时，工具调用会失败并不会发送请求。未配置占位符的服务端不会收到任何额外请求头。
 
 签名密钥对所有 MCP 服务端共用，token payload 因此除了用户身份还带有目标与调用标识，服务端应一并校验：
 
 - `user_id`、`conversation_id`：当前用户与会话。
 - `request_id`：一次用户触发的 run，同一 run 内多次工具调用共用，不能用作单次调用的幂等键。
-- `aud`：管理员在 DEEIX 中注册的该服务端 BaseURL 原文。服务端与自身配置的注册地址做精确字符串比较即可，不要从请求的 Host 或路径推导；不匹配即为被重放到其他服务端的 token。
-- `jti`：每次工具调用签发一次。DEEIX 对同一次调用的自动重试沿用同一 token，服务端在 `exp` 之前收到重复 `jti` 且 payload 相同时应视为幂等重试（返回首次结果或直接去重），而不是拒绝。
+- `aud`：管理员在 FireCortex 中注册的该服务端 BaseURL 原文。服务端与自身配置的注册地址做精确字符串比较即可，不要从请求的 Host 或路径推导；不匹配即为被重放到其他服务端的 token。
+- `jti`：每次工具调用签发一次。FireCortex 对同一次调用的自动重试沿用同一 token，服务端在 `exp` 之前收到重复 `jti` 且 payload 相同时应视为幂等重试（返回首次结果或直接去重），而不是拒绝。
 - `exp`：过期时间（Unix 秒）。
 
 计费侧把一次用户触发的多轮 LLM + 工具调用视为一次 run 汇总统计。
@@ -507,10 +507,10 @@ docker compose -f docker/docling/docker-compose.yml up -d --build
 RapidOCR：
 
 ```bash
-docker build -t deeix-chat-rapidocr docker/rapidocr
+docker build -t firecortex-rapidocr docker/rapidocr
 ```
 
-这些服务默认使用 `deeix-chat-network`。可先执行 `docker network create deeix-chat-network`，或先启动一次根目录 compose 创建基础网络。
+这些服务默认使用 `firecortex-network`。可先执行 `docker network create firecortex-network`，或先启动一次根目录 compose 创建基础网络。
 
 ## 常用命令
 

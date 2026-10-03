@@ -34,7 +34,7 @@ import { useScrollFadeFallbackRef } from "@/shared/hooks/use-scroll-fade-fallbac
 import { useStoredBoolean } from "@/shared/hooks/use-stored-boolean";
 import { cn } from "@/lib/utils";
 
-const SEARCH_PREVIEW_PANE_STORAGE_KEY = "deeix.navigation-search.preview.open";
+const SEARCH_PREVIEW_PANE_STORAGE_KEY = "firecortex.navigation-search.preview.open";
 const StreamdownRender = dynamic(
   () => import("@/shared/components/markdown/streamdown-render").then((mod) => mod.StreamdownRender),
   { ssr: false },

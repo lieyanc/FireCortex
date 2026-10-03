@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/tokenestimate"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
 )
 
 const (

@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/mcpauth"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/mcp"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/mcpauth"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/mcp"
 )
 
 // ExecuteToolInput 定义工具执行入参。
@@ -56,7 +56,7 @@ func (s *Service) executeToolCall(ctx context.Context, input ExecuteToolInput) (
 	})
 }
 
-// applySignedUserContext 将请求头中值等于 ${DEEIX_SIGNED_USER_CONTEXT} 占位符的项
+// applySignedUserContext 将请求头中值等于 ${FIRECORTEX_SIGNED_USER_CONTEXT} 占位符的项
 // 替换为本次工具调用签名的用户上下文。未配置占位符时原样返回，不改变现有行为；
 // 签名失败时拒绝调用，避免 MCP 服务端收到没有用户上下文的请求。
 //

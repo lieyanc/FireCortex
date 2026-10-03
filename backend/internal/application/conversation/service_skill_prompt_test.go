@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	domainskill "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/skill"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	domainskill "github.com/lieyanc/FireCortex/backend/internal/domain/skill"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 func TestRenderSkillPromptIncludesSelectedSkillContent(t *testing.T) {

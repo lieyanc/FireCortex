@@ -1,6 +1,6 @@
 package llm
 
-import portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+import portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 
 // collectImageInputParts 收集消息中可发送给图片编辑类协议的原始图片输入。
 func collectImageInputParts(messages []portllm.Message) []portllm.ContentPart {

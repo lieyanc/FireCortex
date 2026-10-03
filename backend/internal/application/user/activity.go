@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 )
 
 const (

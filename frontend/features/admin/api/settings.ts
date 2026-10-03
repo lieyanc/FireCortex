@@ -1,4 +1,4 @@
-import type { EmbeddingIndexStatusResponse, EmbeddingReindexResponse } from "@deeix/api-contract";
+import type { EmbeddingIndexStatusResponse, EmbeddingReindexResponse } from "@firecortex/api-contract";
 import { authedRequest, authedFetch } from "@/shared/api/authed-client";
 import { pathParam } from "@/shared/api/http-client";
 import type {

@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	appaudit "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/audit"
-	domainmemory "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/memory"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/background"
+	appaudit "github.com/lieyanc/FireCortex/backend/internal/application/audit"
+	domainmemory "github.com/lieyanc/FireCortex/backend/internal/domain/memory"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
 )
 
 type embeddingProvider interface {

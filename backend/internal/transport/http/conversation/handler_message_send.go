@@ -10,11 +10,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	appconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/conversation"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/background"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/middleware"
+	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
+	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 )
 

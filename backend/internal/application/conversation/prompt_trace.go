@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"strings"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 type messagePromptTraceInput struct {

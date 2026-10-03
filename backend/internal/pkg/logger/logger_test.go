@@ -12,7 +12,7 @@ import (
 
 func TestMessageOnlyCoreMovesFieldsIntoMessage(t *testing.T) {
 	core, logs := observer.New(zap.InfoLevel)
-	item := zap.New(newMessageOnlyCore(core)).With(zap.String("service", "deeix-chat"))
+	item := zap.New(newMessageOnlyCore(core)).With(zap.String("service", "firecortex"))
 
 	item.Info("request", zap.String("http.method", "GET"), zap.Int("http.status_code", 200))
 
@@ -23,7 +23,7 @@ func TestMessageOnlyCoreMovesFieldsIntoMessage(t *testing.T) {
 	if len(entries[0].Context) != 0 {
 		t.Fatalf("expected context fields to be empty, got %#v", entries[0].Context)
 	}
-	for _, part := range []string{"request", "service deeix-chat", "method GET", "status_code 200"} {
+	for _, part := range []string{"request", "service firecortex", "method GET", "status_code 200"} {
 		if !strings.Contains(entries[0].Message, part) {
 			t.Fatalf("expected message to contain %q, got %q", part, entries[0].Message)
 		}

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	sharedsecurity "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	sharedsecurity "github.com/lieyanc/FireCortex/backend/internal/shared/security"
 )
 
 func TestLoadDefaultsUseBootstrapAdmin(t *testing.T) {
@@ -81,10 +81,10 @@ func TestConfigIsProduction(t *testing.T) {
 func TestLoadNormalizesLegacyPostgresDSNTimeZone(t *testing.T) {
 	cleanupConfigEnv(t)
 	chdir(t, t.TempDir())
-	t.Setenv("POSTGRES_DSN", "postgres://deeix_chat:secret%2Fvalue@postgres:5432/deeix_chat?sslmode=disable&TimeZone=Asia%2FShanghai")
+	t.Setenv("POSTGRES_DSN", "postgres://firecortex:secret%2Fvalue@postgres:5432/firecortex?sslmode=disable&TimeZone=Asia%2FShanghai")
 
 	cfg := Load()
-	if cfg.PostgresDSN != "postgres://deeix_chat:secret%2Fvalue@postgres:5432/deeix_chat?sslmode=disable&TimeZone=Asia/Shanghai" {
+	if cfg.PostgresDSN != "postgres://firecortex:secret%2Fvalue@postgres:5432/firecortex?sslmode=disable&TimeZone=Asia/Shanghai" {
 		t.Fatalf("expected legacy timezone to be normalized without decoding credentials, got %q", cfg.PostgresDSN)
 	}
 }
@@ -102,18 +102,18 @@ func TestNormalizePostgresDSNTimeZone(t *testing.T) {
 		},
 		{
 			name: "key value",
-			dsn:  "host=postgres user=deeix password=secret%2Fvalue dbname=deeix sslmode=disable TimeZone=Asia%2FShanghai",
-			want: "host=postgres user=deeix password=secret%2Fvalue dbname=deeix sslmode=disable TimeZone=Asia/Shanghai",
+			dsn:  "host=postgres user=firecortex password=secret%2Fvalue dbname=firecortex sslmode=disable TimeZone=Asia%2FShanghai",
+			want: "host=postgres user=firecortex password=secret%2Fvalue dbname=firecortex sslmode=disable TimeZone=Asia/Shanghai",
 		},
 		{
 			name: "already normalized",
-			dsn:  "host=postgres user=deeix dbname=deeix sslmode=disable TimeZone=Asia/Shanghai",
-			want: "host=postgres user=deeix dbname=deeix sslmode=disable TimeZone=Asia/Shanghai",
+			dsn:  "host=postgres user=firecortex dbname=firecortex sslmode=disable TimeZone=Asia/Shanghai",
+			want: "host=postgres user=firecortex dbname=firecortex sslmode=disable TimeZone=Asia/Shanghai",
 		},
 		{
 			name: "other percent encoded fields unchanged",
-			dsn:  "postgres://user:pass@postgres:5432/db?application_name=DEEIX%2FChat&sslmode=disable",
-			want: "postgres://user:pass@postgres:5432/db?application_name=DEEIX%2FChat&sslmode=disable",
+			dsn:  "postgres://user:pass@postgres:5432/db?application_name=FireCortex&sslmode=disable",
+			want: "postgres://user:pass@postgres:5432/db?application_name=FireCortex&sslmode=disable",
 		},
 	}
 

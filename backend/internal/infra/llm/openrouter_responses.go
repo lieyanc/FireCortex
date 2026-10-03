@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode"
 
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 // openRouterResponsesAdapter 实现 OpenRouter Responses API Beta。
@@ -118,7 +118,7 @@ func buildOpenRouterResponsesAPIInput(messages []portllm.Message) []map[string]a
 			"content": buildResponsesAPIContent(msg, nil),
 		}
 		if role == "assistant" {
-			item["id"] = openRouterResponsesItemID("msg_deeix", index, msg.Content)
+			item["id"] = openRouterResponsesItemID("msg_firecortex", index, msg.Content)
 			item["status"] = "completed"
 		}
 		items = append(items, item)

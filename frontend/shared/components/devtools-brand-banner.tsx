@@ -10,7 +10,7 @@ const BANNER = String.raw`
 
 const BANNER_SCRIPT = `
 (() => {
-  const key = "__DEEIX_CHAT_DEVTOOLS_BANNER__";
+  const key = "__FIRECORTEX_DEVTOOLS_BANNER__";
   if (globalThis[key]) return;
   globalThis[key] = true;
   const banner = ${JSON.stringify(BANNER)};
@@ -26,13 +26,13 @@ const BANNER_SCRIPT = `
     "background:#d4d4d4",
     "background:transparent"
   );
-  console.log("%cOfficial: https://deeix.com  |  Repository: https://github.com/DEEIX-AI/DEEIX-Chat  |  License: Apache License 2.0", "color:#64748b;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace");
+  console.log("%cOfficial: https://github.com/lieyanc/FireCortex  |  Repository: https://github.com/lieyanc/FireCortex  |  License: Apache License 2.0", "color:#64748b;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace");
 })();
 `;
 
 export function DevtoolsBrandBanner() {
   return (
-    <Script id="deeix-devtools-brand" strategy="afterInteractive">
+    <Script id="firecortex-devtools-brand" strategy="afterInteractive">
       {BANNER_SCRIPT}
     </Script>
   );

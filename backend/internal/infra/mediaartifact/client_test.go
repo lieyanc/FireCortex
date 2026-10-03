@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/outboundhttp"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/outboundhttp"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 )
 
 type roundTripFunc func(*http.Request) (*http.Response, error)

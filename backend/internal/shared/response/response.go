@@ -3,7 +3,7 @@ package response
 import (
 	"net/http"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 	"github.com/gin-gonic/gin"
 )
 

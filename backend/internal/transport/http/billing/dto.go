@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/nativetool"
+	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/nativetool"
 )
 
 // ── 请求 DTO ─────────────────────────────────────────────────────────────────

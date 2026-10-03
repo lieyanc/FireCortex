@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 )
 
 // ListFileObjectsInput 定义用户文件列表的分页、筛选与排序条件。

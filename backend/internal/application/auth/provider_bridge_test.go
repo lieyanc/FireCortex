@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
-	memorycache "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/cache/memory"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/requestmeta"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
+	memorycache "github.com/lieyanc/FireCortex/backend/internal/infra/cache/memory"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/requestmeta"
 )
 
 func TestStartProviderAuthBridgeKeepsProviderCallbackAndPKCEOnServer(t *testing.T) {
@@ -78,7 +78,7 @@ func TestProviderAuthBridgeReturnsProviderDenialThroughOneTimeGrant(t *testing.T
 	if err != nil {
 		t.Fatalf("parse client redirect: %v", err)
 	}
-	if redirect.Scheme != "com.deeix.chat" || redirect.Query().Get("state") != clientState {
+	if redirect.Scheme != "com.firecortex" || redirect.Query().Get("state") != clientState {
 		t.Fatalf("unexpected client redirect %q", callback.RedirectURI)
 	}
 	input := ProviderAuthBridgeExchangeInput{

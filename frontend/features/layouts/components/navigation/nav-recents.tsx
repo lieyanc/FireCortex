@@ -50,7 +50,7 @@ import { useDialogSnapshot } from "@/shared/hooks/use-dialog-snapshot";
 import { useLoadMoreSentinel } from "@/shared/hooks/use-load-more-sentinel";
 import { useStoredBoolean } from "@/shared/hooks/use-stored-boolean";
 
-const RECENTS_OPEN_STORAGE_KEY = "deeix.sidebar.recents.open";
+const RECENTS_OPEN_STORAGE_KEY = "firecortex.sidebar.recents.open";
 
 export function NavRecents() {
   const t = useTranslations("recent");

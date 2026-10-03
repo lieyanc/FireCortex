@@ -1,11 +1,11 @@
 {
-  "name": "@deeix/api",
+  "name": "@firecortex/api",
   "version": "0.4.3",
   "private": true,
   "scripts": {
     "build": "make build",
     "check": "make check-version && make lint",
-    "clean": "rm -rf ../.cache/deeix-chat",
+    "clean": "rm -rf ../.cache/firecortex",
     "dev": "make run",
     "test": "make test"
   }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 )
 
 // ContextArtifactRepository 封装对话上下文证据的写入与查询能力。

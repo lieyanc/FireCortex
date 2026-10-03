@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	domaincm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/contentmoderation"
+	domaincm "github.com/lieyanc/FireCortex/backend/internal/domain/contentmoderation"
 )
 
 // These private documents preserve the stored JSON schema without coupling domain types

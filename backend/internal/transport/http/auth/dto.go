@@ -3,8 +3,8 @@ package auth
 import (
 	"time"
 
-	appauth "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/auth"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/userview"
+	appauth "github.com/lieyanc/FireCortex/backend/internal/application/auth"
+	"github.com/lieyanc/FireCortex/backend/internal/application/userview"
 )
 
 // LoginRequest 登录请求。

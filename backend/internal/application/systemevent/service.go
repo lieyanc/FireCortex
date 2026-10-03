@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	domainsystemevent "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/systemevent"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/traceid"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/pagination"
+	domainsystemevent "github.com/lieyanc/FireCortex/backend/internal/domain/systemevent"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/traceid"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 )
 
 // ListFilter 描述系统事件筛选条件。

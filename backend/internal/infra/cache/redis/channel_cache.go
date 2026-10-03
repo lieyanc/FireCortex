@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 )

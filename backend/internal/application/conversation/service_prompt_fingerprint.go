@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	domainmemory "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/memory"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	domainmemory "github.com/lieyanc/FireCortex/backend/internal/domain/memory"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 type promptStateFingerprintInput struct {

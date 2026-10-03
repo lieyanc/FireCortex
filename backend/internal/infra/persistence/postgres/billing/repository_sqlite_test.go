@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/dberror"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/dberror"
+	model "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

@@ -7,8 +7,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	cachememory "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/cache/memory"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	cachememory "github.com/lieyanc/FireCortex/backend/internal/infra/cache/memory"
 )
 
 func TestLiveSnapshotKeepsThinkStructureWithoutContent(t *testing.T) {

@@ -1,6 +1,6 @@
-# Contributing to DEEIX Chat
+# Contributing to FireCortex
 
-Thank you for contributing to DEEIX Chat.
+Thank you for contributing to FireCortex.
 
 ## Before You Start
 
@@ -86,7 +86,7 @@ Commit message subjects that do not match this format will fail CI.
 - After changing a route, HTTP DTO, JSON tag, validation tag, response document, or Swagger annotation, run `pnpm api:generate` from the repository root. `cd backend && make swagger` invokes the same pipeline.
 - Run `pnpm api:check` before submitting. It regenerates into a temporary directory and rejects Swagger or TypeScript drift without modifying the worktree.
 - Requiredness, optionality, and nullability must be correct in backend DTOs. Use JSON and validation tags deliberately; use pointer fields when omission must be distinguished from an explicit zero, `false`, or empty value.
-- Frontend transport types must import from `@deeix/api-contract`. Do not copy generated request or response fields into local interfaces and do not repair generated contracts with `Required<>`.
+- Frontend transport types must import from `@firecortex/api-contract`. Do not copy generated request or response fields into local interfaces and do not repair generated contracts with `Required<>`.
 - Frontend API adapters may use `Omit`, intersections, or narrow unions only for a real UI/domain invariant. Keep form state and view models separate from wire contracts.
 - New HTTP endpoints must expose Swagger contracts before the frontend consumes them. Do not introduce a second handwritten transport schema as a shortcut.
 
@@ -119,10 +119,10 @@ Core expectations:
 - keep route files thin and place feature logic under `features/*`
 - use existing UI components and local design patterns
 - keep API access inside `shared/api` or feature-level API modules
-- derive wire types from `@deeix/api-contract` and keep UI state types inside the owning feature
+- derive wire types from `@firecortex/api-contract` and keep UI state types inside the owning feature
 - do not hard-code provider-private model behavior in the frontend
 - keep authentication tokens aligned with the existing session model
-- run `pnpm --filter @deeix/web lint`, and run `pnpm build` for routing, dependency, or Next.js changes
+- run `pnpm --filter @firecortex/web lint`, and run `pnpm build` for routing, dependency, or Next.js changes
 
 ## Code Style
 

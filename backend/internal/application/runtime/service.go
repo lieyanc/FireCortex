@@ -7,21 +7,21 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/extraction"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	runtimeport "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/runtime"
+	"github.com/lieyanc/FireCortex/backend/internal/application/extraction"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	runtimeport "github.com/lieyanc/FireCortex/backend/internal/ports/runtime"
 )
 
 const (
-	tikaContainerName      = "deeix-chat-tika"
+	tikaContainerName      = "firecortex-tika"
 	tikaImage              = "apache/tika:3.2.3.0"
-	tesseractContainerName = "deeix-chat-tesseract"
-	tesseractImage         = "deeix-chat-tesseract:latest"
-	rapidOCRContainerName  = "deeix-chat-rapidocr"
-	rapidOCRImage          = "deeix-chat-rapidocr:latest"
-	doclingContainerName   = "deeix-chat-docling"
-	doclingImage           = "deeix-chat-docling:latest"
-	serviceNetwork         = "deeix-chat-network"
+	tesseractContainerName = "firecortex-tesseract"
+	tesseractImage         = "firecortex-tesseract:latest"
+	rapidOCRContainerName  = "firecortex-rapidocr"
+	rapidOCRImage          = "firecortex-rapidocr:latest"
+	doclingContainerName   = "firecortex-docling"
+	doclingImage           = "firecortex-docling:latest"
+	serviceNetwork         = "firecortex-network"
 	dockerDefaultTimeout   = 3 * time.Minute
 	dockerBuildTimeout     = 3 * time.Minute
 

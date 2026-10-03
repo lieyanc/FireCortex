@@ -4,7 +4,7 @@ import {
 } from "@/features/chat/model/conversation-options";
 import type { ConversationOptions } from "@/shared/api/conversation.types";
 
-const MODEL_OPTIONS_STORAGE_PREFIX = "deeix-chat:chat-model-options:";
+const MODEL_OPTIONS_STORAGE_PREFIX = "firecortex:chat-model-options:";
 
 function modelOptionsStorageKey(platformModelName: string): string {
   return `${MODEL_OPTIONS_STORAGE_PREFIX}${encodeURIComponent(platformModelName)}`;

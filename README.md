@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./frontend/public/logo-white.svg" />
-    <img src="./frontend/public/logo-black.svg" alt="DEEIX Chat" width="160" />
+    <img src="./frontend/public/logo-black.svg" alt="FireCortex" width="160" />
   </picture>
 </p>
 
@@ -14,10 +14,10 @@
 </p>
 
 <p align="center">
-  <a href="https://deeix.com"><img alt="Website" src="https://img.shields.io/badge/Website-deeix.com-black" /></a>
-  <a href="https://deeix.com/docs/deeix-chat/quickstart"><img alt="Guide" src="https://img.shields.io/badge/Guide-Quickstart-0f766e" /></a>
-  <a href="https://t.me/deeix_chat"><img alt="Telegram" src="https://img.shields.io/badge/Telegram-deeix_chat-26A5E4?logo=telegram&logoColor=white" /></a>
-  <a href="https://x.com/DEEIX_AI"><img alt="X" src="https://img.shields.io/badge/X-%40DEEIX_AI-black?logo=x&logoColor=white" /></a>
+  <a href="https://github.com/lieyanc/FireCortex"><img alt="Website" src="https://img.shields.io/badge/Website-github.com/lieyanc/FireCortex-black" /></a>
+  <a href="https://github.com/lieyanc/FireCortex"><img alt="Guide" src="https://img.shields.io/badge/Guide-Quickstart-0f766e" /></a>
+  <a href="https://t.me/firecortex"><img alt="Telegram" src="https://img.shields.io/badge/Telegram-firecortex-26A5E4?logo=telegram&logoColor=white" /></a>
+  <a href="https://x.com/FIRECORTEX_AI"><img alt="X" src="https://img.shields.io/badge/X-%40FIRECORTEX_AI-black?logo=x&logoColor=white" /></a>
   <a href="https://www.apache.org/licenses/LICENSE-2.0"><img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-blue" /></a>
   <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black" />
   <img alt="React" src="https://img.shields.io/badge/React-19-149eca" />
@@ -26,11 +26,11 @@
 
 ## Overview
 
-DEEIX Chat is an open-source, deployable AI platform for individuals, teams, and enterprises that need long-term, stable, and unified access to multiple model providers. It provides one clear entry point for multiple upstream models and providers, integrating multimodal chat, model routing, files and RAG, MCP tools, usage billing, identity, audit logs, and operational controls into one product.
+FireCortex is an open-source, deployable AI platform for individuals, teams, and enterprises that need long-term, stable, and unified access to multiple model providers. It provides one clear entry point for multiple upstream models and providers, integrating multimodal chat, model routing, files and RAG, MCP tools, usage billing, identity, audit logs, and operational controls into one product.
 
 The system is designed around simple deployment, efficient static delivery, and a low runtime resource footprint: lightweight without feeling limited, restrained without losing capability, and open without becoming disorderly.
 
-![DEEIX Chat workspace](./docs/assets/screenshots/DEEIX-Chat.jpg)
+![FireCortex workspace](./docs/assets/screenshots/FireCortex.jpg)
 
 ## Features
 
@@ -48,19 +48,19 @@ The system is designed around simple deployment, efficient static delivery, and 
 | Deployment and operations | Single-runtime frontend/API serving, Docker deployment, SQLite or PostgreSQL, in-memory cache or Redis, S3-compatible storage, Swagger, structured logs, version endpoint, GeoIP, and OpenTelemetry. |
 
 <p align="center">
-  <img src="./docs/assets/screenshots/DEEIX-Chat-Image.png" alt="DEEIX Chat image generation" width="49.45%" />
-  <img src="./docs/assets/screenshots/DEEIX-Chat-Dark.png" alt="DEEIX Chat dark mode" width="49.45%" />
+  <img src="./docs/assets/screenshots/FireCortex-Image.png" alt="FireCortex image generation" width="49.45%" />
+  <img src="./docs/assets/screenshots/FireCortex-Dark.png" alt="FireCortex dark mode" width="49.45%" />
 </p>
 
 <p align="center">
-  <img src="./docs/assets/screenshots/DEEIX-Chat-Usage.png" alt="DEEIX Chat usage and billing" width="32.3%" />
-  <img src="./docs/assets/screenshots/DEEIX-Chat-Artifacts.png" alt="DEEIX Chat artifacts" width="32.3%" />
-  <img src="./docs/assets/screenshots/DEEIX-Chat-Html.png" alt="DEEIX Chat HTML rendering" width="32.3%" />
+  <img src="./docs/assets/screenshots/FireCortex-Usage.png" alt="FireCortex usage and billing" width="32.3%" />
+  <img src="./docs/assets/screenshots/FireCortex-Artifacts.png" alt="FireCortex artifacts" width="32.3%" />
+  <img src="./docs/assets/screenshots/FireCortex-Html.png" alt="FireCortex HTML rendering" width="32.3%" />
 </p>
 
 ## Architecture and Tech Stack
 
-DEEIX Chat uses a split frontend/backend development model with a single-runtime deployment path. The frontend is built into static assets and served by the Go service, while APIs, authorization, model routing, files, billing, and audit capabilities run in the same backend runtime. Heavy document extraction and OCR capabilities are optional services, keeping the base deployment lightweight.
+FireCortex uses a split frontend/backend development model with a single-runtime deployment path. The frontend is built into static assets and served by the Go service, while APIs, authorization, model routing, files, billing, and audit capabilities run in the same backend runtime. Heavy document extraction and OCR capabilities are optional services, keeping the base deployment lightweight.
 
 ```mermaid
 flowchart TB
@@ -159,7 +159,7 @@ The SQLite profile does not require a separately managed database or cache. The 
 
 ## Quick Start
 
-> Quick installation guide: [Quick Start](https://deeix.com/docs/deeix-chat/quickstart).
+> Quick installation guide: [Quick Start](https://github.com/lieyanc/FireCortex).
 
 ### Local Development
 
@@ -277,16 +277,16 @@ The default compose files persist application data:
 
 | Data | Container path |
 | --- | --- |
-| SQLite database | `/app/data/deeix.db` |
+| SQLite database | `/app/data/firecortex.db` |
 | Uploaded and generated files | `/app/storage` |
 | PostgreSQL data | `/var/lib/postgresql/data`, full installation only |
 | Redis data | `/data`, full installation only |
 
-The default application image is `ghcr.io/deeix-ai/deeix-chat:latest`. Compose files reference an image and do not define a build step. Build a local image first, then select it with `DEEIX_CHAT_IMAGE`:
+The default application image is `ghcr.io/lieyanc/firecortex:latest`. Compose files reference an image and do not define a build step. Build a local image first, then select it with `FIRECORTEX_IMAGE`:
 
 ```bash
-docker build -t deeix-chat:local .
-DEEIX_CHAT_IMAGE=deeix-chat:local docker compose up -d
+docker build -t firecortex:local .
+FIRECORTEX_IMAGE=firecortex:local docker compose up -d
 ```
 
 Use the matching `-f docker-compose.sqlite.yml` or `-f docker-compose.full.yml` option when starting another profile.
@@ -296,7 +296,7 @@ Use the matching `-f docker-compose.sqlite.yml` or `-f docker-compose.full.yml` 
 #### Optional Installation Services
 
 These services are optional. Start only the ones you enable in the admin console or `config.yaml`.
-They attach to `deeix-chat-network`; start one root compose profile first, or create the network manually with `docker network create deeix-chat-network`.
+They attach to `firecortex-network`; start one root compose profile first, or create the network manually with `docker network create firecortex-network`.
 
 ```bash
 docker compose -f docker/tika/docker-compose.yml up -d
@@ -328,14 +328,14 @@ Use this mode when the frontend and backend are served from different public ori
    For Docker image builds, pass the frontend API URL at build time:
 
    ```bash
-   docker build --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.example.com -t deeix-chat .
+   docker build --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.example.com -t firecortex .
    ```
 
 2. Build and publish the frontend.
 
    ```bash
    pnpm install
-   NEXT_PUBLIC_API_BASE_URL=https://api.example.com pnpm --filter @deeix/web build
+   NEXT_PUBLIC_API_BASE_URL=https://api.example.com pnpm --filter @firecortex/web build
    ```
 
    The static output is `frontend/out`. Serve it with Nginx, CDN, object storage, or any static web server. To let the Go backend serve the frontend, place `frontend/out` under `server.frontend_dist_dir`; the Docker image defaults to `/app/frontend/out`.
@@ -377,7 +377,7 @@ If a superadmin already exists, the service does not regenerate or print the ini
 
 ## Configuration
 
-> Full configuration guide: [Configuration](https://deeix.com/docs/deeix-chat/configuration).
+> Full configuration guide: [Configuration](https://github.com/lieyanc/FireCortex).
 
 Backend configuration is split into static runtime configuration and runtime business settings. Static runtime configuration describes branding and the infrastructure, security, and storage parameters required to start the service, and is provided through `config.yaml` and environment variables. Runtime business settings cover product capabilities such as authentication, conversations, models, files, and billing; they are stored in `system_settings` and maintained from the admin console. Environment variables override matching config-file values, which is useful for containerized deployments, separated deployments, and secret injection.
 
@@ -466,13 +466,13 @@ Set `PUBLIC_API_BASE_URL` to the externally reachable API origin before enabling
 <PUBLIC_API_BASE_URL>/api/v1/auth/providers/<provider-slug>/callback
 ```
 
-Web, App, and Desktop clients then reuse that instance callback automatically. The external provider authorization code and client secret remain on the self-hosted server; public clients receive only a short-lived, one-time DEEIX grant bound to their PKCE verifier. Keep the legacy Web callback shown by the admin dialog registered when account identity binding or older Web clients are still in use.
+Web, App, and Desktop clients then reuse that instance callback automatically. The external provider authorization code and client secret remain on the self-hosted server; public clients receive only a short-lived, one-time FireCortex grant bound to their PKCE verifier. Keep the legacy Web callback shown by the admin dialog registered when account identity binding or older Web clients are still in use.
 
 ## Feature Guides
 
-- [User Guide](https://deeix.com/docs/deeix-chat/new-chat)
-- [Admin Guide](https://deeix.com/docs/deeix-chat/admin-accounts)
-- [Advanced Guide](https://deeix.com/docs/deeix-chat/advanced-capabilities-passthrough-tools)
+- [User Guide](https://github.com/lieyanc/FireCortex)
+- [Admin Guide](https://github.com/lieyanc/FireCortex)
+- [Advanced Guide](https://github.com/lieyanc/FireCortex)
 
 ## Security Notes
 
@@ -485,11 +485,11 @@ Web, App, and Desktop clients then reuse that instance callback automatically. T
 
 ## Documentation
 
-- [Quick Start](https://deeix.com/docs/deeix-chat/quickstart)
-- [Configuration](https://deeix.com/docs/deeix-chat/configuration)
-- [User Guide](https://deeix.com/docs/deeix-chat/new-chat)
-- [Admin Guide](https://deeix.com/docs/deeix-chat/admin-accounts)
-- [Advanced Guide](https://deeix.com/docs/deeix-chat/advanced-capabilities-passthrough-tools)
+- [Quick Start](https://github.com/lieyanc/FireCortex)
+- [Configuration](https://github.com/lieyanc/FireCortex)
+- [User Guide](https://github.com/lieyanc/FireCortex)
+- [Admin Guide](https://github.com/lieyanc/FireCortex)
+- [Advanced Guide](https://github.com/lieyanc/FireCortex)
 - Backend guide: [backend/README.md](./backend/README.md)
 - Backend standards: [backend/docs/README.md](./backend/docs/README.md)
 - Frontend guide: [frontend/README.md](./frontend/README.md)
@@ -500,7 +500,7 @@ Web, App, and Desktop clients then reuse that instance callback automatically. T
 
 ## Acknowledgements
 
-DEEIX Chat is built on the open-source ecosystem. Thanks to all maintainers and communities in the AI tooling ecosystem.
+FireCortex is built on the open-source ecosystem. Thanks to all maintainers and communities in the AI tooling ecosystem.
 
 - [Next.js](https://nextjs.org)
 - [Go](https://go.dev)
@@ -508,12 +508,12 @@ DEEIX Chat is built on the open-source ecosystem. Thanks to all maintainers and 
 
 ## Contact & Community
 
-- Website: [deeix.com](https://deeix.com/)
+- Website: [github.com/lieyanc/FireCortex](https://github.com/lieyanc/FireCortex)
 - Blog: [blog.cheny.me](https://blog.cheny.me/)
 - Email: [support@deeix.com](mailto:support@deeix.com)
-- Telegram: [t.me/deeix_chat](https://t.me/deeix_chat)
-- X: [@DEEIX_AI](https://x.com/DEEIX_AI)
+- Telegram: [t.me/firecortex](https://t.me/firecortex)
+- X: [@FIRECORTEX_AI](https://x.com/FIRECORTEX_AI)
 
 ## License
 
-DEEIX Chat is licensed under the [Apache License 2.0](./LICENSE).
+FireCortex is licensed under the [Apache License 2.0](./LICENSE).

@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	domainmcp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/mcp"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainmcp "github.com/lieyanc/FireCortex/backend/internal/domain/mcp"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

@@ -5,12 +5,12 @@ import (
 	"sync"
 	"time"
 
-	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
-	appstorage "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/objectstorage"
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
+	appstorage "github.com/lieyanc/FireCortex/backend/internal/application/objectstorage"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"go.uber.org/zap"
 	"golang.org/x/sync/singleflight"
 )

@@ -9,16 +9,16 @@ import (
 	"testing"
 	"time"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	model "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func TestUpdateFieldsKeepsLastSuperAdminProtected(t *testing.T) {
-	dsn := strings.TrimSpace(os.Getenv("DEEIX_TEST_DATABASE_DSN"))
+	dsn := strings.TrimSpace(os.Getenv("FIRECORTEX_TEST_DATABASE_DSN"))
 	if dsn == "" {
-		t.Skip("set DEEIX_TEST_DATABASE_DSN to run PostgreSQL repository guard integration test")
+		t.Skip("set FIRECORTEX_TEST_DATABASE_DSN to run PostgreSQL repository guard integration test")
 	}
 
 	db, cleanup := openUserRepositoryIntegrationDB(t, dsn)
@@ -66,7 +66,7 @@ func openUserRepositoryIntegrationDB(t *testing.T, dsn string) (*gorm.DB, func()
 	}
 	sqlDB.SetMaxOpenConns(1)
 
-	schemaName := fmt.Sprintf("deeix_test_superadmin_guard_%d", time.Now().UnixNano())
+	schemaName := fmt.Sprintf("firecortex_test_superadmin_guard_%d", time.Now().UnixNano())
 	if err := db.Exec(`CREATE SCHEMA ` + schemaName).Error; err != nil {
 		_ = sqlDB.Close()
 		t.Fatalf("create schema: %v", err)

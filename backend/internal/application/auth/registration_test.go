@@ -9,23 +9,23 @@ import (
 	"testing"
 	"time"
 
-	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/requestmeta"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/requestmeta"
 )
 
 func TestBuildVerificationEmailMessageEncodesChineseSubject(t *testing.T) {
-	message := buildVerificationEmailMessage("DEEIX Chat <no-reply@example.com>", "user@example.com", "123456", verificationEmailTemplate{
-		Subject:      "DEEIX Chat 验证码",
+	message := buildVerificationEmailMessage("FireCortex <no-reply@example.com>", "user@example.com", "123456", verificationEmailTemplate{
+		Subject:      "FireCortex 验证码",
 		Title:        "完成邮箱注册",
 		SecurityNote: "如果不是您本人操作，请忽略这封邮件。",
-	}, "https://deeix.example/logo.svg")
+	}, "https://firecortex.example/logo.svg")
 
 	if !strings.Contains(message, "Subject: =?utf-8?") {
 		t.Fatalf("expected encoded utf-8 subject, got:\n%s", message)
 	}
-	if strings.Contains(message, "Subject: DEEIX Chat 验证码") {
+	if strings.Contains(message, "Subject: FireCortex 验证码") {
 		t.Fatalf("expected subject to be MIME encoded, got:\n%s", message)
 	}
 	if !strings.Contains(message, "Content-Type: multipart/alternative; boundary=") {
@@ -43,7 +43,7 @@ func TestBuildVerificationEmailMessageEncodesChineseSubject(t *testing.T) {
 	if !strings.Contains(message, "<!doctype html>") || !strings.Contains(message, ">123456<") {
 		t.Fatalf("expected html verification body, got:\n%s", message)
 	}
-	if !strings.Contains(message, `src="https://deeix.example/logo.svg"`) {
+	if !strings.Contains(message, `src="https://firecortex.example/logo.svg"`) {
 		t.Fatalf("expected html logo, got:\n%s", message)
 	}
 }
@@ -55,13 +55,13 @@ func TestBuildVerificationEmailMessageEscapesDynamicHTMLContent(t *testing.T) {
 		SecurityNote: `<img src=x onerror=alert("note")>`,
 	}
 	message := buildVerificationEmailMessage(
-		"DEEIX Chat <no-reply@example.com>",
+		"FireCortex <no-reply@example.com>",
 		"user@example.com",
 		"123456",
 		template,
-		`https://deeix.example/logo.svg?a="quoted"`,
+		`https://firecortex.example/logo.svg?a="quoted"`,
 	)
-	htmlBody := buildVerificationHTML("123456", template, `https://deeix.example/logo.svg?a="quoted"`)
+	htmlBody := buildVerificationHTML("123456", template, `https://firecortex.example/logo.svg?a="quoted"`)
 
 	if strings.Contains(htmlBody, `<script>alert("title")</script>`) || strings.Contains(htmlBody, `<img src=x onerror=alert("note")>`) {
 		t.Fatalf("expected dynamic HTML content to be escaped, got:\n%s", htmlBody)
@@ -106,14 +106,14 @@ func TestSendRegistrationVerificationEmailRejectsInvalidFrom(t *testing.T) {
 
 func TestValidateEmailRegistrationPolicy(t *testing.T) {
 	cfg := config.Config{
-		EmailRegistrationDomains: "example.com, @deeix-chat.ai\ncorp.cn",
+		EmailRegistrationDomains: "example.com, @firecortex.ai\ncorp.cn",
 		EmailRegistrationNoAlias: true,
 	}
 
-	if err := validateEmailRegistrationPolicy(cfg, "user@deeix-chat.ai"); err != nil {
-		t.Fatalf("expected deeix-chat.ai to pass, got %v", err)
+	if err := validateEmailRegistrationPolicy(cfg, "user@firecortex.ai"); err != nil {
+		t.Fatalf("expected firecortex.ai to pass, got %v", err)
 	}
-	if err := validateEmailRegistrationPolicy(cfg, "user+alias@deeix-chat.ai"); err == nil || err.Error() != "email aliases are not allowed" {
+	if err := validateEmailRegistrationPolicy(cfg, "user+alias@firecortex.ai"); err == nil || err.Error() != "email aliases are not allowed" {
 		t.Fatalf("expected alias rejection, got %v", err)
 	}
 	if err := validateEmailRegistrationPolicy(cfg, "user@blocked.com"); err == nil || err.Error() != "email domain is not allowed" {

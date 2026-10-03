@@ -5,8 +5,8 @@ import (
 	"errors"
 	"strings"
 
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 // SetModelProtocols 原子替换平台模型全部上游绑定的协议集合。

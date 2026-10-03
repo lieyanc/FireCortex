@@ -9,13 +9,13 @@ import (
 	"strings"
 	"time"
 
-	appembedding "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/embedding"
-	appruntime "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/runtime"
-	appsettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/settings"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/nativetool"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/middleware"
+	appembedding "github.com/lieyanc/FireCortex/backend/internal/application/embedding"
+	appruntime "github.com/lieyanc/FireCortex/backend/internal/application/runtime"
+	appsettings "github.com/lieyanc/FireCortex/backend/internal/application/settings"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/nativetool"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
+	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 )
 

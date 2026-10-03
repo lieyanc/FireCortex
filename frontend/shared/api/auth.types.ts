@@ -14,7 +14,7 @@ import type {
   PasswordResetStartResponse,
   PatchMeRequest,
   UpdateCurrentSessionLocationRequest,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 
 export type UserIdentityProviderSummaryDTO = AuthUserIdentityProviderSummaryResponse;
 

@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	domainmemory "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/memory"
+	domainmemory "github.com/lieyanc/FireCortex/backend/internal/domain/memory"
 )
 
 // MemoryRepository 定义记忆流程依赖的持久化能力。

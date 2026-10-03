@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	gormpostgres "gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	appupload "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/upload"
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	domainknowledgebase "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/knowledgebase"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	appupload "github.com/lieyanc/FireCortex/backend/internal/application/upload"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainknowledgebase "github.com/lieyanc/FireCortex/backend/internal/domain/knowledgebase"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 func TestAddUserFilesRejectsDuplicateIDs(t *testing.T) {

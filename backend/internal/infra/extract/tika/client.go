@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	platformtracing "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/observability/tracing"
-	extractport "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/extract"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	platformtracing "github.com/lieyanc/FireCortex/backend/internal/infra/observability/tracing"
+	extractport "github.com/lieyanc/FireCortex/backend/internal/ports/extract"
 )
 
 // Request 表示 Tika 文本提取请求，契约定义在 ports/extract。
@@ -34,8 +34,8 @@ const (
 	errTikaUnsupportedMimeType = "tika_unsupported_media_type"
 	// DefaultTikaBaseURL 契约定义在 ports/extract。
 	DefaultTikaBaseURL = extractport.DefaultTikaBaseURL
-	ManagedTikaBaseURL = "http://deeix-chat-tika:9998"
-	managedTikaHost    = "deeix-chat-tika"
+	ManagedTikaBaseURL = "http://firecortex-tika:9998"
+	managedTikaHost    = "firecortex-tika"
 	tikaSourceManaged  = "managed"
 )
 

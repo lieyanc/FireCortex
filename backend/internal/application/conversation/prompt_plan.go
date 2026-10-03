@@ -3,15 +3,15 @@ package conversation
 import (
 	"context"
 	"fmt"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 	"strings"
 
-	appstorage "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/objectstorage"
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	domainskill "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/skill"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/tokenestimate"
+	appstorage "github.com/lieyanc/FireCortex/backend/internal/application/objectstorage"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainskill "github.com/lieyanc/FireCortex/backend/internal/domain/skill"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
 )
 
 // PromptBlockKind 标识 PromptPlan 中每一类上下文块。

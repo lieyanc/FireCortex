@@ -3,10 +3,10 @@ package schema
 import (
 	"errors"
 
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
-	domainuicomponent "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/uicomponent"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/channelconfig"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	domainuicomponent "github.com/lieyanc/FireCortex/backend/internal/domain/uicomponent"
+	model "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/channelconfig"
 	"gorm.io/gorm"
 )
 

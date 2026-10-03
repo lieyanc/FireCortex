@@ -1,5 +1,5 @@
 // Temporary tombstone for the retired PWA service worker. Keep this URL stable during migration.
-const LEGACY_CACHE_PREFIX = "deeix-chat-";
+const LEGACY_CACHE_PREFIX = "firecortex-";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());

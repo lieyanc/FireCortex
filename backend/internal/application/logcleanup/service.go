@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	appaudit "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/audit"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
+	appaudit "github.com/lieyanc/FireCortex/backend/internal/application/audit"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 )
 
 const (

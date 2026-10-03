@@ -7,11 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	appembedding "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/embedding"
-	appsettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/settings"
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
+	appembedding "github.com/lieyanc/FireCortex/backend/internal/application/embedding"
+	appsettings "github.com/lieyanc/FireCortex/backend/internal/application/settings"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

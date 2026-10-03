@@ -3,7 +3,7 @@ package conversation
 import (
 	"context"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 )
 
 type contextCompactionPolicy struct {

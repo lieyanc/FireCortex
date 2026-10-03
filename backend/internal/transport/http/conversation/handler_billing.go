@@ -3,8 +3,8 @@ package conversation
 import (
 	"strings"
 
-	appconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/conversation"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
+	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 )
 
 type billingRequestInput struct {

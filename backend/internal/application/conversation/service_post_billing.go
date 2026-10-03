@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	appcompact "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/compact"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/background"
+	appcompact "github.com/lieyanc/FireCortex/backend/internal/application/compact"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
 )
 
 // postBillingCompactionTask 保存主调用结算后执行上下文压缩所需的运行信息。

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	domaincm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/contentmoderation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domaincm "github.com/lieyanc/FireCortex/backend/internal/domain/contentmoderation"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 func TestGetEventDetailOnlyMapsRepositoryNotFound(t *testing.T) {

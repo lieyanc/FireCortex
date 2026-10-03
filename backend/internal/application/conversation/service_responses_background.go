@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/background"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
 	"go.uber.org/zap"
 )
 

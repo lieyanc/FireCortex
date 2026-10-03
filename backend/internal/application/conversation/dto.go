@@ -3,7 +3,7 @@ package conversation
 import (
 	"time"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 )
 
 // ConversationExportResult 表示单会话 JSON 导出结果。

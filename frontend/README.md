@@ -1,6 +1,6 @@
-# DEEIX Chat Frontend
+# FireCortex Frontend
 
-`@deeix/web` 是 DEEIX Chat 的浏览器端工作区，基于 Next.js App Router 实现对话、文件、知识库、提示词、用户设置和管理员后台。前端负责界面、客户端状态和展示层流程；认证授权、模型路由、文件处理、计费、持久化和审计等业务规则由 Go 后端负责。
+`@firecortex/web` 是 FireCortex 的浏览器端工作区，基于 Next.js App Router 实现对话、文件、知识库、提示词、用户设置和管理员后台。前端负责界面、客户端状态和展示层流程；认证授权、模型路由、文件处理、计费、持久化和审计等业务规则由 Go 后端负责。
 
 前端采用 Next.js 静态导出模式（`output: "export"`）。开发时使用 Next.js 开发服务器，构建后生成 `frontend/out`，生产环境可由 Go 服务托管，也可以交给 Nginx、CDN 或其他静态文件服务。
 
@@ -12,7 +12,7 @@
 - Tailwind CSS 4、Shadcn/UI、Radix UI、Base UI
 - Biome 2（lint）
 - Streamdown、KaTeX、Mermaid、Recharts、Motion
-- `@deeix/api-contract`：从 Go Swagger 契约生成的 TypeScript 类型
+- `@firecortex/api-contract`：从 Go Swagger 契约生成的 TypeScript 类型
 
 ## 目录结构
 
@@ -52,7 +52,7 @@ frontend/
 ├── public/                    # 静态资源
 ├── scripts/                   # 图标、PWA、截图 worker 等资源同步脚本
 ├── next.config.ts             # 静态导出与 Next 配置
-└── package.json               # @deeix/web workspace 脚本
+└── package.json               # @firecortex/web workspace 脚本
 ```
 
 `app/` 中的页面文件负责路由挂载、布局和边界处理。复杂业务放在对应的 `features/<domain>` 中；真正跨业务复用的能力放在 `shared/`。`components/ui`、`components/animate-ui` 和 `components/reactbits` 分别承载基础 UI、动画基础设施和视觉效果；跨页面业务组件放在 `shared/components/`。
@@ -61,7 +61,7 @@ frontend/
 
 业务域内部按职责拆分：
 
-- `api/`：该业务域的请求封装和契约适配。传输类型从 `@deeix/api-contract` 引入，跨业务的基础接口放在 `shared/api/`。
+- `api/`：该业务域的请求封装和契约适配。传输类型从 `@firecortex/api-contract` 引入，跨业务的基础接口放在 `shared/api/`。
 - `components/`：页面外壳、侧边栏、表格、弹窗、图表和编辑器等业务组件。
 - `hooks/`：加载、筛选、乐观更新、轮询和批量操作等状态编排。
 - `model/`：纯业务模型、常量、映射和排序规则，不放 React 副作用。
@@ -133,7 +133,7 @@ pnpm api:generate
 pnpm api:check
 ```
 
-前端传输类型必须从 `@deeix/api-contract` 导入。表单草稿、未提交状态、视图模型和格式化结果属于前端模型，可以定义在对应 feature 中；不要复制生成字段，也不要用 `Required<>` 修补后端 requiredness。标准响应沿用生成契约中的 `errorMsg + data` envelope，错误解析统一读取 `errorMsg`。
+前端传输类型必须从 `@firecortex/api-contract` 导入。表单草稿、未提交状态、视图模型和格式化结果属于前端模型，可以定义在对应 feature 中；不要复制生成字段，也不要用 `Required<>` 修补后端 requiredness。标准响应沿用生成契约中的 `errorMsg + data` envelope，错误解析统一读取 `errorMsg`。
 
 对话消息的 `processTrace` 由后端产生，前端按职责展示为处理链路、思考链路和工具链路。模型能力 JSON 中的 `defaultOptions`、`optionControls` 和 `nativeToolKeys` 负责默认参数、设置控件和管理员允许的官方原生工具；用户输入最终仍由后端参数策略治理。
 
@@ -154,7 +154,7 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8080
 分离部署时，必须在构建前设置正式 API 地址：
 
 ```bash
-NEXT_PUBLIC_API_BASE_URL=https://api.example.com pnpm --filter @deeix/web build
+NEXT_PUBLIC_API_BASE_URL=https://api.example.com pnpm --filter @firecortex/web build
 ```
 
 `NEXT_PUBLIC_DEV_AUTO_LOGIN`、`NEXT_PUBLIC_DEV_USERNAME` 和 `NEXT_PUBLIC_DEV_PASSWORD` 只用于本地开发调试，不应带入生产构建。产品品牌和其他浏览器运行时配置由后端公开接口提供，因此修改品牌通常只需要更新后端配置并重启服务。
@@ -199,10 +199,10 @@ pnpm build
 `pnpm install` 会同步资源；`predev` 和 `prebuild` 会检查版本并同步资源。需要手动同步时，可以使用：
 
 ```bash
-pnpm --filter @deeix/web sync:assets
-pnpm --filter @deeix/web sync:icons
-pnpm --filter @deeix/web sync:pwa-assets
-pnpm --filter @deeix/web sync:screenshot-worker
+pnpm --filter @firecortex/web sync:assets
+pnpm --filter @firecortex/web sync:icons
+pnpm --filter @firecortex/web sync:pwa-assets
+pnpm --filter @firecortex/web sync:screenshot-worker
 ```
 
 ## 开发约束
@@ -223,14 +223,14 @@ pnpm --filter @deeix/web sync:screenshot-worker
 从仓库根目录执行：
 
 ```bash
-pnpm --filter @deeix/web check
+pnpm --filter @firecortex/web check
 pnpm api:check
 ```
 
 涉及路由、依赖、静态导出或 Next.js 配置时，再执行：
 
 ```bash
-pnpm --filter @deeix/web build
+pnpm --filter @firecortex/web build
 ```
 
 根目录的 `pnpm check`、`pnpm test`、`pnpm build` 和 `pnpm verify` 会通过 Turborepo 运行对应工作区任务。Biome 规则与例外见 [BIOME.md](./BIOME.md)。

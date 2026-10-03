@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/extraction"
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/application/extraction"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 )
 
 func TestExtractTextForProcessingRequiresExtractionService(t *testing.T) {

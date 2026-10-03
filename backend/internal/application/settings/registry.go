@@ -5,11 +5,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/extraction"
-	domainsettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/settings"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	extractport "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/extract"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/nativetool"
+	"github.com/lieyanc/FireCortex/backend/internal/application/extraction"
+	domainsettings "github.com/lieyanc/FireCortex/backend/internal/domain/settings"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	extractport "github.com/lieyanc/FireCortex/backend/internal/ports/extract"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/nativetool"
 )
 
 // settingSpec 是一个动态配置项的唯一定义：种子默认值、敏感性、取值校验与运行时写入。
@@ -130,7 +130,7 @@ var settingSpecs = []settingSpec{
 		Validate: integerValue(), Apply: applyField(func(c *config.Config) *int { return &c.MaxContextMessages }, toInt)},
 	{Namespace: "chat", Key: "context_max_turns", ValueType: "int", Default: "48", Description: "最大对话轮次",
 		Validate: integerValue(), Apply: applyField(func(c *config.Config) *int { return &c.ContextMaxTurns }, toInt)},
-	{Namespace: "chat", Key: "ui_components_enabled", ValueType: "bool", Default: "true", Description: "是否向模型注入交互式组件目录（deeix-ui 卡片、对比表、图表）",
+	{Namespace: "chat", Key: "ui_components_enabled", ValueType: "bool", Default: "true", Description: "是否向模型注入交互式组件目录（firecortex-ui 卡片、对比表、图表）",
 		Validate: boolValue(), Apply: applyField(func(c *config.Config) *bool { return &c.UIComponentsEnabled }, toBool)},
 	{Namespace: "chat", Key: "context_compact_enabled", ValueType: "bool", Default: "false", Description: "是否允许上下文压缩功能",
 		Validate: boolValue(), Apply: applyField(func(c *config.Config) *bool { return &c.ContextCompactEnabled }, toBool)},

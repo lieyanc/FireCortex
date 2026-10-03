@@ -3,8 +3,8 @@ package conversation
 import (
 	"errors"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 )
 
 // 错误码与对外文案是前端本地化依赖的 API 契约（frontend/i18n/messages/*/errors.json 按错误码取文案），

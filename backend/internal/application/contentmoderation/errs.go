@@ -3,8 +3,8 @@ package contentmoderation
 import (
 	"errors"
 
-	cmport "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/contentmoderation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
+	cmport "github.com/lieyanc/FireCortex/backend/internal/ports/contentmoderation"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 )
 
 var (

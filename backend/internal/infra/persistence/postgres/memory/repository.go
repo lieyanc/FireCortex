@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	domainmemory "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/memory"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/dberror"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/sqlitevec"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/vectorutil"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainmemory "github.com/lieyanc/FireCortex/backend/internal/domain/memory"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/dberror"
+	model "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/sqlitevec"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/vectorutil"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"gorm.io/gorm"
 )
 

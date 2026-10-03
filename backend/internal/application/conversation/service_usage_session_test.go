@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
 )
 
 func TestBeginUsageSessionWithoutBillingServiceUsesSelfMode(t *testing.T) {

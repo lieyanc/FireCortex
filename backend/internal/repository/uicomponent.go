@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	domainuicomponent "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/uicomponent"
+	domainuicomponent "github.com/lieyanc/FireCortex/backend/internal/domain/uicomponent"
 )
 
 // UIComponentRepository 定义交互式组件持久化能力。

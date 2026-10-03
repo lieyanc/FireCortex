@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 func TestIsCircuitStateKey(t *testing.T) {

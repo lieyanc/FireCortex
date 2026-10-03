@@ -345,7 +345,7 @@ function assertGeneratedFilesMatch(expectedFiles) {
   }
 }
 
-const temporaryDir = mkdtempSync(join(tmpdir(), "deeix-api-contract-"));
+const temporaryDir = mkdtempSync(join(tmpdir(), "firecortex-api-contract-"));
 
 try {
   syncVersions();

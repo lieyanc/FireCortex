@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	appstorage "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/objectstorage"
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/objectstore"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	appstorage "github.com/lieyanc/FireCortex/backend/internal/application/objectstorage"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/objectstore"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 func TestUploadModelIconAssetStoresAndDeduplicatesValidatedImage(t *testing.T) {

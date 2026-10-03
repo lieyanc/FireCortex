@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	appadmin "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/admin"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
+	appadmin "github.com/lieyanc/FireCortex/backend/internal/application/admin"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

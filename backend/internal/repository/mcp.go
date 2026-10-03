@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	domainmcp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/mcp"
+	domainmcp "github.com/lieyanc/FireCortex/backend/internal/domain/mcp"
 )
 
 // CreateMCPServerInput 定义创建 MCP 服务字段。

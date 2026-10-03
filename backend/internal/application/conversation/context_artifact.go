@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	domainmemory "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/memory"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/traceid"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/tokenestimate"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainmemory "github.com/lieyanc/FireCortex/backend/internal/domain/memory"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/traceid"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
 	"go.uber.org/zap"
 )
 

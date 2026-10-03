@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	portobjectstore "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/objectstore"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	portobjectstore "github.com/lieyanc/FireCortex/backend/internal/ports/objectstore"
 )
 
 const (

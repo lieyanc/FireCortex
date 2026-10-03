@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	domainaudit "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/audit"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainaudit "github.com/lieyanc/FireCortex/backend/internal/domain/audit"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"go.uber.org/zap"
 )
 

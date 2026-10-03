@@ -31,7 +31,7 @@
       "propsSummary": "Props summary",
       "propsSummaryHint": "Compact props description for the model, e.g. '{'symbol, name?'}'",
       "rendererSource": "Renderer",
-      "rendererSourceHint": "HTML and script run in a sandboxed iframe with no network access; receive data with deeix.onProps and theme variables with deeix.onTheme",
+      "rendererSourceHint": "HTML and script run in a sandboxed iframe with no network access; receive data with firecortex.onProps and theme variables with firecortex.onTheme",
       "propsSchema": "Props schema",
       "propsSchemaHint": "Optional JSON Schema used to validate model output; leave empty to skip validation",
       "enabled": "Enabled"

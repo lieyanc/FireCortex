@@ -57,7 +57,7 @@ import { LoadingReveal } from "@/shared/components/loading-reveal";
 import { useDialogSnapshot } from "@/shared/hooks/use-dialog-snapshot";
 import { useStoredBoolean } from "@/shared/hooks/use-stored-boolean";
 
-const STARRED_OPEN_STORAGE_KEY = "deeix.sidebar.starred.open";
+const STARRED_OPEN_STORAGE_KEY = "firecortex.sidebar.starred.open";
 
 export function NavStarred() {
   const t = useTranslations("recent");

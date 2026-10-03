@@ -4,10 +4,10 @@ import (
 	"context"
 	"strings"
 
-	domainaudit "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/audit"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/dberror"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainaudit "github.com/lieyanc/FireCortex/backend/internal/domain/audit"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/dberror"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"gorm.io/gorm"
 )
 

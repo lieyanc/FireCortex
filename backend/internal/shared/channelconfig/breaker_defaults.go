@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
 )
 
 // BreakerDefaultsKey 是熔断默认参数在 llm 设置命名空间中的键。

@@ -1,4 +1,4 @@
-import type { User } from "@deeix/api-contract";
+import type { User } from "@firecortex/api-contract";
 import { authedRequest } from "@/shared/api/authed-client";
 
 export type UserSettingsMap = User.SettingsPartialUpdate.RequestBody["settings"];

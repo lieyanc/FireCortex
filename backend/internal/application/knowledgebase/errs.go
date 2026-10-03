@@ -1,6 +1,6 @@
 package knowledgebase
 
-import "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
+import "github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 
 var (
 	// ErrKnowledgeBaseNotFound 表示知识库不存在或当前用户无权访问。

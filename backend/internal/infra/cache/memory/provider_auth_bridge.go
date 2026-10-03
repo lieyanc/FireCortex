@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 type expiringProviderAuthTransaction struct {

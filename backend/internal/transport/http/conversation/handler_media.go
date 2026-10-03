@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"sync/atomic"
 
-	appconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/background"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/middleware"
+	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
+	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 )
 

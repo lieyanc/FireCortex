@@ -2,7 +2,7 @@ import type {
   PublicModelPricingResponse,
   PublicModelPricingTierResponse,
   PublicModelResponse,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 
 export type PublicModelPricingTierDTO = PublicModelPricingTierResponse;
 

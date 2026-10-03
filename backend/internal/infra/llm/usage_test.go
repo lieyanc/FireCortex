@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 func mustDecodeObject(t *testing.T, raw string) map[string]any {

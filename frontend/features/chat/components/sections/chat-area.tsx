@@ -35,12 +35,12 @@ import { MAX_SCREENSHOT_MESSAGES } from "@/features/chat/model/conversation-scre
 import type { ChatModelOption } from "@/features/chat/types/chat-runtime";
 import type { ChatAreaMessage, MessageAttachment } from "@/features/chat/types/messages";
 import { cn } from "@/lib/utils";
-import { AppLogo, DeeixLogo } from "@/shared/components/app-logo";
+import { AppLogo, FireCortexLogo } from "@/shared/components/app-logo";
 import { ConversationShareExportIconDropdown } from "@/shared/components/conversation-share-export-menu";
 import { useCopyAction } from "@/shared/components/copy-action";
 import type { FileContentLoader } from "@/shared/components/file-preview/preview-dialog";
 import { StreamdownRender } from "@/shared/components/markdown/streamdown-render";
-import { PoweredByDeeix } from "@/shared/components/powered-by-deeix";
+import { PoweredByFireCortex } from "@/shared/components/powered-by-firecortex";
 import { useBranding } from "@/shared/config/branding-provider";
 import type { BillingDisplayCurrency } from "@/shared/lib/billing-display";
 
@@ -234,16 +234,16 @@ function ChatScreenshotBrandMark({ placement }: { placement: "top" | "bottom" })
       {placement === "top" ? (
         <>
           <AppLogo width={65} height={20} className="h-5 w-auto opacity-75" />
-          {branding.logoURL ? <PoweredByDeeix className="text-[10px]" /> : null}
+          {branding.logoURL ? <PoweredByFireCortex className="text-[10px]" /> : null}
         </>
       ) : branding.logoURL ? (
         <>
           <AppLogo width={65} height={20} className="h-5 w-auto opacity-75" />
           <span aria-hidden="true" className="h-4 w-px bg-border" />
-          <DeeixLogo width={65} height={20} className="h-5 w-auto opacity-75" />
+          <FireCortexLogo width={65} height={20} className="h-5 w-auto opacity-75" />
         </>
       ) : (
-        <DeeixLogo width={65} height={20} className="h-5 w-auto opacity-75" />
+        <FireCortexLogo width={65} height={20} className="h-5 w-auto opacity-75" />
       )}
     </div>
   );

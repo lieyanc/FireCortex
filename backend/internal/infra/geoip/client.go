@@ -13,10 +13,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	platformtracing "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/observability/tracing"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/requestmeta"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	platformtracing "github.com/lieyanc/FireCortex/backend/internal/infra/observability/tracing"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/requestmeta"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 )
 
 var errLookupSkipped = errors.New("geo lookup skipped")

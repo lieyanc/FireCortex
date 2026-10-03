@@ -4,10 +4,10 @@ import (
 	"context"
 	"strings"
 
-	domainskill "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/skill"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/dberror"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainskill "github.com/lieyanc/FireCortex/backend/internal/domain/skill"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/dberror"
+	model "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

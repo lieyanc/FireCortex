@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
 )
 
 // ---------------------------------------------------------------------------

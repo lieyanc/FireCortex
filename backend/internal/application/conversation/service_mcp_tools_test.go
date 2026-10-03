@@ -4,11 +4,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 func TestInjectMCPToolGuidanceOnlyAddsPolicy(t *testing.T) {
-	messages := []llm.Message{{Role: "user", Content: "搜索 DEEIX Chat"}}
+	messages := []llm.Message{{Role: "user", Content: "搜索 FireCortex"}}
 	runtime := selectedToolRuntime{
 		definitions: []llm.ToolDefinition{{
 			Name:        "bing_search",
@@ -35,7 +35,7 @@ func TestInjectMCPToolGuidanceOnlyAddsPolicy(t *testing.T) {
 }
 
 func TestInjectMCPToolGuidanceUsesCustomPrompt(t *testing.T) {
-	messages := []llm.Message{{Role: "user", Content: "搜索 DEEIX Chat"}}
+	messages := []llm.Message{{Role: "user", Content: "搜索 FireCortex"}}
 	runtime := selectedToolRuntime{
 		definitions: []llm.ToolDefinition{{Name: "bing_search"}},
 	}

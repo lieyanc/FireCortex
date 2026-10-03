@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
 )
 
 func TestParseBreakerDefaults(t *testing.T) {

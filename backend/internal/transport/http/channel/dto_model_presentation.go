@@ -1,6 +1,6 @@
 package channel
 
-import appchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/channel"
+import appchannel "github.com/lieyanc/FireCortex/backend/internal/application/channel"
 
 // ModelVendorResponse 技术厂商响应 DTO。
 type ModelVendorResponse struct {

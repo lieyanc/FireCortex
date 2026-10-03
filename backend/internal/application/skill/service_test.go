@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	domainskill "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/skill"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainskill "github.com/lieyanc/FireCortex/backend/internal/domain/skill"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 type fakeSkillRepo struct {

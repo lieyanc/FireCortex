@@ -4,10 +4,10 @@ package probe
 import (
 	"context"
 
-	docling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/extract/docling"
-	mineru "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/extract/mineru"
-	ocr "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/extract/ocr"
-	tika "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/extract/tika"
+	docling "github.com/lieyanc/FireCortex/backend/internal/infra/extract/docling"
+	mineru "github.com/lieyanc/FireCortex/backend/internal/infra/extract/mineru"
+	ocr "github.com/lieyanc/FireCortex/backend/internal/infra/extract/ocr"
+	tika "github.com/lieyanc/FireCortex/backend/internal/infra/extract/tika"
 )
 
 // Prober 聚合各引擎的探活实现。

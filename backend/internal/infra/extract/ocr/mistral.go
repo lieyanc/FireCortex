@@ -17,7 +17,7 @@ import (
 
 const (
 	defaultMistralOCRModel        = "mistral-ocr-latest"
-	mistralOCRDocumentPlaceholder = "__deeix_mistral_ocr_document_data__"
+	mistralOCRDocumentPlaceholder = "__firecortex_mistral_ocr_document_data__"
 )
 
 type mistralOCRRequest struct {

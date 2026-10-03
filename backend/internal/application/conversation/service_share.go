@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	appupload "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/upload"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	appupload "github.com/lieyanc/FireCortex/backend/internal/application/upload"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/schema"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/vectorutil"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/schema"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/vectorutil"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
@@ -505,7 +505,7 @@ func postgresExtensionVersionAtLeast(version string, requiredMajor int, required
 	return major > requiredMajor || (major == requiredMajor && minor >= requiredMinor)
 }
 
-const postgresVectorMigrationLockName = "deeix_postgres_vector_baseline_v2"
+const postgresVectorMigrationLockName = "firecortex_postgres_vector_baseline_v2"
 
 func withPostgresVectorMigrationLock(db *gorm.DB, operation func(*gorm.DB) error) error {
 	return db.Connection(func(connection *gorm.DB) error {

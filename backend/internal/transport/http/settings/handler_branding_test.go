@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/gin-gonic/gin"
 )
 
@@ -54,7 +54,7 @@ func TestGetBrandingManifestUsesBrandingIcons(t *testing.T) {
 		BrandTitle:                 "Example Chat",
 		BrandShortName:             "Example",
 		BrandDescription:           "Example description",
-		PublicWebBaseURL:           "https://chat.example.com/deeix",
+		PublicWebBaseURL:           "https://chat.example.com/firecortex",
 		BrandPWAIcon192URL:         "/pwa/icon-192.png",
 		BrandPWAIcon512URL:         "https://cdn.example.com/icon-512.png",
 		BrandPWAMaskableIcon512URL: "https://cdn.example.com/icon-maskable.png",

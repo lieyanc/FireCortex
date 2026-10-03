@@ -7,12 +7,12 @@ import (
 	"strings"
 	"testing"
 
-	systemeventapp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/systemevent"
-	domainmcp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/mcp"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/mcpauth"
-	portmcp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/mcp"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	systemeventapp "github.com/lieyanc/FireCortex/backend/internal/application/systemevent"
+	domainmcp "github.com/lieyanc/FireCortex/backend/internal/domain/mcp"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/mcpauth"
+	portmcp "github.com/lieyanc/FireCortex/backend/internal/ports/mcp"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 type syncSecurityRepo struct {
@@ -77,7 +77,7 @@ func TestSyncServerToolsDoesNotPersistProviderErrorDetails(t *testing.T) {
 }
 
 func TestRemoveSignedUserContextTemplates(t *testing.T) {
-	repo := &syncSecurityRepo{headersJSON: `{"X-Static":"keep","X-Deeix-User":"` + mcpauth.TemplateSignedUserContext + `"}`}
+	repo := &syncSecurityRepo{headersJSON: `{"X-Static":"keep","X-FireCortex-User":"` + mcpauth.TemplateSignedUserContext + `"}`}
 	client := &syncSecurityClient{err: errors.New("stop after header capture")}
 	service := NewServiceWithRuntime(
 		config.NewRuntime(config.Config{}),
@@ -91,7 +91,7 @@ func TestRemoveSignedUserContextTemplates(t *testing.T) {
 	if len(client.cfg.Headers) != 1 || client.cfg.Headers["X-Static"] != "keep" {
 		t.Fatalf("unexpected sync headers: %#v", client.cfg.Headers)
 	}
-	if _, ok := client.cfg.Headers["X-Deeix-User"]; ok {
+	if _, ok := client.cfg.Headers["X-FireCortex-User"]; ok {
 		t.Fatalf("signed user context template leaked into sync request: %#v", client.cfg.Headers)
 	}
 }

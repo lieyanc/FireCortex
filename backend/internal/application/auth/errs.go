@@ -3,7 +3,7 @@ package auth
 import (
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 )
 
 // AccountLockedError 携带账户解锁剩余时长，供传输层输出 Retry-After。

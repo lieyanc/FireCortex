@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 	"io"
 	"net"
 	"net/http"
@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	platformtracing "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/observability/tracing"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/requestmeta"
+	platformtracing "github.com/lieyanc/FireCortex/backend/internal/infra/observability/tracing"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/requestmeta"
 	"github.com/oschwald/maxminddb-golang"
 )
 

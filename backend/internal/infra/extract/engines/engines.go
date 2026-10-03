@@ -6,13 +6,13 @@ import (
 	"context"
 	"strings"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/extract/builtin"
-	docling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/extract/docling"
-	mineru "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/extract/mineru"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/extract/ocr"
-	tika "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/extract/tika"
-	extractport "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/extract"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/extract/builtin"
+	docling "github.com/lieyanc/FireCortex/backend/internal/infra/extract/docling"
+	mineru "github.com/lieyanc/FireCortex/backend/internal/infra/extract/mineru"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/extract/ocr"
+	tika "github.com/lieyanc/FireCortex/backend/internal/infra/extract/tika"
+	extractport "github.com/lieyanc/FireCortex/backend/internal/ports/extract"
 )
 
 // NewTika 创建 Tika 客户端；未配置地址时返回 nil。

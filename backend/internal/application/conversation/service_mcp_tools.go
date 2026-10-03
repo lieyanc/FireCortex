@@ -4,15 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 	"strconv"
 	"strings"
 
-	domainmcp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/mcp"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/secretbox"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/mcp"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	domainmcp "github.com/lieyanc/FireCortex/backend/internal/domain/mcp"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/secretbox"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/mcp"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 )
 
 type selectedToolRuntime struct {

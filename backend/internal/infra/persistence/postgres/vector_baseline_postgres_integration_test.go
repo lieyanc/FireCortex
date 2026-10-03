@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/vectorutil"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/vectorutil"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -72,9 +72,9 @@ func TestPostgresVectorIndexSQLUsesHalfVectorCandidates(t *testing.T) {
 }
 
 func TestEnsurePostgresVectorColumnPreservesLegacyVectors(t *testing.T) {
-	dsn := strings.TrimSpace(os.Getenv("DEEIX_TEST_DATABASE_DSN"))
+	dsn := strings.TrimSpace(os.Getenv("FIRECORTEX_TEST_DATABASE_DSN"))
 	if dsn == "" {
-		t.Skip("set DEEIX_TEST_DATABASE_DSN to run PostgreSQL vector migration integration test")
+		t.Skip("set FIRECORTEX_TEST_DATABASE_DSN to run PostgreSQL vector migration integration test")
 	}
 	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -94,7 +94,7 @@ func TestEnsurePostgresVectorColumnPreservesLegacyVectors(t *testing.T) {
 		t.Skip("pgvector extension is required for PostgreSQL vector migration integration test")
 	}
 
-	schemaName := fmt.Sprintf("deeix_test_vector_migration_%d", time.Now().UnixNano())
+	schemaName := fmt.Sprintf("firecortex_test_vector_migration_%d", time.Now().UnixNano())
 	if err = database.Exec(`CREATE SCHEMA ` + schemaName).Error; err != nil {
 		t.Fatalf("create test schema: %v", err)
 	}

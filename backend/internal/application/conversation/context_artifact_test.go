@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	domainmemory "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/memory"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainmemory "github.com/lieyanc/FireCortex/backend/internal/domain/memory"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 type toolArtifactCaptureRepository struct {
@@ -197,7 +197,7 @@ func TestBuildToolContextArtifactsRecordsLocalAndNativeTools(t *testing.T) {
 				ToolType:   "function",
 				ToolName:   "search_web",
 				Status:     "success",
-				InputJSON:  `{"query":"DEEIX Chat"}`,
+				InputJSON:  `{"query":"FireCortex"}`,
 				OutputJSON: `{"answer":"result"}`,
 			},
 			{

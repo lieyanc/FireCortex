@@ -1,13 +1,13 @@
 package conversation
 
 import (
-	domainuicomponent "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/uicomponent"
+	domainuicomponent "github.com/lieyanc/FireCortex/backend/internal/domain/uicomponent"
 	"strings"
 	"testing"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/channel"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/application/channel"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 func TestResolveMessageSystemPromptInjectionUsesNativeSystemPrompt(t *testing.T) {
@@ -213,7 +213,7 @@ func TestResolveMessageSystemPromptInjectionAddsUIComponentsCatalog(t *testing.T
 
 	got := resolveMessageSystemPromptInjection(config.Config{UIComponentsEnabled: true}, route, "", requestPromptOptions{UIComponents: domainuicomponent.Builtin()})
 
-	for _, want := range []string{`<ui-components p="100" scope="request">`, "`deeix-ui`", `<component name="card-grid">`, `<component name="data-table">`, `<component name="chart">`, "<props>"} {
+	for _, want := range []string{`<ui-components p="100" scope="request">`, "`firecortex-ui`", `<component name="card-grid">`, `<component name="data-table">`, `<component name="chart">`, "<props>"} {
 		if !strings.Contains(got.Content, want) {
 			t.Fatalf("expected content to contain %q, got %q", want, got.Content)
 		}

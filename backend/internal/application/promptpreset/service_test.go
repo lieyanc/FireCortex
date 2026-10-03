@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	domainpromptpreset "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/promptpreset"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainpromptpreset "github.com/lieyanc/FireCortex/backend/internal/domain/promptpreset"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 type fakePromptPresetRepo struct {

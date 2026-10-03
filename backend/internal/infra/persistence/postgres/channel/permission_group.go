@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/dberror"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/dberror"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"gorm.io/gorm"
 )
 

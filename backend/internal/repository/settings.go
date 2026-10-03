@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	domainsettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/settings"
+	domainsettings "github.com/lieyanc/FireCortex/backend/internal/domain/settings"
 )
 
 // SettingsRepository 定义系统配置读写能力。

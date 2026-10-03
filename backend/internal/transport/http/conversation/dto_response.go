@@ -2,15 +2,15 @@ package conversation
 
 import (
 	"encoding/json"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 	"strings"
 	"time"
 
-	appconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/conversation"
-	appembedding "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/embedding"
-	appprocessing "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/processing"
-	appupload "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/upload"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
+	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
+	appembedding "github.com/lieyanc/FireCortex/backend/internal/application/embedding"
+	appprocessing "github.com/lieyanc/FireCortex/backend/internal/application/processing"
+	appupload "github.com/lieyanc/FireCortex/backend/internal/application/upload"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 )
 
 // ---------- Conversation ----------
@@ -194,7 +194,7 @@ func ToConversationExportResponse(item *appconversation.ConversationExportResult
 		TotalRuns:               item.TotalRuns,
 		DefaultMessagePublicIDs: item.DefaultMessagePublicIDs,
 		Compatibility: ConversationExportCompatibilityResponse{
-			Format: "deeix.conversation.export",
+			Format: "firecortex.conversation.export",
 			Notes:  "Full backup export. Import compatibility is not guaranteed.",
 		},
 	}
@@ -388,7 +388,7 @@ type PublicSharedConversationResponse struct {
 	DefaultMessagePublicIDs []string                      `json:"defaultMessagePublicIDs"`
 	Messages                []PublicSharedMessageResponse `json:"messages"`
 
-	// UIComponentsEnabled 为 false 时，分享页不渲染 deeix-ui 组件块。
+	// UIComponentsEnabled 为 false 时，分享页不渲染 firecortex-ui 组件块。
 	UIComponentsEnabled bool `json:"uiComponentsEnabled"`
 }
 

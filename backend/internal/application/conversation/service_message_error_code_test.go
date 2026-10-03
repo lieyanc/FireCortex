@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-	appchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/channel"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	appchannel "github.com/lieyanc/FireCortex/backend/internal/application/channel"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 func TestClassifyRunErrorCode(t *testing.T) {

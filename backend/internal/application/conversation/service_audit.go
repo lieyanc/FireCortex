@@ -3,7 +3,7 @@ package conversation
 import (
 	"context"
 
-	appaudit "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/audit"
+	appaudit "github.com/lieyanc/FireCortex/backend/internal/application/audit"
 )
 
 // AuditInput 描述会话域一次审计写入。

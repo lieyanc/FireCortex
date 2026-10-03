@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 func TestUpstreamDebugSnapshotRedactsInlineBinaryPayloads(t *testing.T) {

@@ -74,7 +74,7 @@ export function AuthCallbackPage() {
         return;
       }
       void exchangeProviderAuthBridgeGrant(provider, {
-        clientID: "deeix-web",
+        clientID: "firecortex-web",
         grant,
         codeVerifier: stored.verifier,
       })

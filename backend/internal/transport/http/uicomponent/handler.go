@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strconv"
 
-	appuicomponent "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/uicomponent"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/pagination"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/middleware"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/queryparam"
+	appuicomponent "github.com/lieyanc/FireCortex/backend/internal/application/uicomponent"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
+	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
+	"github.com/lieyanc/FireCortex/backend/internal/transport/http/queryparam"
 	"github.com/gin-gonic/gin"
 )
 

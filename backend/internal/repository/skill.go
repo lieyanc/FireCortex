@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	domainskill "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/skill"
+	domainskill "github.com/lieyanc/FireCortex/backend/internal/domain/skill"
 )
 
 // SkillRepository 定义技能持久化能力。

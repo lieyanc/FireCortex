@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
+	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
 	"github.com/gin-gonic/gin/binding"
 )
 

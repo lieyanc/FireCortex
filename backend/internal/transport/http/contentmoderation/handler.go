@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	appadmin "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/admin"
-	appcm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/contentmoderation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/middleware"
+	appadmin "github.com/lieyanc/FireCortex/backend/internal/application/admin"
+	appcm "github.com/lieyanc/FireCortex/backend/internal/application/contentmoderation"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
+	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 )
 

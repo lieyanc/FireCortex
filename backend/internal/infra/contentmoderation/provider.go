@@ -17,8 +17,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	domaincm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/contentmoderation"
-	cmport "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/contentmoderation"
+	domaincm "github.com/lieyanc/FireCortex/backend/internal/domain/contentmoderation"
+	cmport "github.com/lieyanc/FireCortex/backend/internal/ports/contentmoderation"
 )
 
 const (

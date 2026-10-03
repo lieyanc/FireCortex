@@ -4,7 +4,7 @@ import type {
   UsageStatisticsResponse,
   UsageStatisticsTrendResponse,
   UsageStatisticsUserRankResponse,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 import { authedRequest } from "@/shared/api/authed-client";
 
 export type AdminUsageStatisticsRankBy = "cost" | "tokens" | "calls";

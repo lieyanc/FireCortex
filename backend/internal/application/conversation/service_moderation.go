@@ -9,14 +9,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 
-	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
-	appcm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/contentmoderation"
-	appstorage "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/objectstorage"
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/objectstore"
+	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
+	appcm "github.com/lieyanc/FireCortex/backend/internal/application/contentmoderation"
+	appstorage "github.com/lieyanc/FireCortex/backend/internal/application/objectstorage"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/objectstore"
 )
 
 const moderationFinalizationTimeout = 65 * time.Second

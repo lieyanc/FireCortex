@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	appauth "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/auth"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
+	appauth "github.com/lieyanc/FireCortex/backend/internal/application/auth"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 
 	"github.com/gin-gonic/gin"
 )

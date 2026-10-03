@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/filetype"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/filetype"
 	_ "golang.org/x/image/webp"
 )
 

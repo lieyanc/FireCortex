@@ -10,12 +10,12 @@ import (
 	"fmt"
 	"strings"
 
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/secretbox"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/pagination"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/secretbox"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 )
 
 // ---------------------------------------------------------------------------

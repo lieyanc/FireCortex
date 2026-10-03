@@ -34,9 +34,9 @@ import type { FileContentLoader } from "@/shared/components/file-preview/preview
 import { CenteredEmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AppLogo, DeeixLogo } from "@/shared/components/app-logo";
+import { AppLogo, FireCortexLogo } from "@/shared/components/app-logo";
 import { useBranding } from "@/shared/config/branding-provider";
-import { CustomBrandAttribution } from "@/shared/components/powered-by-deeix";
+import { CustomBrandAttribution } from "@/shared/components/powered-by-firecortex";
 import { useOptionalAuthSession } from "@/shared/auth/auth-session-context";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 import { useAppLocale } from "@/i18n/app-i18n-provider";
@@ -480,13 +480,13 @@ export function PublicSharePage() {
               </>
             ) : null}
             <a
-              href="https://github.com/DEEIX-AI/DEEIX-Chat"
+              href="https://github.com/lieyanc/FireCortex"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="DEEIX Chat on GitHub"
+              aria-label="FireCortex on GitHub"
               className="inline-flex h-8 shrink-0 items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2"
             >
-              <DeeixLogo width={78} height={24} className="h-6 w-auto opacity-75" />
+              <FireCortexLogo width={78} height={24} className="h-6 w-auto opacity-75" />
             </a>
           </div>
         </div>

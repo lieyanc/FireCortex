@@ -3,10 +3,10 @@ package admin
 import (
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/userview"
-	domainaudit "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/audit"
-	domainsystemevent "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/systemevent"
-	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
+	"github.com/lieyanc/FireCortex/backend/internal/application/userview"
+	domainaudit "github.com/lieyanc/FireCortex/backend/internal/domain/audit"
+	domainsystemevent "github.com/lieyanc/FireCortex/backend/internal/domain/systemevent"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 )
 
 // UserListFilter 管理员用户列表过滤条件。

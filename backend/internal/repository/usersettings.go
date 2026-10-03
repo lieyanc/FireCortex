@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	domainusersettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/usersettings"
+	domainusersettings "github.com/lieyanc/FireCortex/backend/internal/domain/usersettings"
 )
 
 // UserSettingsRepository 定义用户个人配置读写能力。

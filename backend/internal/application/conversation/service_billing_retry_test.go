@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
+	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
 )
 
 func TestRetryUsageBillingOperationRecoversTransientFailure(t *testing.T) {

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	portembedding "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/embedding"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	portembedding "github.com/lieyanc/FireCortex/backend/internal/ports/embedding"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 )
 
 func TestCallAPITrustsConfiguredPrivateEmbeddingOrigin(t *testing.T) {

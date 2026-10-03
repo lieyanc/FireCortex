@@ -35,8 +35,8 @@ export function AppLogo({
   );
 }
 
-export function DeeixLogo({
-  alt = "DEEIX Chat",
+export function FireCortexLogo({
+  alt = "FireCortex",
   width,
   height,
   priority,

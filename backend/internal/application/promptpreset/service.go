@@ -5,10 +5,10 @@ import (
 	"errors"
 	"strings"
 
-	appaudit "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/audit"
-	domainpromptpreset "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/promptpreset"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/pagination"
+	appaudit "github.com/lieyanc/FireCortex/backend/internal/application/audit"
+	domainpromptpreset "github.com/lieyanc/FireCortex/backend/internal/domain/promptpreset"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 )
 
 const (

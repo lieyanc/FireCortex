@@ -9,14 +9,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/channel"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/extraction"
-	appupload "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/upload"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	extractport "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/extract"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/application/channel"
+	"github.com/lieyanc/FireCortex/backend/internal/application/extraction"
+	appupload "github.com/lieyanc/FireCortex/backend/internal/application/upload"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	extractport "github.com/lieyanc/FireCortex/backend/internal/ports/extract"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 type temporaryLLMGatewayStub struct {

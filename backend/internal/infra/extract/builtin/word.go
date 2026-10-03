@@ -11,7 +11,7 @@ import (
 	docx "github.com/mmonterroca/docxgo/v2"
 	"github.com/mmonterroca/docxgo/v2/domain"
 
-	extractport "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/extract"
+	extractport "github.com/lieyanc/FireCortex/backend/internal/ports/extract"
 )
 
 const (

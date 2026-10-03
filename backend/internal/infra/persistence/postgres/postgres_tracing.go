@@ -4,30 +4,30 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	platformtracing "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/observability/tracing"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	platformtracing "github.com/lieyanc/FireCortex/backend/internal/infra/observability/tracing"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
 )
 
-const gormTraceSpanKey = "deeix-chat:postgres-trace-span"
+const gormTraceSpanKey = "firecortex:postgres-trace-span"
 
 func configureTracing(db *gorm.DB, cfg config.Config) error {
 	attrs := postgresTraceAttributes(cfg)
 	registrations := []error{
-		db.Callback().Create().Before("gorm:create").Register("deeix-chat:trace-before-create", beginGORMTrace("create", attrs)),
-		db.Callback().Create().After("gorm:create").Register("deeix-chat:trace-after-create", endGORMTrace),
-		db.Callback().Query().Before("gorm:query").Register("deeix-chat:trace-before-query", beginGORMTrace("query", attrs)),
-		db.Callback().Query().After("gorm:query").Register("deeix-chat:trace-after-query", endGORMTrace),
-		db.Callback().Update().Before("gorm:update").Register("deeix-chat:trace-before-update", beginGORMTrace("update", attrs)),
-		db.Callback().Update().After("gorm:update").Register("deeix-chat:trace-after-update", endGORMTrace),
-		db.Callback().Delete().Before("gorm:delete").Register("deeix-chat:trace-before-delete", beginGORMTrace("delete", attrs)),
-		db.Callback().Delete().After("gorm:delete").Register("deeix-chat:trace-after-delete", endGORMTrace),
-		db.Callback().Row().Before("gorm:row").Register("deeix-chat:trace-before-row", beginGORMTrace("row", attrs)),
-		db.Callback().Row().After("gorm:row").Register("deeix-chat:trace-after-row", endGORMTrace),
-		db.Callback().Raw().Before("gorm:raw").Register("deeix-chat:trace-before-raw", beginGORMTrace("raw", attrs)),
-		db.Callback().Raw().After("gorm:raw").Register("deeix-chat:trace-after-raw", endGORMTrace),
+		db.Callback().Create().Before("gorm:create").Register("firecortex:trace-before-create", beginGORMTrace("create", attrs)),
+		db.Callback().Create().After("gorm:create").Register("firecortex:trace-after-create", endGORMTrace),
+		db.Callback().Query().Before("gorm:query").Register("firecortex:trace-before-query", beginGORMTrace("query", attrs)),
+		db.Callback().Query().After("gorm:query").Register("firecortex:trace-after-query", endGORMTrace),
+		db.Callback().Update().Before("gorm:update").Register("firecortex:trace-before-update", beginGORMTrace("update", attrs)),
+		db.Callback().Update().After("gorm:update").Register("firecortex:trace-after-update", endGORMTrace),
+		db.Callback().Delete().Before("gorm:delete").Register("firecortex:trace-before-delete", beginGORMTrace("delete", attrs)),
+		db.Callback().Delete().After("gorm:delete").Register("firecortex:trace-after-delete", endGORMTrace),
+		db.Callback().Row().Before("gorm:row").Register("firecortex:trace-before-row", beginGORMTrace("row", attrs)),
+		db.Callback().Row().After("gorm:row").Register("firecortex:trace-after-row", endGORMTrace),
+		db.Callback().Raw().Before("gorm:raw").Register("firecortex:trace-before-raw", beginGORMTrace("raw", attrs)),
+		db.Callback().Raw().After("gorm:raw").Register("firecortex:trace-after-raw", endGORMTrace),
 	}
 	for _, err := range registrations {
 		if err != nil {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	domaincm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/contentmoderation"
+	domaincm "github.com/lieyanc/FireCortex/backend/internal/domain/contentmoderation"
 )
 
 // Provider 是审核服务依赖的出站审核端口，由 infra/contentmoderation 以相同签名实现。

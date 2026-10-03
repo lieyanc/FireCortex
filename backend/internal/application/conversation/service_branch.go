@@ -5,11 +5,11 @@ import (
 	"errors"
 	"strings"
 
-	appcompact "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/compact"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/traceid"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/tokenestimate"
+	appcompact "github.com/lieyanc/FireCortex/backend/internal/application/compact"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/traceid"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
 	"go.uber.org/zap"
 )
 

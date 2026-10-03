@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	appstorage "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/objectstorage"
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/objectstore"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	appstorage "github.com/lieyanc/FireCortex/backend/internal/application/objectstorage"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/objectstore"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 func TestOpenObjectStoreRequiresProvider(t *testing.T) {

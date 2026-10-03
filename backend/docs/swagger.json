@@ -1,8 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "DEEIX Chat 后端 API 文档",
-        "title": "DEEIX Chat API",
+        "description": "FireCortex 后端 API 文档",
+        "title": "FireCortex API",
         "contact": {},
         "version": "0.4.3"
     },
@@ -9032,7 +9032,7 @@
         },
         "/auth/providers/{slug}/authorize": {
             "post": {
-                "description": "为 Web、App 或桌面公共客户端创建 PKCE 保护的 OAuth 授权事务；外部身份源仅回调当前 DEEIX 实例",
+                "description": "为 Web、App 或桌面公共客户端创建 PKCE 保护的 OAuth 授权事务；外部身份源仅回调当前 FireCortex 实例",
                 "consumes": [
                     "application/json"
                 ],
@@ -24703,7 +24703,7 @@
                     "type": "string"
                 },
                 "uiComponentsEnabled": {
-                    "description": "UIComponentsEnabled 为 false 时，分享页不渲染 deeix-ui 组件块。",
+                    "description": "UIComponentsEnabled 为 false 时，分享页不渲染 firecortex-ui 组件块。",
                     "type": "boolean"
                 }
             }

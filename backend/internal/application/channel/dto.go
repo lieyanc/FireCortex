@@ -1,7 +1,7 @@
 package channel
 
 import (
-	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
+	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
 )
 
 const (

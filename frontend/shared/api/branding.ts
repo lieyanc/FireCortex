@@ -1,4 +1,4 @@
-import type { BrandingResponse } from "@deeix/api-contract";
+import type { BrandingResponse } from "@firecortex/api-contract";
 import { apiRequest } from "@/shared/api/http-client";
 
 export type BrandingDTO = BrandingResponse;

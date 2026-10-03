@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	appcm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/contentmoderation"
-	domaincm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/contentmoderation"
+	appcm "github.com/lieyanc/FireCortex/backend/internal/application/contentmoderation"
+	domaincm "github.com/lieyanc/FireCortex/backend/internal/domain/contentmoderation"
 )
 
 func TestServiceConfigResponseJSONContract(t *testing.T) {

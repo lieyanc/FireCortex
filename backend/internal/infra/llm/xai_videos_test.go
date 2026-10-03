@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 func TestBuildXAIVideoRequestBody(t *testing.T) {

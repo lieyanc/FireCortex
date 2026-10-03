@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/vectorutil"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/vectorutil"
 	sqlite_vec "github.com/asg017/sqlite-vec-go-bindings/cgo"
 	"gorm.io/gorm"
 )

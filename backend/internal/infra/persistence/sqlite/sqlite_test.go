@@ -4,14 +4,14 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	model "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
 )
 
 func TestNewMigratesAndSeedsSQLite(t *testing.T) {
 	db, err := New(config.Config{
 		Env:                 "dev",
-		SQLitePath:          filepath.Join(t.TempDir(), "deeix.db"),
+		SQLitePath:          filepath.Join(t.TempDir(), "firecortex.db"),
 		SQLiteMaxOpenConns:  1,
 		SQLiteBusyTimeoutMS: 5000,
 		SQLiteCacheSizeKB:   20480,

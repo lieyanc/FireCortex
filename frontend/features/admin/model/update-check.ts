@@ -5,11 +5,11 @@ export type ReleaseInfo = {
 
 export type VersionCompareResult = "available" | "current" | "unknown";
 
-export const LATEST_RELEASE_ENDPOINT = "https://api.github.com/repos/DEEIX-AI/DEEIX-Chat/releases/latest";
-export const RELEASE_PAGE_PREFIX = "https://github.com/DEEIX-AI/DEEIX-Chat/releases/tag/";
+export const LATEST_RELEASE_ENDPOINT = "https://api.github.com/repos/FireCortex-AI/FireCortex/releases/latest";
+export const RELEASE_PAGE_PREFIX = "https://github.com/lieyanc/FireCortex/releases/tag/";
 
-const LATEST_RELEASE_CACHE_KEY = "deeix-chat:latest-release";
-const LATEST_RELEASE_CHANGED_EVENT = "deeix-chat:latest-release-changed";
+const LATEST_RELEASE_CACHE_KEY = "firecortex:latest-release";
+const LATEST_RELEASE_CHANGED_EVENT = "firecortex:latest-release-changed";
 
 let cachedRawValue: string | null | undefined;
 let cachedSnapshot: ReleaseInfo | null = null;

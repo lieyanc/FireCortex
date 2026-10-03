@@ -9,11 +9,11 @@ import (
 func TestNormalizeToolArgumentsCoercesSchemaDeclaredScalars(t *testing.T) {
 	schema := json.RawMessage(`{"type":"object","properties":{"query":{"type":"string"},"count":{"type":"number"},"safe":{"type":"boolean"}},"required":["query"]}`)
 
-	got, err := normalizeToolArguments(`{"query":"DEEIX Chat","count":"3","safe":"true"}`, schema)
+	got, err := normalizeToolArguments(`{"query":"FireCortex","count":"3","safe":"true"}`, schema)
 	if err != nil {
 		t.Fatalf("normalize arguments: %v", err)
 	}
-	if got != `{"count":3,"query":"DEEIX Chat","safe":true}` {
+	if got != `{"count":3,"query":"FireCortex","safe":true}` {
 		t.Fatalf("unexpected normalized arguments: %s", got)
 	}
 }

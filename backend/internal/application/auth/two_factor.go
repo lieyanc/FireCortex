@@ -14,18 +14,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 	"math"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/secretbox"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/token"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/requestmeta"
+	"github.com/lieyanc/FireCortex/backend/internal/domain/user"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/secretbox"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/token"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/requestmeta"
 	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
 )
@@ -287,7 +287,7 @@ func (s *Service) StartCurrentTwoFactorSetup(ctx context.Context, userID uint) (
 		}
 		return &TwoFactorSetupStartResult{
 			Secret:     secret,
-			OTPAuthURL: buildOTPAuthURL("DEEIX Chat", textutil.FirstNonEmpty(item.Email, item.Username), secret),
+			OTPAuthURL: buildOTPAuthURL("FireCortex", textutil.FirstNonEmpty(item.Email, item.Username), secret),
 			ExpiresAt:  *current.TOTPSetupExpiresAt,
 		}, nil
 	}
@@ -311,7 +311,7 @@ func (s *Service) StartCurrentTwoFactorSetup(ctx context.Context, userID uint) (
 	}
 	return &TwoFactorSetupStartResult{
 		Secret:     secret,
-		OTPAuthURL: buildOTPAuthURL("DEEIX Chat", textutil.FirstNonEmpty(item.Email, item.Username), secret),
+		OTPAuthURL: buildOTPAuthURL("FireCortex", textutil.FirstNonEmpty(item.Email, item.Username), secret),
 		ExpiresAt:  expiresAt,
 	}, nil
 }

@@ -16,7 +16,7 @@ We will acknowledge valid reports as soon as possible and coordinate remediation
 
 ## Scope
 
-Security reports are in scope when they affect DEEIX Chat source code, default deployment guidance, authentication, authorization, data isolation, secret handling, file processing, model provider routing, MCP/tool execution, billing, or administrative APIs.
+Security reports are in scope when they affect FireCortex source code, default deployment guidance, authentication, authorization, data isolation, secret handling, file processing, model provider routing, MCP/tool execution, billing, or administrative APIs.
 
 Out of scope:
 

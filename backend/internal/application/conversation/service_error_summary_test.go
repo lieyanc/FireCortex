@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	apprag "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/rag"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
+	apprag "github.com/lieyanc/FireCortex/backend/internal/application/rag"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 )
 
 func TestMessageErrorSummaryUsesPublicApplicationMessage(t *testing.T) {

@@ -70,7 +70,7 @@ export function resolveAvatarSeed(source?: AvatarSeedSource) {
     normalizeTrimmedString(source?.publicID) ||
     normalizeTrimmedString(source?.username) ||
     normalizeTrimmedString(source?.displayName) ||
-    "deeix-chat-user"
+    "firecortex-user"
   );
 }
 

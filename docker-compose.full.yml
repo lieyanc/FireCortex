@@ -1,9 +1,9 @@
-name: deeix-chat
+name: firecortex
 
 services:
   app:
-    image: ${DEEIX_CHAT_IMAGE:-ghcr.io/deeix-ai/deeix-chat:latest}
-    container_name: deeix-chat-app
+    image: ${FIRECORTEX_IMAGE:-ghcr.io/lieyanc/firecortex:latest}
+    container_name: firecortex-app
     depends_on:
       postgres:
         condition: service_healthy
@@ -12,10 +12,10 @@ services:
     environment:
       # Full compose connects to bundled services on the compose network.
       # These environment variables override database and Redis values in config.yaml.
-      POSTGRES_DSN: "postgres://deeix_chat:deeix_chat_2026@postgres:5432/deeix_chat?sslmode=disable&TimeZone=Asia/Shanghai"
+      POSTGRES_DSN: "postgres://firecortex:firecortex_2026@postgres:5432/firecortex?sslmode=disable&TimeZone=Asia/Shanghai"
       REDIS_ADDR: "redis:6379"
       REDIS_USERNAME: ""
-      REDIS_PASSWORD: "deeix_chat_2026"
+      REDIS_PASSWORD: "firecortex_2026"
     ports:
       # Optional. Localhost-only by default. Put a reverse proxy in front for public access.
       - "127.0.0.1:8080:8080"
@@ -25,15 +25,15 @@ services:
       # The image runs from /app and reads /app/config.yaml automatically.
       - ./config.yaml:/app/config.yaml:ro
     networks:
-      - deeix-chat
+      - firecortex
 
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: deeix-chat-postgres
+    container_name: firecortex-postgres
     environment:
-      POSTGRES_USER: deeix_chat
-      POSTGRES_PASSWORD: deeix_chat_2026
-      POSTGRES_DB: deeix_chat
+      POSTGRES_USER: firecortex
+      POSTGRES_PASSWORD: firecortex_2026
+      POSTGRES_DB: firecortex
     ports:
       # Optional. Localhost-only for local administration; the app uses the internal Docker network.
       - "127.0.0.1:5432:5432"
@@ -46,36 +46,36 @@ services:
       retries: 5
       start_period: 10s
     networks:
-      - deeix-chat
+      - firecortex
 
   redis:
     image: redis:7
-    container_name: deeix-chat-redis
-    command: redis-server --requirepass deeix_chat_2026
+    container_name: firecortex-redis
+    command: redis-server --requirepass firecortex_2026
     ports:
       # Optional. Localhost-only for local administration; the app uses the internal Docker network.
       - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "deeix_chat_2026", "ping"]
+      test: ["CMD", "redis-cli", "-a", "firecortex_2026", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
     networks:
-      - deeix-chat
+      - firecortex
 
 volumes:
   app_storage:
-    name: deeix-chat-app-storage
+    name: firecortex-app-storage
   app_data:
-    name: deeix-chat-app-data
+    name: firecortex-app-data
   postgres_data:
-    name: deeix-chat-postgres-data
+    name: firecortex-postgres-data
   redis_data:
-    name: deeix-chat-redis-data
+    name: firecortex-redis-data
 
 networks:
-  deeix-chat:
-    name: deeix-chat-network
+  firecortex:
+    name: firecortex-network

@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	appupload "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/upload"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	appupload "github.com/lieyanc/FireCortex/backend/internal/application/upload"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 const maxAssistantImageContentItems = 8

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-const HTML_VISUAL_PROMPT_STORAGE_KEY = "deeix-chat:html-visual-prompt:v1";
+const HTML_VISUAL_PROMPT_STORAGE_KEY = "firecortex:html-visual-prompt:v1";
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
 
 function readHTMLVisualPromptEnabled(): boolean {

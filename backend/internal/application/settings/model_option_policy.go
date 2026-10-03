@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/nativetool"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/nativetool"
 )
 
 var validModelOptionProtocolKeys = map[string]struct{}{

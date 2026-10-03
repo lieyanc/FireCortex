@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/tokenestimate"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/toolresult"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/toolresult"
 )
 
 type executeAssistantToolCallsInput struct {

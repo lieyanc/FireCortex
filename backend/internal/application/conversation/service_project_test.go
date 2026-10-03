@@ -7,12 +7,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/channel"
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	domainknowledgebase "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/knowledgebase"
-	domainmcp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/mcp"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/application/channel"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainknowledgebase "github.com/lieyanc/FireCortex/backend/internal/domain/knowledgebase"
+	domainmcp "github.com/lieyanc/FireCortex/backend/internal/domain/mcp"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 func TestNormalizeConversationProjectInputInheritClearsMCPDefaults(t *testing.T) {

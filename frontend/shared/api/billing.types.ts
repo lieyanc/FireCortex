@@ -21,7 +21,7 @@ import type {
   UsageDailyResponse,
   UsageLedgerResponse,
   UsageMonthlyResponse,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 
 export type BillingPlanPriceDTO = BillingPriceResponse;
 

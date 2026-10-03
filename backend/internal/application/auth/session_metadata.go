@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
-	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/requestmeta"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/requestmeta"
 )
 
 const sessionActivityTouchInterval = time.Minute

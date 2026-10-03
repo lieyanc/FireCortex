@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	appchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/channel"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
-	channelrepo "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/channel"
+	appchannel "github.com/lieyanc/FireCortex/backend/internal/application/channel"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	model "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	channelrepo "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/postgres/channel"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

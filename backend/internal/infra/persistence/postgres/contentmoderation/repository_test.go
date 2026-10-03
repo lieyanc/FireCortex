@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	domaincm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/contentmoderation"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
+	domaincm "github.com/lieyanc/FireCortex/backend/internal/domain/contentmoderation"
+	model "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

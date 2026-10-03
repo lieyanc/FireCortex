@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 )
 
 const FileProcessingKindEmbedding = "embedding"

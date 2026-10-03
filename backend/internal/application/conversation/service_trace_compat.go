@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 )
 
 // The legacy finalization replay persisted its duplicate completion immediately

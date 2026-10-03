@@ -1,5 +1,5 @@
 app:
-  name: DEEIX Chat
+  name: FireCortex
   # Required. Use prod and replace security values before public deployment.
   env: dev
 
@@ -20,7 +20,7 @@ server:
 security:
   # Required. Replace both values with strong random secrets before deployment.
   jwt_secret: "change-me-dev-jwt-secret"
-  # Required only when an MCP Server uses ${DEEIX_SIGNED_USER_CONTEXT}.
+  # Required only when an MCP Server uses ${FIRECORTEX_SIGNED_USER_CONTEXT}.
   mcp_user_context_secret: ""
   data_encryption_key: "change-me-dev-data-encryption-key-32-bytes-min"
   # Optional. Enable in production to block outbound requests to private or metadata networks.
@@ -34,9 +34,9 @@ security:
 
 branding:
   # Optional. Frontend product branding; changes take effect after restarting the app.
-  title: DEEIX Chat
-  short_name: DEEIX
-  description: DEEIX Chat is a multi-model AI conversation system.
+  title: FireCortex
+  short_name: FireCortex
+  description: FireCortex is a multi-model AI conversation system.
   logo_url: ""
   favicon_url: /favicon.ico
   pwa_icon_192_url: /pwa/icon-192.png
@@ -49,7 +49,7 @@ database:
   driver: sqlite
   sqlite:
     # Required. The SQLite database is stored under the persistent /app/data volume.
-    path: /app/data/deeix.db
+    path: /app/data/firecortex.db
     dsn: ""
     max_open_conns: 1
     busy_timeout_ms: 5000

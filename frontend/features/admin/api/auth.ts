@@ -6,7 +6,7 @@ import type {
 	IdentityProviderReorderResponse,
 	IdentityProviderResponse,
 	UpsertIdentityProviderRequest,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 import type { IdentityProviderDTO } from "@/shared/api/auth.types";
 
 export async function listAdminIdentityProviders(accessToken: string): Promise<{ total: number; results: IdentityProviderDTO[] }> {

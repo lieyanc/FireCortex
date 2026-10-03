@@ -17,7 +17,7 @@ import type {
   UpdateUserStatusRequest,
   UserDataResponse,
   UsageLogResponse,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 import type { PagePayload } from "@/shared/api/common.types";
 
 export type AdminUserStatus = "pending_activation" | "active" | "locked" | "suspended" | "deactivated";

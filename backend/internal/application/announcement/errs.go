@@ -1,6 +1,6 @@
 package announcement
 
-import "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
+import "github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 
 var (
 	// ErrInvalidAnnouncement 表示公告配置非法。

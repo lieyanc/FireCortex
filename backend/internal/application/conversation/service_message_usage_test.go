@@ -5,13 +5,13 @@ import (
 	"strings"
 	"testing"
 
-	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/tokenestimate"
+	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
 )
 
 func TestMessageUsageAccumulatorCombinesObservedAndUnobservedInput(t *testing.T) {

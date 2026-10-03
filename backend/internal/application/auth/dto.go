@@ -3,7 +3,7 @@ package auth
 import (
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/userview"
+	"github.com/lieyanc/FireCortex/backend/internal/application/userview"
 )
 
 // LoginResult 登录成功后的内部传输结构，不携带序列化标记。

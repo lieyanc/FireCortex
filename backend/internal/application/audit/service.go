@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	domainaudit "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/audit"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/traceid"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/pagination"
+	domainaudit "github.com/lieyanc/FireCortex/backend/internal/domain/audit"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/traceid"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 	"go.uber.org/zap"
 )
 

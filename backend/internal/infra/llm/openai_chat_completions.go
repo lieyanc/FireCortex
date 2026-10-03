@@ -5,9 +5,9 @@ import (
 	"encoding/base64"
 	"strings"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 // openAIChatCompletionsAdapter 实现 OpenAI Chat Completions API（POST /v1/chat/completions）。

@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	domainmemory "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/memory"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/sqlitevec"
+	domainmemory "github.com/lieyanc/FireCortex/backend/internal/domain/memory"
+	model "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/sqlitevec"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

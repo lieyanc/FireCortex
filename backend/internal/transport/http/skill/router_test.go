@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	appskill "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/skill"
-	domainskill "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/skill"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/middleware"
+	appskill "github.com/lieyanc/FireCortex/backend/internal/application/skill"
+	domainskill "github.com/lieyanc/FireCortex/backend/internal/domain/skill"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 )
 

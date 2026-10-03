@@ -122,8 +122,8 @@ const TOOL_SORT_OPTIONS = [
 ] as const;
 
 const SIGNED_USER_CONTEXT_HEADER: readonly [string, string] = [
-  "X-Deeix-User-Context",
-  `\${DEEIX_SIGNED_USER_CONTEXT}`,
+  "X-FireCortex-User-Context",
+  `\${FIRECORTEX_SIGNED_USER_CONTEXT}`,
 ];
 
 function serverStatusLabel(status: string, translate: (key: string) => string): string {

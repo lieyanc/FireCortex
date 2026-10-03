@@ -5,8 +5,8 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/objectstore"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/objectstore"
 )
 
 // ErrProviderNotConfigured 表示对象存储 provider 尚未由组合根注入。

@@ -43,7 +43,7 @@ import type {
   UpstreamRemoteModelResponse,
   UpstreamRemoteModelsResponse,
   UpstreamResponse,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 
 export type AdminLLMStatus = "active" | "inactive";
 export type AdminLLMModelAccessScope = "public" | "internal";

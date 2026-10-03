@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/dberror"
-	models "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/dberror"
+	models "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
 	"gorm.io/gorm"
 )
 

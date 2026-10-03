@@ -82,7 +82,7 @@ function artifactRuntimeScript(): string {
 }
 
 function artifactPreviewResetStyle(): string {
-  return `<style data-deeix-artifact-reset>
+  return `<style data-firecortex-artifact-reset>
 html,
 body {
   min-height: 100%;
@@ -104,7 +104,7 @@ body {
 
 function artifactThemeStyle(theme: HTMLVisualThemeSnapshot): string {
   const declarations = theme.variables.map(([name, value]) => `${name}:${value}`).join(";");
-  return `<style data-deeix-artifact-theme>
+  return `<style data-firecortex-artifact-theme>
 :root { color-scheme: ${theme.colorScheme}; ${escapeStyleContent(declarations)} }
 html, body { color: var(--foreground); background: var(--background); }
 </style>`;

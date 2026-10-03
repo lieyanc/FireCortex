@@ -3,8 +3,8 @@ package conversation
 import (
 	"testing"
 
-	appcompact "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/compact"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
+	appcompact "github.com/lieyanc/FireCortex/backend/internal/application/compact"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 )
 
 func TestBuildPromptScopeKeepsFullHistoryWhenDisabled(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	runtimeport "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/runtime"
+	runtimeport "github.com/lieyanc/FireCortex/backend/internal/ports/runtime"
 )
 
 // DockerRunner 执行本机 Docker 命令。

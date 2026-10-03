@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	platformtracing "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/observability/tracing"
+	platformtracing "github.com/lieyanc/FireCortex/backend/internal/infra/observability/tracing"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -197,7 +197,7 @@ func (s *S3Store) Materialize(ctx context.Context, key string) (string, func(), 
 		return "", nil, err
 	}
 	defer reader.Close() //nolint:errcheck
-	file, err := os.CreateTemp("", "deeix-chat-object-*")
+	file, err := os.CreateTemp("", "firecortex-object-*")
 	if err != nil {
 		return "", nil, err
 	}

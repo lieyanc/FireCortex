@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import { SettingsSidebar } from "@/features/settings/components/settings-sidebar";
-import { CustomBrandAttribution } from "@/shared/components/powered-by-deeix";
+import { CustomBrandAttribution } from "@/shared/components/powered-by-firecortex";
 
 export function AppSettingsPanel({
   children,

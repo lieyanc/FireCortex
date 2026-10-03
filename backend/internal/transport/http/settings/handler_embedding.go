@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	appembedding "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/embedding"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
+	appembedding "github.com/lieyanc/FireCortex/backend/internal/application/embedding"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

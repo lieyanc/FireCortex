@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	domainmemory "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/memory"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/background"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainmemory "github.com/lieyanc/FireCortex/backend/internal/domain/memory"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
 	"go.uber.org/zap"
 )
 

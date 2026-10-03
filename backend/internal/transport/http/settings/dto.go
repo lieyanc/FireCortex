@@ -3,8 +3,8 @@ package settings
 import (
 	"strings"
 
-	appsettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/settings"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/nativetool"
+	appsettings "github.com/lieyanc/FireCortex/backend/internal/application/settings"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/nativetool"
 )
 
 // ── 请求 DTO ─────────────────────────────────────────────────────────────────

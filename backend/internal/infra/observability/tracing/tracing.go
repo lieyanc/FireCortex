@@ -19,7 +19,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-const instrumentationName = "github.com/DEEIX-AI/DEEIX-Chat/backend"
+const instrumentationName = "github.com/lieyanc/FireCortex/backend"
 
 // ShutdownFunc 释放一次 tracing 初始化所创建的资源。
 type ShutdownFunc func(context.Context) error
@@ -48,7 +48,7 @@ func Init(ctx context.Context, cfg Config) (ShutdownFunc, error) {
 	}
 	serviceName := cfg.ServiceName
 	if strings.TrimSpace(serviceName) == "" {
-		serviceName = "deeix-chat"
+		serviceName = "firecortex"
 	}
 
 	exporter, err := newExporter(ctx, cfg)

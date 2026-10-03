@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
+	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
 )
 
 func TestPublicPricingResponsePreservesCacheWriteMultipliers(t *testing.T) {

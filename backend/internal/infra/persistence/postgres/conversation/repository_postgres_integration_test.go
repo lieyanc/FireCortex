@@ -8,17 +8,17 @@ import (
 	"testing"
 	"time"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	model "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func TestSearchMessageChunksFiltersPostgresBranchBeforeTopK(t *testing.T) {
 	const embeddingSignature = "test-model@1536"
-	dsn := strings.TrimSpace(os.Getenv("DEEIX_TEST_DATABASE_DSN"))
+	dsn := strings.TrimSpace(os.Getenv("FIRECORTEX_TEST_DATABASE_DSN"))
 	if dsn == "" {
-		t.Skip("set DEEIX_TEST_DATABASE_DSN to run PostgreSQL branch-scoped vector integration test")
+		t.Skip("set FIRECORTEX_TEST_DATABASE_DSN to run PostgreSQL branch-scoped vector integration test")
 	}
 
 	db, cleanup := openConversationPostgresIntegrationDB(t, dsn)
@@ -123,7 +123,7 @@ func openConversationPostgresIntegrationDB(t *testing.T, dsn string) (*gorm.DB, 
 		_ = sqlDB.Close()
 		t.Skip("pgvector extension is required for PostgreSQL branch-scoped vector integration test")
 	}
-	schemaName := fmt.Sprintf("deeix_test_conversation_scope_%d", time.Now().UnixNano())
+	schemaName := fmt.Sprintf("firecortex_test_conversation_scope_%d", time.Now().UnixNano())
 	if err := db.Exec(`CREATE SCHEMA ` + schemaName).Error; err != nil {
 		_ = sqlDB.Close()
 		t.Fatalf("create test schema: %v", err)

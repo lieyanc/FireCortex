@@ -3,9 +3,9 @@ export type SessionSnapshot = {
   sessionID: string;
 };
 
-export const SESSION_SNAPSHOT_CHANGED_EVENT = "deeix-chat:session-snapshot-changed";
+export const SESSION_SNAPSHOT_CHANGED_EVENT = "firecortex:session-snapshot-changed";
 
-const SESSION_CHANNEL_NAME = "deeix-chat:session-snapshot";
+const SESSION_CHANNEL_NAME = "firecortex:session-snapshot";
 const SESSION_CHANNEL_MESSAGE_TYPE = "session_snapshot";
 
 type SessionSnapshotWriteOptions = {

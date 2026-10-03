@@ -4,8 +4,8 @@ import * as React from "react";
 
 import type { SkillSummaryDTO } from "@/shared/api/skills.types";
 
-const LEGACY_CHAT_COMPOSER_SELECTION_STORAGE_KEY = "deeix-chat:chat-composer-selection:v1";
-const CHAT_COMPOSER_SELECTION_STORAGE_KEY_PREFIX = "deeix-chat:chat-composer-selection:v2:";
+const LEGACY_CHAT_COMPOSER_SELECTION_STORAGE_KEY = "firecortex:chat-composer-selection:v1";
+const CHAT_COMPOSER_SELECTION_STORAGE_KEY_PREFIX = "firecortex:chat-composer-selection:v2:";
 const COMPOSER_SELECTION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 const COMPOSER_SELECTION_MAX_ENTRIES = 50;
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;

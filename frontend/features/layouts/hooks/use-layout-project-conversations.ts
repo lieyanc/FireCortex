@@ -21,7 +21,7 @@ export type ProjectConversationState = {
 type ProjectConversationStateMap = Record<string, ProjectConversationState>;
 
 const PROJECT_CONVERSATION_PAGE_SIZE = 30;
-const PROJECT_EXPANDED_IDS_STORAGE_KEY = "deeix.sidebar.projects.expanded";
+const PROJECT_EXPANDED_IDS_STORAGE_KEY = "firecortex.sidebar.projects.expanded";
 
 function readStoredProjectIDSet(): Set<string> {
   if (typeof window === "undefined") {

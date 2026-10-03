@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"strings"
 
-	appskill "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/skill"
-	domainskill "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/skill"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	appskill "github.com/lieyanc/FireCortex/backend/internal/application/skill"
+	domainskill "github.com/lieyanc/FireCortex/backend/internal/domain/skill"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 const skillPromptSystemMarker = "<skill_context>"

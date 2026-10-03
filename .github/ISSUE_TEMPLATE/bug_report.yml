@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible defect in DEEIX Chat.
+description: Report a reproducible defect in FireCortex.
 title: "[Bug]: "
 labels:
   - bug
@@ -33,7 +33,7 @@ body:
     attributes:
       label: Version or commit
       description: Provide the release version, Docker image tag, branch, or commit SHA where the issue occurs.
-      placeholder: "v0.1.0, ghcr.io/deeix-ai/deeix-chat:latest, main@abcdef1"
+      placeholder: "v0.1.0, ghcr.io/lieyanc/firecortex:latest, main@abcdef1"
     validations:
       required: true
   - type: textarea

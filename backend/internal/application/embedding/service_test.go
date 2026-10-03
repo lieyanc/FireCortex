@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/extraction"
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	infraembedding "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/embedding"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	"github.com/lieyanc/FireCortex/backend/internal/application/extraction"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	infraembedding "github.com/lieyanc/FireCortex/backend/internal/infra/embedding"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 	"go.uber.org/zap"
 )
 

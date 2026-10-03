@@ -1,17 +1,17 @@
 {
-  "name": "@deeix/chat-monorepo",
+  "name": "@firecortex/chat-monorepo",
   "version": "0.4.3",
   "private": true,
   "packageManager": "pnpm@10.17.0",
   "scripts": {
-    "api:check": "pnpm --filter @deeix/api-contract check",
-    "api:generate": "pnpm --filter @deeix/api-contract generate",
+    "api:check": "pnpm --filter @firecortex/api-contract check",
+    "api:generate": "pnpm --filter @firecortex/api-contract generate",
     "build": "turbo run build",
     "check": "turbo run check",
     "clean": "turbo run clean",
     "dev": "turbo run dev",
-    "dev:api": "turbo run dev --filter=@deeix/api",
-    "dev:web": "turbo run dev --filter=@deeix/web",
+    "dev:api": "turbo run dev --filter=@firecortex/api",
+    "dev:web": "turbo run dev --filter=@firecortex/web",
     "test": "turbo run test",
     "verify": "turbo run check test build"
   },

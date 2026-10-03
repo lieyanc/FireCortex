@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 )
 
 // ConversationRepository 定义 conversation 编排层真正调用的聚合仓储能力。

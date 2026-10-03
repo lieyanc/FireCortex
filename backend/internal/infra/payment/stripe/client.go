@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 	"io"
 	"net/http"
 	"net/url"
@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	platformtracing "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/observability/tracing"
-	paymentport "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/payment"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	platformtracing "github.com/lieyanc/FireCortex/backend/internal/infra/observability/tracing"
+	paymentport "github.com/lieyanc/FireCortex/backend/internal/ports/payment"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 )
 
 const (

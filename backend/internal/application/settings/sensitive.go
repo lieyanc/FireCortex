@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	domainsettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/settings"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/secretbox"
+	domainsettings "github.com/lieyanc/FireCortex/backend/internal/domain/settings"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/secretbox"
 )
 
 func settingKey(namespace string, key string) string {

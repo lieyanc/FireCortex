@@ -2949,7 +2949,7 @@ export interface PublicSharedConversationResponse {
   model: string;
   shareID: string;
   title: string;
-  /** UIComponentsEnabled 为 false 时，分享页不渲染 deeix-ui 组件块。 */
+  /** UIComponentsEnabled 为 false 时，分享页不渲染 firecortex-ui 组件块。 */
   uiComponentsEnabled: boolean;
 }
 
@@ -7907,7 +7907,7 @@ export namespace Auth {
   }
 
   /**
-   * @description 为 Web、App 或桌面公共客户端创建 PKCE 保护的 OAuth 授权事务；外部身份源仅回调当前 DEEIX 实例
+   * @description 为 Web、App 或桌面公共客户端创建 PKCE 保护的 OAuth 授权事务；外部身份源仅回调当前 FireCortex 实例
    * @tags auth
    * @name ProvidersAuthorizeCreate
    * @summary 创建第三方登录授权桥事务

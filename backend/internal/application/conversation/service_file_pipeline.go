@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	appprocessing "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/processing"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/background"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/tokenestimate"
+	appprocessing "github.com/lieyanc/FireCortex/backend/internal/application/processing"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )

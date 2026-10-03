@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 // xAIImageAdapter 实现 xAI 图片生成协议。

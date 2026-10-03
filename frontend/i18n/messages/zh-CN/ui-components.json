@@ -31,7 +31,7 @@
       "propsSummary": "入参摘要",
       "propsSummaryHint": "给模型看的紧凑入参说明，如 '{'symbol, name?'}'",
       "rendererSource": "渲染代码",
-      "rendererSourceHint": "HTML 与脚本在沙箱 iframe 中运行，无网络访问；通过 deeix.onProps 接收数据，deeix.onTheme 接收主题变量",
+      "rendererSourceHint": "HTML 与脚本在沙箱 iframe 中运行，无网络访问；通过 firecortex.onProps 接收数据，firecortex.onTheme 接收主题变量",
       "propsSchema": "入参 Schema",
       "propsSchemaHint": "可选的 JSON Schema，前端据此校验模型输出；留空则不校验",
       "enabled": "启用"

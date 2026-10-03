@@ -3,15 +3,15 @@ package admin
 import (
 	"time"
 
-	appadmin "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/admin"
-	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/userview"
-	domainaudit "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/audit"
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	domainsystemevent "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/systemevent"
-	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
+	appadmin "github.com/lieyanc/FireCortex/backend/internal/application/admin"
+	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
+	"github.com/lieyanc/FireCortex/backend/internal/application/userview"
+	domainaudit "github.com/lieyanc/FireCortex/backend/internal/domain/audit"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainsystemevent "github.com/lieyanc/FireCortex/backend/internal/domain/systemevent"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 )
 
 // ── 请求 DTO ────────────────────────────────────────────────────────────────

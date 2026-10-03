@@ -1,7 +1,7 @@
 services:
   tesseract:
-    container_name: deeix-chat-tesseract
-    image: deeix-chat-tesseract:latest
+    container_name: firecortex-tesseract
+    image: firecortex-tesseract:latest
     build:
       context: ../../
       dockerfile: docker/tesseract/Dockerfile
@@ -16,10 +16,10 @@ services:
       TESSERACT_GRAYSCALE: ${TESSERACT_GRAYSCALE:-true}
     restart: unless-stopped
     networks:
-      - deeix-chat
+      - firecortex
 
 networks:
-  deeix-chat:
+  firecortex:
     # Required. Start a root compose profile first, or create this network manually.
     external: true
-    name: deeix-chat-network
+    name: firecortex-network

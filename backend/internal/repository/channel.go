@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
 )
 
 // CircuitFailureInput 记录熔断失败所需的全量参数（时长均以秒为单位）。

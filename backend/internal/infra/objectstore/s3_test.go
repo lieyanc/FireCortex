@@ -3,9 +3,9 @@ package objectstore
 import "testing"
 
 func TestS3ObjectKeyAppliesPrefix(t *testing.T) {
-	store := &S3Store{prefix: normalizeKey("/deeix-chat/prod/")}
+	store := &S3Store{prefix: normalizeKey("/firecortex/prod/")}
 
-	if got := store.objectKey("/user_1/2026/05/file.txt"); got != "deeix-chat/prod/user_1/2026/05/file.txt" {
+	if got := store.objectKey("/user_1/2026/05/file.txt"); got != "firecortex/prod/user_1/2026/05/file.txt" {
 		t.Fatalf("unexpected object key: %q", got)
 	}
 }

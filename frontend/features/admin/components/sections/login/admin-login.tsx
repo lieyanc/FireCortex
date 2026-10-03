@@ -33,7 +33,7 @@ import {
   AdminSortableList,
   moveSortableItem,
 } from "@/features/admin/components/sections/shared/admin-sortable-list";
-import type { UpsertIdentityProviderRequest } from "@deeix/api-contract";
+import type { UpsertIdentityProviderRequest } from "@firecortex/api-contract";
 import { Table, TableBody, TableCell, TableEmptyRow, TableHead, TableHeader, TableLoadingRow, TableRow } from "@/components/ui/table";
 import { ApiError } from "@/shared/api/http-client";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";

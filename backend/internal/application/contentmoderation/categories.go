@@ -1,6 +1,6 @@
 package contentmoderation
 
-import domaincm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/contentmoderation"
+import domaincm "github.com/lieyanc/FireCortex/backend/internal/domain/contentmoderation"
 
 // Direction / modality aliases for application code.
 const (

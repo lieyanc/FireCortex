@@ -1,4 +1,4 @@
-import type { Envelope } from "@deeix/api-contract";
+import type { Envelope } from "@firecortex/api-contract";
 
 export type ApiEnvelope<T> = Omit<Envelope, "data" | "details" | "errorMsg"> & {
   errorMsg: string;

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 func mustBuildRequestBody(t *testing.T, protocol string, model string, endpoint string, input portllm.GenerateInput, stream bool) map[string]any {
@@ -798,7 +798,7 @@ func TestParseChatCompletionsDSMLToolCalls(t *testing.T) {
 		"choices": [{
 			"message": {
 				"role": "assistant",
-				"content": "<｜DSML｜tool_calls>\n<｜DSML｜invoke name=\"searchGitHub\">\n<｜DSML｜parameter name=\"query\" string=\"true\">默认启用MCP DEEIX</｜DSML｜parameter>\n</｜DSML｜invoke>\n</｜DSML｜tool_calls>"
+				"content": "<｜DSML｜tool_calls>\n<｜DSML｜invoke name=\"searchGitHub\">\n<｜DSML｜parameter name=\"query\" string=\"true\">默认启用MCP FireCortex</｜DSML｜parameter>\n</｜DSML｜invoke>\n</｜DSML｜tool_calls>"
 			}
 		}]
 	}`)
@@ -814,7 +814,7 @@ func TestParseChatCompletionsDSMLToolCalls(t *testing.T) {
 	if call.ToolCallID != "dsml_call_1" || call.ToolType != "function" || call.ToolName != "searchGitHub" || call.Status != "requested" {
 		t.Fatalf("unexpected DSML tool call: %#v", call)
 	}
-	if call.ArgumentsJSON != `{"query":"默认启用MCP DEEIX"}` {
+	if call.ArgumentsJSON != `{"query":"默认启用MCP FireCortex"}` {
 		t.Fatalf("unexpected DSML arguments: %q", call.ArgumentsJSON)
 	}
 }
@@ -825,7 +825,7 @@ func TestParseChatCompletionsDSMLToolCallsDecodesJSONParameters(t *testing.T) {
 		"choices": [{
 			"message": {
 				"role": "assistant",
-				"content": "<｜DSML｜tool_calls>\n<｜DSML｜invoke name=\"searchGitHub\">\n<｜DSML｜parameter name=\"query\" string=\"true\">DEEIX</｜DSML｜parameter>\n<｜DSML｜parameter name=\"limit\" string=\"false\">3</｜DSML｜parameter>\n<｜DSML｜parameter name=\"filters\" string=\"false\">{\"language\":\"Go\"}</｜DSML｜parameter>\n</｜DSML｜invoke>\n</｜DSML｜tool_calls>"
+				"content": "<｜DSML｜tool_calls>\n<｜DSML｜invoke name=\"searchGitHub\">\n<｜DSML｜parameter name=\"query\" string=\"true\">FireCortex</｜DSML｜parameter>\n<｜DSML｜parameter name=\"limit\" string=\"false\">3</｜DSML｜parameter>\n<｜DSML｜parameter name=\"filters\" string=\"false\">{\"language\":\"Go\"}</｜DSML｜parameter>\n</｜DSML｜invoke>\n</｜DSML｜tool_calls>"
 			}
 		}]
 	}`)
@@ -834,7 +834,7 @@ func TestParseChatCompletionsDSMLToolCallsDecodesJSONParameters(t *testing.T) {
 	if len(result.ToolCalls) != 1 {
 		t.Fatalf("expected one parsed DSML tool call, got %#v", result.ToolCalls)
 	}
-	if result.ToolCalls[0].ArgumentsJSON != `{"filters":{"language":"Go"},"limit":3,"query":"DEEIX"}` {
+	if result.ToolCalls[0].ArgumentsJSON != `{"filters":{"language":"Go"},"limit":3,"query":"FireCortex"}` {
 		t.Fatalf("unexpected DSML arguments: %q", result.ToolCalls[0].ArgumentsJSON)
 	}
 }
@@ -845,7 +845,7 @@ func TestParseChatCompletionsDSMLToolCallsDisabledByDefault(t *testing.T) {
 		"choices": [{
 			"message": {
 				"role": "assistant",
-				"content": "<｜DSML｜tool_calls><｜DSML｜invoke name=\"searchGitHub\"><｜DSML｜parameter name=\"query\" string=\"true\">DEEIX</｜DSML｜parameter></｜DSML｜invoke></｜DSML｜tool_calls>"
+				"content": "<｜DSML｜tool_calls><｜DSML｜invoke name=\"searchGitHub\"><｜DSML｜parameter name=\"query\" string=\"true\">FireCortex</｜DSML｜parameter></｜DSML｜invoke></｜DSML｜tool_calls>"
 			}
 		}]
 	}`)
@@ -883,7 +883,7 @@ func TestTextEncodedToolCallsOnlyEnabledForDeepSeekChatCompletions(t *testing.T)
 func TestConsumeChatStreamDSMLToolCallsAreNotEmittedAsText(t *testing.T) {
 	rawStream := strings.Join([]string{
 		`data: {"id":"chatcmpl_1","choices":[{"delta":{"content":"<｜DSML｜tool_calls>\n<｜DSML｜invoke name=\"searchGitHub\">\n"}}]}`,
-		`data: {"id":"chatcmpl_1","choices":[{"delta":{"content":"<｜DSML｜parameter name=\"query\" string=\"true\">DEEIX MCP</｜DSML｜parameter>\n</｜DSML｜invoke>\n</｜DSML｜tool_calls>"}}]}`,
+		`data: {"id":"chatcmpl_1","choices":[{"delta":{"content":"<｜DSML｜parameter name=\"query\" string=\"true\">FireCortex MCP</｜DSML｜parameter>\n</｜DSML｜invoke>\n</｜DSML｜tool_calls>"}}]}`,
 		`data: [DONE]`,
 		``,
 	}, "\n\n")
@@ -902,7 +902,7 @@ func TestConsumeChatStreamDSMLToolCallsAreNotEmittedAsText(t *testing.T) {
 	if len(deltas) != 0 || result.Text != "" {
 		t.Fatalf("expected DSML stream to stay out of visible text, deltas=%#v text=%q", deltas, result.Text)
 	}
-	if len(result.ToolCalls) != 1 || result.ToolCalls[0].ToolName != "searchGitHub" || result.ToolCalls[0].ArgumentsJSON != `{"query":"DEEIX MCP"}` {
+	if len(result.ToolCalls) != 1 || result.ToolCalls[0].ToolName != "searchGitHub" || result.ToolCalls[0].ArgumentsJSON != `{"query":"FireCortex MCP"}` {
 		t.Fatalf("unexpected DSML stream tool calls: %#v", result.ToolCalls)
 	}
 }

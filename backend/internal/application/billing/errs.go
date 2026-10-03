@@ -1,6 +1,6 @@
 package billing
 
-import "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
+import "github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 
 // 用量计费哨兵随消息发送路径一起以 apperr 声明错误码与对外文案；
 // 未携带对外契约的内部哨兵不得直接作为 HTTP 错误响应输出。

@@ -1,7 +1,7 @@
 package settings
 
 import (
-	domainsettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/settings"
+	domainsettings "github.com/lieyanc/FireCortex/backend/internal/domain/settings"
 )
 
 const (

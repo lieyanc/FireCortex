@@ -5,13 +5,13 @@ import (
 	"errors"
 	"testing"
 
-	appembedding "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/embedding"
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	memorycache "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/cache/memory"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	infraembedding "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/embedding"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	appembedding "github.com/lieyanc/FireCortex/backend/internal/application/embedding"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	memorycache "github.com/lieyanc/FireCortex/backend/internal/infra/cache/memory"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	infraembedding "github.com/lieyanc/FireCortex/backend/internal/infra/embedding"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 )
 
 type targetedEmbeddingRepositoryStub struct {

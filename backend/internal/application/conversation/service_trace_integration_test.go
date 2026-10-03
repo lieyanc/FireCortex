@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	persistencemodels "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
-	persistenceconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/postgres/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	persistencemodels "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	persistenceconversation "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/postgres/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

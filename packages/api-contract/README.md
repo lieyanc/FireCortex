@@ -1,4 +1,4 @@
-# @deeix/api-contract
+# @firecortex/api-contract
 
 TypeScript data contracts generated from the Go backend's Swagger 2.0 document.
 
@@ -24,7 +24,7 @@ DTO field conventions:
 Consume the package with type-only imports:
 
 ```ts
-import type { Admin, UserDataResponse } from "@deeix/api-contract";
+import type { Admin, UserDataResponse } from "@firecortex/api-contract";
 
 type CreateUserBody = Admin.UsersCreate.RequestBody;
 type CreateUserResult = Admin.UsersCreate.ResponseBody;

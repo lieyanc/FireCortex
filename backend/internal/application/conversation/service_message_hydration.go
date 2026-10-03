@@ -3,7 +3,7 @@ package conversation
 import (
 	"context"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 )
 
 func (s *Service) hydrateMessageFeedback(ctx context.Context, userID uint, items []model.Message) error {

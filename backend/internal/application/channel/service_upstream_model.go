@@ -6,10 +6,10 @@ import (
 	"sort"
 	"strings"
 
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/pagination"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 )
 
 // ---------------------------------------------------------------------------

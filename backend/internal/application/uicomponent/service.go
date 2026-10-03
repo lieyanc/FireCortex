@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"strings"
 
-	appaudit "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/audit"
-	domainuicomponent "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/uicomponent"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/pagination"
+	appaudit "github.com/lieyanc/FireCortex/backend/internal/application/audit"
+	domainuicomponent "github.com/lieyanc/FireCortex/backend/internal/domain/uicomponent"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 )
 
 const (

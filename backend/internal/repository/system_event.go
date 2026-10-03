@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	domainsystemevent "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/systemevent"
+	domainsystemevent "github.com/lieyanc/FireCortex/backend/internal/domain/systemevent"
 )
 
 // SystemEventListFilter 描述系统事件列表查询条件。

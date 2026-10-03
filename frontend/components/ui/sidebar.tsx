@@ -29,7 +29,7 @@ import {
   sidebarRevealTransitionReducer,
 } from "./sidebar-hover-transition"
 
-const SIDEBAR_STORAGE_KEY = "deeix.sidebar.open"
+const SIDEBAR_STORAGE_KEY = "firecortex.sidebar.open"
 
 type SidebarState = "expanded" | "collapsed"
 

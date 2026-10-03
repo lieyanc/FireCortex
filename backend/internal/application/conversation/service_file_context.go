@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"strings"
 
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	domainknowledgebase "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/knowledgebase"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/tokenestimate"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainknowledgebase "github.com/lieyanc/FireCortex/backend/internal/domain/knowledgebase"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
 )
 
 const (

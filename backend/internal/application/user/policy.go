@@ -16,7 +16,7 @@ const (
 )
 
 var reservedUsernames = map[string]struct{}{
-	"admin": {}, "api": {}, "auth": {}, "billing": {}, "chat": {}, "deeix_chat": {}, "deeix-chat": {},
+	"admin": {}, "api": {}, "auth": {}, "billing": {}, "chat": {}, "fire_cortex": {}, "firecortex": {},
 	"files": {}, "help": {}, "me": {}, "root": {}, "settings": {}, "support": {},
 	"system": {}, "user": {}, "users": {},
 }

@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 // openRouterImageMaxInputReferences 是 OpenRouter Image API 文档给出的 input_references 上限。

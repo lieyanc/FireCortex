@@ -7,12 +7,12 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/channel"
-	appusersettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/usersettings"
-	domainusersettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/usersettings"
-	memorycache "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/cache/memory"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/application/channel"
+	appusersettings "github.com/lieyanc/FireCortex/backend/internal/application/usersettings"
+	domainusersettings "github.com/lieyanc/FireCortex/backend/internal/domain/usersettings"
+	memorycache "github.com/lieyanc/FireCortex/backend/internal/infra/cache/memory"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 type mutableUserSettingsRepository struct {

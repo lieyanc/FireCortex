@@ -6,7 +6,7 @@ export type KnowledgeBaseInvalidatedDetail = {
   nonce: string;
 };
 
-const storageKey = "deeix-chat:knowledge-base-invalidated:payload";
+const storageKey = "firecortex:knowledge-base-invalidated:payload";
 
 function isInvalidationDetail(value: unknown): value is KnowledgeBaseInvalidatedDetail {
   if (!value || typeof value !== "object") {

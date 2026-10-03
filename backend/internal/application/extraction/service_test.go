@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	appstorage "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/objectstorage"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	extractport "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/extract"
+	appstorage "github.com/lieyanc/FireCortex/backend/internal/application/objectstorage"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	extractport "github.com/lieyanc/FireCortex/backend/internal/ports/extract"
 )
 
 func TestStoredExtractionRequiresObjectStoreProvider(t *testing.T) {

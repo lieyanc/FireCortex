@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	appusersettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/usersettings"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/middleware"
+	appusersettings "github.com/lieyanc/FireCortex/backend/internal/application/usersettings"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
+	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 )
 

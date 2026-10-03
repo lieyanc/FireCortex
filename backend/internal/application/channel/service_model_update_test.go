@@ -6,11 +6,11 @@ import (
 	"reflect"
 	"testing"
 
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/cache/memory"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/cache/memory"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 func TestUpdateModelResetsIconToAutoWhenExplicitlyEmpty(t *testing.T) {
@@ -115,7 +115,7 @@ func TestUpdateModelClearsAutomaticContextWindowWhenIdentityChanges(t *testing.T
 			PlatformModelName: "claude-sonnet-4.5",
 			Vendor:            "anthropic",
 			KindsJSON:         `["chat"]`,
-			CapabilitiesJSON:  `{"contextWindow":200000,"_deeixContextWindowMode":"auto","maxOutputTokens":8192}`,
+			CapabilitiesJSON:  `{"contextWindow":200000,"_firecortexContextWindowMode":"auto","maxOutputTokens":8192}`,
 			AccessScope:       "public",
 			Status:            "active",
 		},

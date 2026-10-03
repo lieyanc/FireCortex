@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 )
 
 func TestSanitizePublicTracePayloadRemovesKnowledgeEvidence(t *testing.T) {

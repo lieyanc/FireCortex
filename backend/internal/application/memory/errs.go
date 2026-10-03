@@ -1,7 +1,7 @@
 package memory
 
 import (
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 var (

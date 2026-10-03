@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 )
 
 // settingValidator 校验去除首尾空白后的配置值；key 是 namespace:key，用于错误文案。

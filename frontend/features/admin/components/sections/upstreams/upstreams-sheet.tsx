@@ -92,18 +92,18 @@ const PROTOCOL_DEFAULT_KINDS = [
 const NO_PROTOCOL_DEFAULT = "__system_default__";
 const CONVERSATION_ID_HEADER = [
   "X-Conversation-Id",
-  `\${DEEIX_CONVERSATION_ID}`,
+  `\${FIRECORTEX_CONVERSATION_ID}`,
 ] as const;
-const SESSION_ID_HEADER = ["X-Session-Id", `\${DEEIX_SESSION_ID}`] as const;
-const REQUEST_ID_HEADER = ["X-Request-Id", `\${DEEIX_REQUEST_ID}`] as const;
+const SESSION_ID_HEADER = ["X-Session-Id", `\${FIRECORTEX_SESSION_ID}`] as const;
+const REQUEST_ID_HEADER = ["X-Request-Id", `\${FIRECORTEX_REQUEST_ID}`] as const;
 const OPENAI_CLIENT_REQUEST_ID_HEADER = [
   "X-Client-Request-Id",
-  `\${DEEIX_UPSTREAM_REQUEST_ID}`,
+  `\${FIRECORTEX_UPSTREAM_REQUEST_ID}`,
 ] as const;
 const CODEX_COMPATIBLE_AFFINITY_HEADERS = [
-  ["session-id", `\${DEEIX_SESSION_ID}`],
-  ["thread-id", `\${DEEIX_CONVERSATION_ID}`],
-  ["x-client-request-id", `\${DEEIX_CONVERSATION_ID}`],
+  ["session-id", `\${FIRECORTEX_SESSION_ID}`],
+  ["thread-id", `\${FIRECORTEX_CONVERSATION_ID}`],
+  ["x-client-request-id", `\${FIRECORTEX_CONVERSATION_ID}`],
 ] as const;
 
 const PROTOCOL_OPTIONS_BY_KIND: Record<(typeof PROTOCOL_DEFAULT_KINDS)[number], string[]> = {

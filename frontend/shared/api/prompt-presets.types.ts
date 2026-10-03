@@ -5,7 +5,7 @@ import type {
   PromptPresetPageResponseDoc,
   PromptPresetResponse,
   WritePromptPresetRequest as ContractWritePromptPresetRequest,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 
 export type PromptPresetScope = "builtin" | "user";
 

@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/background"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
 	"go.uber.org/zap"
 )
 

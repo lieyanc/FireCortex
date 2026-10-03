@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	domainusersettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/usersettings"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainusersettings "github.com/lieyanc/FireCortex/backend/internal/domain/usersettings"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 // allowedKeys 是用户可配置的 key 集合及其默认值。

@@ -5,11 +5,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/channel"
-	appuicomponent "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/uicomponent"
-	domainuicomponent "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/uicomponent"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/application/channel"
+	appuicomponent "github.com/lieyanc/FireCortex/backend/internal/application/uicomponent"
+	domainuicomponent "github.com/lieyanc/FireCortex/backend/internal/domain/uicomponent"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 const (

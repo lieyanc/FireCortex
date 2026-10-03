@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	domaincm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/contentmoderation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/dberror"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domaincm "github.com/lieyanc/FireCortex/backend/internal/domain/contentmoderation"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/dberror"
+	model "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

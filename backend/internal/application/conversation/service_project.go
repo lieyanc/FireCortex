@@ -7,12 +7,12 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/channel"
-	appskill "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/skill"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	domainknowledgebase "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/knowledgebase"
-	domainmcp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/mcp"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/application/channel"
+	appskill "github.com/lieyanc/FireCortex/backend/internal/application/skill"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainknowledgebase "github.com/lieyanc/FireCortex/backend/internal/domain/knowledgebase"
+	domainmcp "github.com/lieyanc/FireCortex/backend/internal/domain/mcp"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/google/uuid"
 )
 

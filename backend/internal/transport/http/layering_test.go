@@ -21,8 +21,8 @@ func TestBackendLayeringImports(t *testing.T) {
 		{
 			dir: "transport/http",
 			forbidden: []string{
-				`"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence`,
-				`"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"`,
+				`"github.com/lieyanc/FireCortex/backend/internal/infra/persistence`,
+				`"github.com/lieyanc/FireCortex/backend/internal/repository"`,
 				`"gorm.io/gorm"`,
 				`"github.com/redis/go-redis`,
 			},
@@ -30,7 +30,7 @@ func TestBackendLayeringImports(t *testing.T) {
 		{
 			dir: "application",
 			forbidden: []string{
-				`"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence`,
+				`"github.com/lieyanc/FireCortex/backend/internal/infra/persistence`,
 				`"github.com/gin-gonic/gin"`,
 				`"gorm.io/gorm"`,
 				`"github.com/redis/go-redis`,
@@ -39,9 +39,9 @@ func TestBackendLayeringImports(t *testing.T) {
 		{
 			dir: "repository",
 			forbidden: []string{
-				`"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application`,
-				`"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport`,
-				`"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence`,
+				`"github.com/lieyanc/FireCortex/backend/internal/application`,
+				`"github.com/lieyanc/FireCortex/backend/internal/transport`,
+				`"github.com/lieyanc/FireCortex/backend/internal/infra/persistence`,
 				`"github.com/gin-gonic/gin"`,
 				`"gorm.io/gorm"`,
 				`"github.com/redis/go-redis`,
@@ -50,9 +50,9 @@ func TestBackendLayeringImports(t *testing.T) {
 		{
 			dir: "domain",
 			forbidden: []string{
-				`"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application`,
-				`"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport`,
-				`"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra`,
+				`"github.com/lieyanc/FireCortex/backend/internal/application`,
+				`"github.com/lieyanc/FireCortex/backend/internal/transport`,
+				`"github.com/lieyanc/FireCortex/backend/internal/infra`,
 				`"github.com/gin-gonic/gin"`,
 				`"gorm.io/gorm"`,
 				`"github.com/redis/go-redis`,
@@ -61,17 +61,17 @@ func TestBackendLayeringImports(t *testing.T) {
 		{
 			dir: "infra",
 			forbidden: []string{
-				`"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application`,
-				`"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport`,
+				`"github.com/lieyanc/FireCortex/backend/internal/application`,
+				`"github.com/lieyanc/FireCortex/backend/internal/transport`,
 			},
 		},
 		{
 			dir: "ports",
 			forbidden: []string{
-				`"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application`,
-				`"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport`,
-				`"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra`,
-				`"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository`,
+				`"github.com/lieyanc/FireCortex/backend/internal/application`,
+				`"github.com/lieyanc/FireCortex/backend/internal/transport`,
+				`"github.com/lieyanc/FireCortex/backend/internal/infra`,
+				`"github.com/lieyanc/FireCortex/backend/internal/repository`,
 				`"github.com/gin-gonic/gin"`,
 				`"gorm.io/gorm"`,
 				`"github.com/redis/go-redis`,
@@ -91,7 +91,7 @@ func TestBackendLayeringImports(t *testing.T) {
 // 新增依赖直接失败；某个包还清依赖后必须同步删除对应白名单条目，确保依赖只减不增。
 // 还债方式见分层规范「出站集成端口」：数据契约放 internal/ports，接口由消费方定义，infra 按端口签名实现。
 func TestApplicationInfraAdapterRatchet(t *testing.T) {
-	const modulePrefix = "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/"
+	const modulePrefix = "github.com/lieyanc/FireCortex/backend/internal/"
 	// 规范允许的技术型组件：无业务决策、无持久化语义。
 	allowedTechnicalPrefixes := []string{
 		"infra/config",

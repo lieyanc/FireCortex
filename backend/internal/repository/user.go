@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
-	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 )
 
 // UpdateUserFieldsInput 定义用户基础资料更新字段。

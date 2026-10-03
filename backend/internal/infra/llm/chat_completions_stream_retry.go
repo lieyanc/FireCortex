@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 // generateChatCompletionsStreamWithAutoUsageFallback 只在首个可观察事件之前兼容不支持

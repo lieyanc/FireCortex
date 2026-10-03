@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	infraembedding "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/embedding"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	infraembedding "github.com/lieyanc/FireCortex/backend/internal/infra/embedding"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 )
 
 func emptyTestConfig() config.Config {

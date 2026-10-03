@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	domainannouncement "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/announcement"
+	domainannouncement "github.com/lieyanc/FireCortex/backend/internal/domain/announcement"
 )
 
 // AnnouncementRepository 定义公告流程依赖的持久化能力。

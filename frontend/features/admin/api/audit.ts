@@ -3,7 +3,7 @@ import type {
   CleanupConversationRunsResponse,
   CleanupLogsRequest,
   CleanupLogsResponse,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 import { authedRequest } from "@/shared/api/authed-client";
 import type {
   AdminAuditLogDTO,

@@ -12,14 +12,14 @@ import (
 	"testing"
 	"time"
 
-	appstorage "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/objectstorage"
-	apprag "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/rag"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	domainknowledgebase "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/knowledgebase"
-	domainmemory "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/memory"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/objectstore"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	appstorage "github.com/lieyanc/FireCortex/backend/internal/application/objectstorage"
+	apprag "github.com/lieyanc/FireCortex/backend/internal/application/rag"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainknowledgebase "github.com/lieyanc/FireCortex/backend/internal/domain/knowledgebase"
+	domainmemory "github.com/lieyanc/FireCortex/backend/internal/domain/memory"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/objectstore"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 func TestFileContextPlanRAGObjectsPreservesFileRevision(t *testing.T) {

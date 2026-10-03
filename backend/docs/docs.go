@@ -9039,7 +9039,7 @@ const docTemplate = `{
         },
         "/auth/providers/{slug}/authorize": {
             "post": {
-                "description": "为 Web、App 或桌面公共客户端创建 PKCE 保护的 OAuth 授权事务；外部身份源仅回调当前 DEEIX 实例",
+                "description": "为 Web、App 或桌面公共客户端创建 PKCE 保护的 OAuth 授权事务；外部身份源仅回调当前 FireCortex 实例",
                 "consumes": [
                     "application/json"
                 ],
@@ -24710,7 +24710,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "uiComponentsEnabled": {
-                    "description": "UIComponentsEnabled 为 false 时，分享页不渲染 deeix-ui 组件块。",
+                    "description": "UIComponentsEnabled 为 false 时，分享页不渲染 firecortex-ui 组件块。",
                     "type": "boolean"
                 }
             }
@@ -29763,8 +29763,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "DEEIX Chat API",
-	Description:      "DEEIX Chat 后端 API 文档",
+	Title:            "FireCortex API",
+	Description:      "FireCortex 后端 API 文档",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

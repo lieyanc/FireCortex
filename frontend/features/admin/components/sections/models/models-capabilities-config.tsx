@@ -1362,9 +1362,9 @@ export function ModelCapabilitiesQuickConfig({
     // Automatic context windows belong to the source model identity. A preset
     // may be applied to a different model, so let the destination resolve its
     // own catalog value instead of copying a cached inference.
-    if (payload._deeixContextWindowMode === "auto") {
+    if (payload._firecortexContextWindowMode === "auto") {
       delete payload.contextWindow;
-      delete payload._deeixContextWindowMode;
+      delete payload._firecortexContextWindowMode;
     }
     const sanitizedValue = Object.keys(payload).length > 0 ? JSON.stringify(payload, null, 2) : "";
     setParameterRows(parseParameterRows(payload.defaultOptions, payload.optionControls, payload.lockedOptionPaths));

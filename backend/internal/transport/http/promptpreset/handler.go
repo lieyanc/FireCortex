@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strconv"
 
-	apppromptpreset "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/promptpreset"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/pagination"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/middleware"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/queryparam"
+	apppromptpreset "github.com/lieyanc/FireCortex/backend/internal/application/promptpreset"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
+	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
+	"github.com/lieyanc/FireCortex/backend/internal/transport/http/queryparam"
 	"github.com/gin-gonic/gin"
 )
 

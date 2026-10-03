@@ -7,11 +7,11 @@ import (
 	"os"
 	"strings"
 
-	appcm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/contentmoderation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/extraction"
-	appupload "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/upload"
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	appcm "github.com/lieyanc/FireCortex/backend/internal/application/contentmoderation"
+	"github.com/lieyanc/FireCortex/backend/internal/application/extraction"
+	appupload "github.com/lieyanc/FireCortex/backend/internal/application/upload"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 // TemporaryChatMaxAttachments 限制单次临时请求携带的历史附件总数。

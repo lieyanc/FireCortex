@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	domainpromptpreset "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/promptpreset"
+	domainpromptpreset "github.com/lieyanc/FireCortex/backend/internal/domain/promptpreset"
 )
 
 // PromptPresetRepository 定义预制提示词持久化能力。

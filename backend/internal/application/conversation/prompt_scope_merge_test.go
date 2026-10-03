@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 func TestMergeConsecutiveSameRoleMessages(t *testing.T) {

@@ -8,7 +8,7 @@ import type {
   ServerToolOrderResponse,
   ToolListResponse,
   UpdateToolRequest,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 
 export type AdminMCPServerDTO = ServerResponse;
 export type AdminMCPServerPayload = CreateServerRequest;

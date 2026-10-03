@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 )
 
 const DefaultCacheLimit = 64

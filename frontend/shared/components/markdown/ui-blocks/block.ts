@@ -1,7 +1,7 @@
 import type { Issue, Schema, ValidationResult } from "./schema";
 import { s, validate } from "./schema";
 
-export const UI_BLOCK_FENCE_LANGUAGE = "deeix-ui";
+export const UI_BLOCK_FENCE_LANGUAGE = "firecortex-ui";
 
 export type UIBlockEnvelope = {
   component: string;

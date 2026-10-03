@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"testing"
 
-	paymentport "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/payment"
+	paymentport "github.com/lieyanc/FireCortex/backend/internal/ports/payment"
 )
 
 func TestCreateCheckoutBuildsClassicEPayRequest(t *testing.T) {

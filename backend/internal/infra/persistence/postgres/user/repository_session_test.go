@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
+	model "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
 )
 
 func TestSessionAcceptsPresentedRefreshHash(t *testing.T) {

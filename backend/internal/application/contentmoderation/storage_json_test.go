@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	domaincm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/contentmoderation"
+	domaincm "github.com/lieyanc/FireCortex/backend/internal/domain/contentmoderation"
 )
 
 func TestStorageJSONPreservesExistingFieldNames(t *testing.T) {

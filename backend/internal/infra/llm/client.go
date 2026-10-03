@@ -14,12 +14,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 
-	platformtracing "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/observability/tracing"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/outboundhttp"
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	platformtracing "github.com/lieyanc/FireCortex/backend/internal/infra/observability/tracing"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/outboundhttp"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 	"github.com/google/uuid"
 )
 
@@ -33,7 +33,7 @@ const (
 	maxStreamToolCallIndex = 1024
 )
 
-const upstreamRequestIDHeaderTemplate = "${DEEIX_UPSTREAM_REQUEST_ID}"
+const upstreamRequestIDHeaderTemplate = "${FIRECORTEX_UPSTREAM_REQUEST_ID}"
 
 // Client 负责跨厂商共享的 HTTP client、adapter 路由和上游调试能力。
 type Client struct {
@@ -786,9 +786,9 @@ func expandAdditionalHeaderValue(value string, input *portllm.GenerateInput, ups
 		template string
 		value    string
 	}{
-		{template: "${DEEIX_CONVERSATION_ID}"},
-		{template: "${DEEIX_SESSION_ID}"},
-		{template: "${DEEIX_REQUEST_ID}"},
+		{template: "${FIRECORTEX_CONVERSATION_ID}"},
+		{template: "${FIRECORTEX_SESSION_ID}"},
+		{template: "${FIRECORTEX_REQUEST_ID}"},
 		{template: upstreamRequestIDHeaderTemplate},
 	}
 	if input != nil {

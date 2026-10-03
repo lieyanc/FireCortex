@@ -10,7 +10,7 @@ import type {
   PermissionGroupModelRuleResponse,
   PermissionGroupResponse,
   UpdatePermissionGroupRequest as ContractUpdatePermissionGroupRequest,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 import { authedRequest } from "@/shared/api/authed-client";
 import { pathParam } from "@/shared/api/http-client";
 

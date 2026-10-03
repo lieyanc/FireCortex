@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	portembedding "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/embedding"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/embeddingutil"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/tokenestimate"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	portembedding "github.com/lieyanc/FireCortex/backend/internal/ports/embedding"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/embeddingutil"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
 )
 
 // Service 封装 RAG 检索能力。

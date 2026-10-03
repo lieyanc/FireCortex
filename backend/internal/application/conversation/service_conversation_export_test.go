@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/pagination"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 )
 
 func TestExportDefaultMessagePublicIDsUsesLatestVisibleBranch(t *testing.T) {

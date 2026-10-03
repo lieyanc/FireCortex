@@ -4,8 +4,8 @@ import * as React from "react";
 
 // Device-level preference: where sonner places toasts. Values match sonner's
 // `position` prop so no mapping is needed at the toaster.
-export const TOAST_POSITION_STORAGE_KEY = "deeix-chat:toast-position";
-export const TOAST_POSITION_UPDATED_EVENT = "deeix-chat:toast-position-updated";
+export const TOAST_POSITION_STORAGE_KEY = "firecortex:toast-position";
+export const TOAST_POSITION_UPDATED_EVENT = "firecortex:toast-position-updated";
 
 export const TOAST_POSITIONS = ["top-left", "top-center", "top-right", "bottom-left", "bottom-center", "bottom-right"] as const;
 export type ToastPosition = (typeof TOAST_POSITIONS)[number];

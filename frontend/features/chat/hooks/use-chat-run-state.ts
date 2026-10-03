@@ -10,7 +10,7 @@ import { useOptionalAuthSession } from "@/shared/auth/auth-session-context";
 const RUN_STREAM_RECONNECT_MIN_MS = 1_000;
 const RUN_STREAM_RECONNECT_MAX_MS = 30_000;
 const RUN_STREAM_RECONNECT_JITTER_RATIO = 0.2;
-const RUN_STATE_CHANNEL = "deeix-conversation-runs";
+const RUN_STATE_CHANNEL = "firecortex-conversation-runs";
 
 export function useChatRunState() {
   const authSession = useOptionalAuthSession();

@@ -8,7 +8,7 @@ import packageMeta from "@/package.json";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { IdentityProviderIcon } from "@/shared/components/identity-provider-icon";
-import { DeeixLogo } from "@/shared/components/app-logo";
+import { FireCortexLogo } from "@/shared/components/app-logo";
 import {
   SettingsPage,
   SettingsSection,
@@ -95,26 +95,26 @@ export function AboutSettingsContent({
   const links: AboutLinkItem[] = [
     {
       label: labels.website,
-      value: "deeix.com",
-      href: "https://deeix.com",
+      value: "github.com/lieyanc/FireCortex",
+      href: "https://github.com/lieyanc/FireCortex",
       icon: Globe,
     },
     {
       label: labels.official,
-      value: "DEEIX",
-      href: "https://github.com/DEEIX-AI",
+      value: "FireCortex",
+      href: "https://github.com/lieyanc",
       providerIcon: { name: "GitHub", slug: "github" },
     },
     {
       label: labels.social,
-      value: "@DEEIX_AI",
-      href: "https://x.com/DEEIX_AI",
+      value: "@FIRECORTEX_AI",
+      href: "https://x.com/FIRECORTEX_AI",
       providerIcon: { name: "X", slug: "x" },
     },
     {
       label: labels.repository,
-      value: "DEEIX-Chat",
-      href: "https://github.com/DEEIX-AI/DEEIX-Chat",
+      value: "FireCortex",
+      href: "https://github.com/lieyanc/FireCortex",
       providerIcon: { name: "GitHub", slug: "github" },
     },
     {
@@ -137,7 +137,7 @@ export function AboutSettingsContent({
         <div className="space-y-5 px-0.5">
           <div className="flex min-w-0 flex-col gap-2.5">
             <div className="flex h-14 w-40 shrink-0 items-center sm:w-48">
-              <DeeixLogo width={180} height={56} className="h-auto w-36 sm:w-44" />
+              <FireCortexLogo width={180} height={56} className="h-auto w-36 sm:w-44" />
             </div>
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <span className="text-xs text-muted-foreground">{consoleLabel}</span>

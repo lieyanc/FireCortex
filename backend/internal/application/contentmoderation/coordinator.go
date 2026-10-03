@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	domaincm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/contentmoderation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/background"
+	domaincm "github.com/lieyanc/FireCortex/backend/internal/domain/contentmoderation"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
 	"go.uber.org/zap"
 )
 

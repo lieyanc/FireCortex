@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	"go.uber.org/zap"
 )
 

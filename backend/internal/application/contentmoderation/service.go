@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	domaincm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/contentmoderation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/secretbox"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domaincm "github.com/lieyanc/FireCortex/backend/internal/domain/contentmoderation"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/secretbox"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )

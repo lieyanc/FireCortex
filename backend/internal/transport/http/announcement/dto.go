@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	appannouncement "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/announcement"
-	domainannouncement "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/announcement"
+	appannouncement "github.com/lieyanc/FireCortex/backend/internal/application/announcement"
+	domainannouncement "github.com/lieyanc/FireCortex/backend/internal/domain/announcement"
 )
 
 // ErrorDoc 用于 Swagger 标注通用错误响应。

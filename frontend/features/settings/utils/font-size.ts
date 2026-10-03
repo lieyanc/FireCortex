@@ -2,8 +2,8 @@
 
 import * as React from "react";
 
-export const FONT_SIZE_STORAGE_KEY = "deeix-chat:font-size";
-export const FONT_SIZE_UPDATED_EVENT = "deeix-chat:font-size-updated";
+export const FONT_SIZE_STORAGE_KEY = "firecortex:font-size";
+export const FONT_SIZE_UPDATED_EVENT = "firecortex:font-size-updated";
 
 export type FontSizeOption = "small" | "standard" | "medium" | "large";
 

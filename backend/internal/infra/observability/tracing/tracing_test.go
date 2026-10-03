@@ -23,11 +23,11 @@ func TestInitRequiresEndpointWhenExplicitlyEnabled(t *testing.T) {
 }
 
 func TestParseHeaders(t *testing.T) {
-	headers := parseHeaders("authorization=Bearer token, x-tenant = deeix-chat, invalid")
+	headers := parseHeaders("authorization=Bearer token, x-tenant = firecortex, invalid")
 	if headers["authorization"] != "Bearer token" {
 		t.Fatalf("unexpected authorization header: %q", headers["authorization"])
 	}
-	if headers["x-tenant"] != "deeix-chat" {
+	if headers["x-tenant"] != "firecortex" {
 		t.Fatalf("unexpected tenant header: %q", headers["x-tenant"])
 	}
 	if _, ok := headers["invalid"]; ok {

@@ -67,7 +67,7 @@ type RedemptionBulkAction = "activate" | "deactivate" | "delete";
 
 function redemptionCodesExportFilename(): string {
   const date = new Date().toISOString().slice(0, 10);
-  return `deeix-chat-redemption-codes-${date}.json`;
+  return `firecortex-redemption-codes-${date}.json`;
 }
 
 function createRedemptionFormState(mode: AdminBillingMode, planID = ""): RedemptionFormState {

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
-	appcm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/contentmoderation"
-	domaincm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/contentmoderation"
+	appcm "github.com/lieyanc/FireCortex/backend/internal/application/contentmoderation"
+	domaincm "github.com/lieyanc/FireCortex/backend/internal/domain/contentmoderation"
 )
 
 // ContentModerationPolicyRequest configures the categories enabled for each surface.

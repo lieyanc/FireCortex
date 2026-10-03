@@ -6,14 +6,14 @@ import (
 	"testing"
 	"time"
 
-	auditapp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/audit"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
-	userapp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/user"
-	domainaudit "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/audit"
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
-	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	auditapp "github.com/lieyanc/FireCortex/backend/internal/application/audit"
+	"github.com/lieyanc/FireCortex/backend/internal/application/billing"
+	userapp "github.com/lieyanc/FireCortex/backend/internal/application/user"
+	domainaudit "github.com/lieyanc/FireCortex/backend/internal/domain/audit"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 func TestBuildUserViewsIncludesBillingBalanceOutsideSelfMode(t *testing.T) {

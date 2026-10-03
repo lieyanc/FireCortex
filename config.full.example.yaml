@@ -1,5 +1,5 @@
 app:
-  name: DEEIX Chat
+  name: FireCortex
   # Required. Use prod and replace security values before public deployment.
   env: dev
 
@@ -28,7 +28,7 @@ security:
   # Required. Replace both values with strong random secrets before deployment.
   # Required. data_encryption_key protects upstream API keys, SSO secrets, MCP tokens, and TOTP secrets.
   jwt_secret: "change-me-dev-jwt-secret"
-  # Required only when an MCP Server uses ${DEEIX_SIGNED_USER_CONTEXT}.
+  # Required only when an MCP Server uses ${FIRECORTEX_SIGNED_USER_CONTEXT}.
   mcp_user_context_secret: ""
   data_encryption_key: "change-me-dev-data-encryption-key-32-bytes-min"
   # Optional. Enable in production to block outbound requests to private or metadata networks.
@@ -42,9 +42,9 @@ security:
 
 branding:
   # Optional. Frontend product branding; changes take effect after restarting the app.
-  title: DEEIX Chat
-  short_name: DEEIX
-  description: DEEIX Chat is a multi-model AI conversation system.
+  title: FireCortex
+  short_name: FireCortex
+  description: FireCortex is a multi-model AI conversation system.
   logo_url: ""
   favicon_url: /favicon.ico
   pwa_icon_192_url: /pwa/icon-192.png
@@ -58,7 +58,7 @@ database:
   postgres:
     # Required when database.driver is postgres.
     # Optional. docker-compose.full.yml overrides this value with the bundled PostgreSQL service.
-    dsn: "postgres://deeix_chat:deeix_chat_2026@postgres:5432/deeix_chat?sslmode=disable&TimeZone=Asia/Shanghai"
+    dsn: "postgres://firecortex:firecortex_2026@postgres:5432/firecortex?sslmode=disable&TimeZone=Asia/Shanghai"
     max_open_conns: 30
     max_idle_conns: 10
     conn_max_lifetime_minutes: 60
@@ -69,7 +69,7 @@ database:
     addr: "redis:6379"
     # Optional. Set when Redis ACL requires a username.
     username: ""
-    password: "deeix_chat_2026"
+    password: "firecortex_2026"
     db: 0
     # Optional. Enable TLS for providers such as Upstash Redis.
     tls_enabled: false

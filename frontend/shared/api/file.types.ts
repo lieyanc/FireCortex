@@ -6,7 +6,7 @@ import type {
   FileProcessingStatusResponse,
   FileUploadResponse,
   StorageQuotaResponse,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 
 export type FileObjectDTO = FileObjectResponse;
 

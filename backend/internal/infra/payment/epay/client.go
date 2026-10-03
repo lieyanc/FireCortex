@@ -11,8 +11,8 @@ import (
 	"sort"
 	"strings"
 
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
-	paymentport "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/payment"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
+	paymentport "github.com/lieyanc/FireCortex/backend/internal/ports/payment"
 )
 
 // Client 构建易支付 submit.php 签名跳转请求。

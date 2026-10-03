@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
-	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/requestmeta"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/requestmeta"
 	"go.uber.org/zap"
 )
 
@@ -25,16 +25,16 @@ const (
 	// ProviderAuthBridgeProtocolVersion identifies the OAuth handoff contract version.
 	ProviderAuthBridgeProtocolVersion = 1
 	// ProviderAuthWebClientID identifies the web client in provider handoff requests.
-	ProviderAuthWebClientID = "deeix-web"
+	ProviderAuthWebClientID = "firecortex-web"
 	// ProviderAuthNativeClientID identifies the native client in provider handoff requests.
-	ProviderAuthNativeClientID = "com.deeix.chat.native"
+	ProviderAuthNativeClientID = "com.firecortex.native"
 	// ProviderAuthDesktopClientID identifies the desktop client in provider handoff requests.
-	ProviderAuthDesktopClientID = "com.deeix.chat.desktop"
+	ProviderAuthDesktopClientID = "com.firecortex.desktop"
 
 	providerAuthBridgeAudience = "provider_auth_bridge_v1"
 	providerAuthTransactionTTL = 10 * time.Minute
 	providerAuthGrantTTL       = 90 * time.Second
-	providerAuthNativeRedirect = "com.deeix.chat:/oauth/callback"
+	providerAuthNativeRedirect = "com.firecortex:/oauth/callback"
 )
 
 type providerAuthBridgeState struct {

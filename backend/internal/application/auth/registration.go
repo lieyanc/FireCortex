@@ -21,12 +21,12 @@ import (
 	"strings"
 	"time"
 
-	userapp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/user"
-	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/conv"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/requestmeta"
+	userapp "github.com/lieyanc/FireCortex/backend/internal/application/user"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/conv"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/requestmeta"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
@@ -1171,7 +1171,7 @@ func canBootstrapEmail(item *domainuser.User) bool {
 
 func (s *Service) sendRegistrationVerificationEmail(to string, code string) error {
 	return s.sendEmailVerificationCode(to, code, verificationEmailTemplate{
-		Subject:      "DEEIX Chat 验证码",
+		Subject:      "FireCortex 验证码",
 		Title:        "完成邮箱注册",
 		SecurityNote: "如果不是您本人操作，请忽略这封邮件。",
 	}, "email registration")
@@ -1179,7 +1179,7 @@ func (s *Service) sendRegistrationVerificationEmail(to string, code string) erro
 
 func (s *Service) sendPasswordChangeVerificationEmail(to string, code string) error {
 	return s.sendEmailVerificationCode(to, code, verificationEmailTemplate{
-		Subject:      "DEEIX Chat 验证码",
+		Subject:      "FireCortex 验证码",
 		Title:        "确认修改密码",
 		SecurityNote: "如果不是您本人操作，请立即检查账号安全。",
 	}, "password change")
@@ -1187,7 +1187,7 @@ func (s *Service) sendPasswordChangeVerificationEmail(to string, code string) er
 
 func (s *Service) sendPasswordResetVerificationEmail(to string, code string) error {
 	return s.sendEmailVerificationCode(to, code, verificationEmailTemplate{
-		Subject:      "DEEIX Chat 验证码",
+		Subject:      "FireCortex 验证码",
 		Title:        "重置密码",
 		SecurityNote: "如果不是您本人操作，请立即检查账号安全。",
 	}, "password reset")
@@ -1195,7 +1195,7 @@ func (s *Service) sendPasswordResetVerificationEmail(to string, code string) err
 
 func (s *Service) sendEmailChangeVerificationEmail(to string, code string) error {
 	return s.sendEmailVerificationCode(to, code, verificationEmailTemplate{
-		Subject:      "DEEIX Chat 验证码",
+		Subject:      "FireCortex 验证码",
 		Title:        "验证邮箱地址",
 		SecurityNote: "如果不是您本人操作，请忽略这封邮件。",
 	}, "email change")
@@ -1203,7 +1203,7 @@ func (s *Service) sendEmailChangeVerificationEmail(to string, code string) error
 
 func (s *Service) sendAccountDeleteVerificationEmail(to string, code string) error {
 	return s.sendEmailVerificationCode(to, code, verificationEmailTemplate{
-		Subject:      "DEEIX Chat 验证码",
+		Subject:      "FireCortex 验证码",
 		Title:        "确认删除账号",
 		SecurityNote: "如果不是您本人操作，请立即检查账号安全。",
 	}, "account deletion")
@@ -1404,7 +1404,7 @@ func writeEmailPart(writer *multipart.Writer, contentType string, body string) {
 }
 
 func buildVerificationPlainText(code string, template verificationEmailTemplate) string {
-	return fmt.Sprintf(`DEEIX Chat
+	return fmt.Sprintf(`FireCortex
 
 %s
 
@@ -1469,9 +1469,9 @@ func buildVerificationHTML(code string, template verificationEmailTemplate, logo
 
 func verificationEmailLogoHTML(logoURL string) string {
 	if trimmed := strings.TrimSpace(logoURL); trimmed != "" {
-		return fmt.Sprintf(`<img src="%s" width="150" alt="DEEIX Chat" style="display:block;width:150px;height:auto;border:0;outline:none;text-decoration:none;">`, html.EscapeString(trimmed))
+		return fmt.Sprintf(`<img src="%s" width="150" alt="FireCortex" style="display:block;width:150px;height:auto;border:0;outline:none;text-decoration:none;">`, html.EscapeString(trimmed))
 	}
-	return `<div style="font-size:20px;line-height:1.3;font-weight:700;color:#26231f;">DEEIX Chat</div>`
+	return `<div style="font-size:20px;line-height:1.3;font-weight:700;color:#26231f;">FireCortex</div>`
 }
 
 func publicAssetURL(publicWebBaseURL string, assetPath string) string {

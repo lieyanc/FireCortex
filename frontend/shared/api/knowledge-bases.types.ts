@@ -14,7 +14,7 @@ import type {
   KnowledgeBaseFileProcessingStatusResponse,
   KnowledgeBasePageResponseDoc,
   KnowledgeBaseResponse,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 
 export type KnowledgeBaseScope = "builtin" | "user";
 

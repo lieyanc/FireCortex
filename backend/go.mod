@@ -1,4 +1,4 @@
-module github.com/DEEIX-AI/DEEIX-Chat/backend
+module github.com/lieyanc/FireCortex/backend
 
 go 1.26.8
 

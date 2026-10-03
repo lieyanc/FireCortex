@@ -4,8 +4,8 @@ import * as React from "react";
 
 import type { PendingAttachment } from "@/features/chat/types/chat-runtime";
 
-const LEGACY_CHAT_COMPOSER_STORAGE_KEY = "deeix-chat:chat-composer:v1";
-const CHAT_COMPOSER_STORAGE_KEY_PREFIX = "deeix-chat:chat-composer:v2:";
+const LEGACY_CHAT_COMPOSER_STORAGE_KEY = "firecortex:chat-composer:v1";
+const CHAT_COMPOSER_STORAGE_KEY_PREFIX = "firecortex:chat-composer:v2:";
 const NEW_CONVERSATION_COMPOSER_KEY = "__new__";
 const TRANSIENT_COMPOSER_KEY = "__transient__";
 const COMPOSER_ENTRY_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;

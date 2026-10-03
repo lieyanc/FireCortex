@@ -3,11 +3,11 @@ package conversation
 import (
 	"strings"
 
-	appcompact "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/compact"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/tokenestimate"
+	appcompact "github.com/lieyanc/FireCortex/backend/internal/application/compact"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
 )
 
 func stringsEqualFold(a, b string) bool {

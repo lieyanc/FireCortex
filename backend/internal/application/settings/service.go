@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"strings"
 
-	appaudit "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/audit"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/extraction"
-	domainsettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/settings"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	appaudit "github.com/lieyanc/FireCortex/backend/internal/application/audit"
+	"github.com/lieyanc/FireCortex/backend/internal/application/extraction"
+	domainsettings "github.com/lieyanc/FireCortex/backend/internal/domain/settings"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 // Service 封装 settings 业务逻辑。

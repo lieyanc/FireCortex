@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 // geminiInteractionsAdapter 实现 Google Gemini Interactions API。

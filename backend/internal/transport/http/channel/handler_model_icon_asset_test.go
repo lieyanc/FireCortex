@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	appchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/channel"
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/objectstore"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	appchannel "github.com/lieyanc/FireCortex/backend/internal/application/channel"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/objectstore"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/gin-gonic/gin"
 )
 

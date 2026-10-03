@@ -1,6 +1,6 @@
 # Frontend Biome policy
 
-DEEIX Chat uses Biome as the frontend linter. TypeScript 7 remains responsible for type checking; ESLint, `typescript-eslint`, and `eslint-config-next` are not part of the frontend toolchain.
+FireCortex uses Biome as the frontend linter. TypeScript 7 remains responsible for type checking; ESLint, `typescript-eslint`, and `eslint-config-next` are not part of the frontend toolchain.
 
 ## Commands
 

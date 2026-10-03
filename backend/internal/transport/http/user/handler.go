@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	appuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/user"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/middleware"
+	appuser "github.com/lieyanc/FireCortex/backend/internal/application/user"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
+	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 )
 

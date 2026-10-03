@@ -27,7 +27,7 @@ func TestNormalizeDisplayNamePolicy(t *testing.T) {
 }
 
 func TestNormalizePasswordPolicy(t *testing.T) {
-	if got, err := NormalizePassword(" deeix2026 "); err != nil || got != "deeix2026" {
+	if got, err := NormalizePassword(" firecortex2026 "); err != nil || got != "firecortex2026" {
 		t.Fatalf("expected normalized password, got %q err=%v", got, err)
 	}
 

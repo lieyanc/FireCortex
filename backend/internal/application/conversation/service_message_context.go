@@ -10,17 +10,17 @@ import (
 	"sort"
 	"strings"
 
-	appchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/channel"
-	appstorage "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/objectstorage"
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	domainmemory "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/memory"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/conv"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/objectstore"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/tokenestimate"
+	appchannel "github.com/lieyanc/FireCortex/backend/internal/application/channel"
+	appstorage "github.com/lieyanc/FireCortex/backend/internal/application/objectstorage"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainmemory "github.com/lieyanc/FireCortex/backend/internal/domain/memory"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/conv"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/objectstore"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
 )
 
 const (

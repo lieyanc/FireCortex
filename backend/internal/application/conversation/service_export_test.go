@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 )
 
 func TestExportUserConversationDataRejectsWrongUser(t *testing.T) {

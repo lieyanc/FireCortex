@@ -3,7 +3,7 @@ package conversation
 import (
 	"strings"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 )

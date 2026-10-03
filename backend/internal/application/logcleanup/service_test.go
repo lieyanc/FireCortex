@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	appaudit "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/audit"
+	appaudit "github.com/lieyanc/FireCortex/backend/internal/application/audit"
 )
 
 type cleanupTestRepository struct {

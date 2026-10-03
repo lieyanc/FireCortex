@@ -26,7 +26,7 @@ type NavigatorWithLocks = Navigator & {
   };
 };
 
-const AUTH_REFRESH_LOCK_NAME = "deeix-chat:auth-refresh";
+const AUTH_REFRESH_LOCK_NAME = "firecortex:auth-refresh";
 const SESSION_TERMINATING_ERROR_CODES = new Set([
   "auth.invalid_token",
   "auth.invalid_refresh_token",

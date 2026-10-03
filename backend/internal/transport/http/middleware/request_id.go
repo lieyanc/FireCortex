@@ -3,7 +3,7 @@ package middleware
 import (
 	"strings"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/traceid"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/traceid"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )

@@ -4,15 +4,15 @@ import (
 	"context"
 	"errors"
 
-	auditapp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/audit"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
-	appconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/conversation"
-	applogcleanup "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/logcleanup"
-	systemeventapp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/systemevent"
-	domainaudit "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/audit"
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	domainsystemevent "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/systemevent"
+	auditapp "github.com/lieyanc/FireCortex/backend/internal/application/audit"
+	"github.com/lieyanc/FireCortex/backend/internal/application/billing"
+	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
+	applogcleanup "github.com/lieyanc/FireCortex/backend/internal/application/logcleanup"
+	systemeventapp "github.com/lieyanc/FireCortex/backend/internal/application/systemevent"
+	domainaudit "github.com/lieyanc/FireCortex/backend/internal/domain/audit"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainsystemevent "github.com/lieyanc/FireCortex/backend/internal/domain/systemevent"
 )
 
 // ListAuditLogs 查询审计日志分页列表。

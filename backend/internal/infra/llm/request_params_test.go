@@ -3,7 +3,7 @@ package llm
 import (
 	"testing"
 
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 func TestBuildOpenAIChatCompletionsMinimalStreamRequestIncludesUsage(t *testing.T) {
@@ -367,7 +367,7 @@ func TestBuildOpenAIChatCompletionsProviderOptionsMergeAndProtectSystemFields(t 
 		Options: map[string]any{
 			"service_tier": "priority",
 			"metadata": map[string]any{
-				"tenant": "deeix-chat",
+				"tenant": "firecortex",
 			},
 			"model":          "attacker-model",
 			"messages":       []any{},
@@ -390,7 +390,7 @@ func TestBuildOpenAIChatCompletionsProviderOptionsMergeAndProtectSystemFields(t 
 		t.Fatalf("expected provider option service_tier, got %#v", payload["service_tier"])
 	}
 	metadata, ok := payload["metadata"].(map[string]any)
-	if !ok || metadata["tenant"] != "deeix-chat" {
+	if !ok || metadata["tenant"] != "firecortex" {
 		t.Fatalf("expected provider metadata merge, got %#v", payload["metadata"])
 	}
 }

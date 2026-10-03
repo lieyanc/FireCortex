@@ -3,7 +3,7 @@ package promptpreset
 import (
 	"time"
 
-	domainpromptpreset "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/promptpreset"
+	domainpromptpreset "github.com/lieyanc/FireCortex/backend/internal/domain/promptpreset"
 )
 
 // PromptPresetResponse 表示预制提示词响应。

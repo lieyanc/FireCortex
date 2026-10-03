@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
+	model "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
 )
 
 func TestGetDailyActivityByUserUsesMainUsageLedgers(t *testing.T) {

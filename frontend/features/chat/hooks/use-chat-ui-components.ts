@@ -9,7 +9,7 @@ import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 const MAX_SELECTED_UI_COMPONENTS = 32;
 // Device-level preference, like the visual-layout prompt: it describes how the
 // user wants replies rendered, not what this conversation is about.
-const UI_COMPONENT_SELECTION_STORAGE_KEY = "deeix-chat:ui-components:v1";
+const UI_COMPONENT_SELECTION_STORAGE_KEY = "firecortex:ui-components:v1";
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
 
 // null means "use the defaults"; an array is an explicit selection.

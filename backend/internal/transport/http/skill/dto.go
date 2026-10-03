@@ -3,7 +3,7 @@ package skill
 import (
 	"time"
 
-	domainskill "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/skill"
+	domainskill "github.com/lieyanc/FireCortex/backend/internal/domain/skill"
 )
 
 // SkillResponse 表示技能响应。

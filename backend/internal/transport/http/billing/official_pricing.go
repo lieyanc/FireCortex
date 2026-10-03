@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
+	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
 )
 

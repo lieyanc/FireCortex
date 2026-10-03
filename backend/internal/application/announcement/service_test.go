@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	domainannouncement "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/announcement"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainannouncement "github.com/lieyanc/FireCortex/backend/internal/domain/announcement"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 func TestCreateAnnouncementValidation(t *testing.T) {

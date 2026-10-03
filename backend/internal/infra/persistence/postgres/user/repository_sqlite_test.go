@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	domainknowledgebase "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/knowledgebase"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/schema"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainknowledgebase "github.com/lieyanc/FireCortex/backend/internal/domain/knowledgebase"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/schema"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

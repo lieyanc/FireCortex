@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import { AdminSidebar } from "@/features/admin/components/admin-sidebar";
-import { CustomBrandAttribution } from "@/shared/components/powered-by-deeix";
+import { CustomBrandAttribution } from "@/shared/components/powered-by-firecortex";
 
 export function AdminShell({
   children,

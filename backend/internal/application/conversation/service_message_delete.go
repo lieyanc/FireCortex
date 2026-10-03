@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 // DeleteMessageResult 返回消息删除结果。

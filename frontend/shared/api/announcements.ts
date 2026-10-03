@@ -1,4 +1,4 @@
-import type { Announcements } from "@deeix/api-contract";
+import type { Announcements } from "@firecortex/api-contract";
 import { authedRequest } from "@/shared/api/authed-client";
 import type { AnnouncementDTO } from "@/shared/api/announcements.types";
 

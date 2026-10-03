@@ -3,9 +3,9 @@ package usersettings
 import (
 	"context"
 
-	domainusersettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/usersettings"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/dberror"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
+	domainusersettings "github.com/lieyanc/FireCortex/backend/internal/domain/usersettings"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/dberror"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

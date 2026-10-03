@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 // 时段倍率（峰谷计费）：在模型基础单价之上按服务器本地时间叠加倍率百分比，与计费模式正交，

@@ -1,6 +1,6 @@
 package admin
 
-import "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
+import "github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 
 var (
 	// ErrInvalidUserEmail 非法用户邮箱。

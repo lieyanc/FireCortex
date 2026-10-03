@@ -10,17 +10,17 @@ import (
 	"testing"
 	"time"
 
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
+	model "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func TestReserveUsageBalanceSerializesConcurrentPostgresRequests(t *testing.T) {
-	dsn := strings.TrimSpace(os.Getenv("DEEIX_TEST_DATABASE_DSN"))
+	dsn := strings.TrimSpace(os.Getenv("FIRECORTEX_TEST_DATABASE_DSN"))
 	if dsn == "" {
-		t.Skip("set DEEIX_TEST_DATABASE_DSN to run PostgreSQL billing concurrency integration test")
+		t.Skip("set FIRECORTEX_TEST_DATABASE_DSN to run PostgreSQL billing concurrency integration test")
 	}
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {

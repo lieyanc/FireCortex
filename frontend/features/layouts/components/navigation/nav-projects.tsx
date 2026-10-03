@@ -105,7 +105,7 @@ const PROJECT_TREE_ACCORDION_MASK_STYLE = {
   WebkitMaskImage: "linear-gradient(black var(--mask-stop), transparent var(--mask-stop))",
   overflow: "hidden",
 } satisfies React.CSSProperties;
-const PROJECTS_OPEN_STORAGE_KEY = "deeix.sidebar.projects.open";
+const PROJECTS_OPEN_STORAGE_KEY = "firecortex.sidebar.projects.open";
 
 type ProjectFolderIconHandle = {
   startAnimation: () => void;

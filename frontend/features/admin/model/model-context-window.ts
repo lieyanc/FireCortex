@@ -46,7 +46,7 @@ export function isValidModelContextWindow(value: number): boolean {
 
 export function modelContextWindowOverride(value: string | null | undefined): number | null {
   const payload = parseCapabilitiesObject(value);
-  if (!payload || payload._deeixContextWindowMode === "auto") {
+  if (!payload || payload._firecortexContextWindowMode === "auto") {
     return null;
   }
   return positiveIntegerProperty(
@@ -70,7 +70,7 @@ export function setModelContextWindowInCapabilities(
   if (!payload) {
     return null;
   }
-  delete payload._deeixContextWindowMode;
+  delete payload._firecortexContextWindowMode;
   delete payload.context_window;
   delete payload.contextWindowTokens;
   delete payload.context_window_tokens;
@@ -94,13 +94,13 @@ export function setAutomaticModelContextWindowInCapabilities(
   delete payload.contextWindowTokens;
   delete payload.context_window_tokens;
   if (contextWindow === null) {
-    if (payload._deeixContextWindowMode === "auto") {
+    if (payload._firecortexContextWindowMode === "auto") {
       delete payload.contextWindow;
-      delete payload._deeixContextWindowMode;
+      delete payload._firecortexContextWindowMode;
     }
   } else {
     payload.contextWindow = contextWindow;
-    payload._deeixContextWindowMode = "auto";
+    payload._firecortexContextWindowMode = "auto";
   }
   return Object.keys(payload).length > 0 ? JSON.stringify(payload, null, 2) : "";
 }

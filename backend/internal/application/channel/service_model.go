@@ -8,13 +8,13 @@ import (
 	"strings"
 	"time"
 
-	appbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/billing"
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/channelconfig"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/nativetool"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/pagination"
+	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/channelconfig"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/nativetool"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 	"go.uber.org/zap"
 )
 
@@ -607,12 +607,12 @@ func clearAutomaticContextWindow(raw string) (string, bool) {
 	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &payload); err != nil || payload == nil {
 		return raw, false
 	}
-	mode, ok := payload["_deeixContextWindowMode"].(string)
+	mode, ok := payload["_firecortexContextWindowMode"].(string)
 	if !ok || !strings.EqualFold(strings.TrimSpace(mode), "auto") {
 		return raw, false
 	}
 
-	delete(payload, "_deeixContextWindowMode")
+	delete(payload, "_firecortexContextWindowMode")
 	delete(payload, "contextWindow")
 	delete(payload, "context_window")
 	delete(payload, "contextWindowTokens")

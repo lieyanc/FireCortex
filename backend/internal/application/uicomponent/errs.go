@@ -1,6 +1,6 @@
 package uicomponent
 
-import "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
+import "github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 
 var (
 	// ErrComponentNotFound 表示组件不存在或当前用户无权访问。

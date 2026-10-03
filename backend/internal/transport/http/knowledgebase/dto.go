@@ -3,9 +3,9 @@ package knowledgebase
 import (
 	"time"
 
-	appembedding "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/embedding"
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	domainknowledgebase "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/knowledgebase"
+	appembedding "github.com/lieyanc/FireCortex/backend/internal/application/embedding"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainknowledgebase "github.com/lieyanc/FireCortex/backend/internal/domain/knowledgebase"
 )
 
 // KnowledgeBaseResponse 表示知识库响应。

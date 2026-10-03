@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"strconv"
 
-	appskill "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/skill"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/pagination"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/middleware"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/transport/http/queryparam"
+	appskill "github.com/lieyanc/FireCortex/backend/internal/application/skill"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
+	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
+	"github.com/lieyanc/FireCortex/backend/internal/transport/http/queryparam"
 	"github.com/gin-gonic/gin"
 )
 

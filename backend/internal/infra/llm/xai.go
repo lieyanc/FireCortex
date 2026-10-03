@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 // xAIResponsesAdapter 实现 xAI Responses API。请求/响应主体沿用 Responses

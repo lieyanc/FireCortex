@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/filetype"
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/filetype"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 // openAIImageGenerationsAdapter 负责 OpenAI Images API 的图片生成端点。

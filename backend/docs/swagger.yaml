@@ -6667,7 +6667,7 @@ definitions:
       title:
         type: string
       uiComponentsEnabled:
-        description: UIComponentsEnabled 为 false 时，分享页不渲染 deeix-ui 组件块。
+        description: UIComponentsEnabled 为 false 时，分享页不渲染 firecortex-ui 组件块。
         type: boolean
     required:
     - createdAt
@@ -10245,8 +10245,8 @@ definitions:
     type: object
 info:
   contact: {}
-  description: DEEIX Chat 后端 API 文档
-  title: DEEIX Chat API
+  description: FireCortex 后端 API 文档
+  title: FireCortex API
   version: "0.4.3"
 paths:
   /admin/announcements:
@@ -15978,7 +15978,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: 为 Web、App 或桌面公共客户端创建 PKCE 保护的 OAuth 授权事务；外部身份源仅回调当前 DEEIX 实例
+      description: 为 Web、App 或桌面公共客户端创建 PKCE 保护的 OAuth 授权事务；外部身份源仅回调当前 FireCortex 实例
       parameters:
       - description: 身份源 slug
         in: path

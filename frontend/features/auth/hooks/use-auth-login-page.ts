@@ -258,7 +258,7 @@ export function useLoginPage({ nextPath }: UseLoginPageInput) {
         next: resolvedNextPath,
       }));
       const result = await startProviderAuthBridge(slug, {
-        clientID: "deeix-web",
+        clientID: "firecortex-web",
         redirectURI,
         codeChallenge: pkce.challenge,
         clientState,

@@ -3,7 +3,7 @@ import type {
   MessageProcessTraceResponse,
   MessageTraceBlockResponse,
   MessageTraceEventResponse,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 import { authedFetch, authedRequest } from "@/shared/api/authed-client";
 import type { PagePayload } from "@/shared/api/common.types";
 import type {

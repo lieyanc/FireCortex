@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/channel"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/application/channel"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 type statefulResponseDecision struct {

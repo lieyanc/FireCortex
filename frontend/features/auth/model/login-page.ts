@@ -25,8 +25,8 @@ export const DEFAULT_LOGIN_OPTIONS: LoginOptionsData = {
   providers: [],
 };
 
-export const TWO_FACTOR_CHALLENGE_STORAGE_KEY = "deeix-chat:2fa:challenge";
-export const TWO_FACTOR_METHODS_STORAGE_KEY = "deeix-chat:2fa:methods";
+export const TWO_FACTOR_CHALLENGE_STORAGE_KEY = "firecortex:2fa:challenge";
+export const TWO_FACTOR_METHODS_STORAGE_KEY = "firecortex:2fa:methods";
 
 export function normalizeTwoFactorInput(value: string): string {
   return value.replace(/[^a-zA-Z0-9-]/g, "").slice(0, 32);
@@ -37,7 +37,7 @@ export function normalizeRegisterCode(value: string): string {
 }
 
 export function providerPKCEStorageKey(slug: string): string {
-  return `deeix-chat:oauth:${slug}:pkce_verifier`;
+  return `firecortex:oauth:${slug}:pkce_verifier`;
 }
 
 export type ProviderAuthBridgeRequest = {
@@ -48,7 +48,7 @@ export type ProviderAuthBridgeRequest = {
 };
 
 export function providerAuthBridgeStorageKey(slug: string): string {
-  return `deeix-chat:oauth:${slug}:bridge`;
+  return `firecortex:oauth:${slug}:bridge`;
 }
 
 export function isTwoFactorChallengeExpired(error: unknown): boolean {

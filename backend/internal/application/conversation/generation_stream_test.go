@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	cachememory "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/cache/memory"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	cachememory "github.com/lieyanc/FireCortex/backend/internal/infra/cache/memory"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 func registerTestGeneration(

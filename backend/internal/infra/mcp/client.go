@@ -14,10 +14,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	platformtracing "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/observability/tracing"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/outboundhttp"
-	portmcp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/mcp"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	platformtracing "github.com/lieyanc/FireCortex/backend/internal/infra/observability/tracing"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/outboundhttp"
+	portmcp "github.com/lieyanc/FireCortex/backend/internal/ports/mcp"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 )
 
 const (
@@ -111,7 +111,7 @@ func (c *Client) initialize(ctx context.Context, cfg CallConfig) (string, error)
 		"protocolVersion": protocolVersion,
 		"capabilities":    map[string]any{},
 		"clientInfo": map[string]any{
-			"name":    "deeix-chat",
+			"name":    "firecortex",
 			"version": "0.1.0",
 		},
 	}

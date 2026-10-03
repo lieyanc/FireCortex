@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/conv"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/conv"
 	"github.com/google/uuid"
 )
 

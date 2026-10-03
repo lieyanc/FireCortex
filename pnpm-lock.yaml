@@ -161,7 +161,7 @@ importers:
       '@biomejs/biome':
         specifier: 2.5.11
         version: 2.5.11
-      '@deeix/api-contract':
+      '@firecortex/api-contract':
         specifier: workspace:*
         version: link:../packages/api-contract
       '@tailwindcss/postcss':

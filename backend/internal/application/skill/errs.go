@@ -1,6 +1,6 @@
 package skill
 
-import "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
+import "github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 
 var (
 	// ErrSkillNotFound 表示技能不存在或当前用户无权访问。

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 )
 
 type runtimeTestProber struct {
@@ -19,7 +19,7 @@ func (p runtimeTestProber) ProbeTika(context.Context, string, string) (bool, str
 }
 
 func (runtimeTestProber) ResolveManagedTikaBaseURL(context.Context) string {
-	return "http://deeix-chat-tika:9998"
+	return "http://firecortex-tika:9998"
 }
 
 func (p runtimeTestProber) ProbeDocling(context.Context, string, string) (bool, string) {
@@ -39,7 +39,7 @@ func (p runtimeTestProber) ProbeRapidOCR(context.Context, string, string) (bool,
 }
 
 func (runtimeTestProber) ResolveManagedRapidOCRBaseURL(context.Context) string {
-	return "http://deeix-chat-rapidocr:8002/ocr"
+	return "http://firecortex-rapidocr:8002/ocr"
 }
 
 type runtimeTestDockerRunner struct {

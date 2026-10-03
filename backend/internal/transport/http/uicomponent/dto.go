@@ -3,7 +3,7 @@ package uicomponent
 import (
 	"time"
 
-	domainuicomponent "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/uicomponent"
+	domainuicomponent "github.com/lieyanc/FireCortex/backend/internal/domain/uicomponent"
 )
 
 // UIComponentResponse 表示组件响应。可见目录也返回渲染源，前端据此渲染自定义组件。

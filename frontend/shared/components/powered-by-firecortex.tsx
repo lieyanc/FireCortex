@@ -5,7 +5,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useBranding } from "@/shared/config/branding-provider";
 
-export function PoweredByDeeix({ className }: { className?: string }) {
+export function PoweredByFireCortex({ className }: { className?: string }) {
   return (
     <span
       className={cn(
@@ -15,10 +15,10 @@ export function PoweredByDeeix({ className }: { className?: string }) {
     >
       <span>Powered by</span>
       <a
-        href="https://github.com/DEEIX-AI/DEEIX-Chat"
+        href="https://github.com/lieyanc/FireCortex"
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="DEEIX Chat on GitHub"
+        aria-label="FireCortex on GitHub"
         className="inline-flex shrink-0 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2"
       >
         <Image
@@ -49,7 +49,7 @@ export function CustomBrandAttribution({ className }: { className?: string }) {
   }
   return (
     <div className={className}>
-      <PoweredByDeeix />
+      <PoweredByFireCortex />
     </div>
   );
 }

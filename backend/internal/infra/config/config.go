@@ -10,22 +10,22 @@ import (
 	"strings"
 	"sync/atomic"
 
-	sharedsecurity "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/security"
+	sharedsecurity "github.com/lieyanc/FireCortex/backend/internal/shared/security"
 	"gopkg.in/yaml.v3"
 )
 
 const (
-	defaultAppName                      = "DEEIX Chat"
-	defaultBrandTitle                   = "DEEIX Chat"
-	defaultBrandShortName               = "DEEIX"
-	defaultBrandDescription             = "DEEIX Chat is a multi-model AI conversation system."
+	defaultAppName                      = "FireCortex"
+	defaultBrandTitle                   = "FireCortex"
+	defaultBrandShortName               = "FireCortex"
+	defaultBrandDescription             = "FireCortex is a multi-model AI conversation system."
 	defaultBrandFaviconURL              = "/favicon.ico"
 	defaultBrandPWAIcon192URL           = "/pwa/icon-192.png"
 	defaultBrandPWAIcon512URL           = "/pwa/icon-512.png"
 	defaultBrandPWAMaskableIcon512URL   = "/pwa/icon-maskable-512.png"
 	defaultBrandAppleTouchIcon180URL    = "/pwa/apple-touch-icon.png"
-	defaultJWTSecret                    = "deeix-chat-dev-secret"
-	defaultDataEncryptionKey            = "deeix-chat-dev-data-encryption-key"
+	defaultJWTSecret                    = "firecortex-dev-secret"
+	defaultDataEncryptionKey            = "firecortex-dev-data-encryption-key"
 	defaultAdminUsername                = "admin"
 	defaultAdminDisplayName             = "System Admin"
 	defaultGeoIPMaxBytes                = 100 * 1024 * 1024
@@ -619,12 +619,12 @@ func Load() Config {
 		SSRFAllowedHosts:             envOr("SSRF_ALLOWED_HOSTS", yc.Security.SSRFAllowedHosts, ""),
 		SSRFAllowedCIDRs:             envOr("SSRF_ALLOWED_CIDRS", yc.Security.SSRFAllowedCIDRs, ""),
 		DatabaseDriver:               normalizeDatabaseDriver(envOr("DATABASE_DRIVER", yc.Database.Driver, "postgres")),
-		PostgresDSN:                  normalizePostgresDSN(envOr("POSTGRES_DSN", yc.Database.Postgres.DSN, "host=127.0.0.1 user=deeix_chat password=deeix_chat_dev_2026 dbname=deeix_chat port=5432 sslmode=disable TimeZone=Asia/Shanghai")),
+		PostgresDSN:                  normalizePostgresDSN(envOr("POSTGRES_DSN", yc.Database.Postgres.DSN, "host=127.0.0.1 user=firecortex password=firecortex_dev_2026 dbname=firecortex port=5432 sslmode=disable TimeZone=Asia/Shanghai")),
 		PostgresMaxOpenConns:         envOrInt("POSTGRES_MAX_OPEN_CONNS", yc.Database.Postgres.MaxOpenConns, 30),
 		PostgresMaxIdleConns:         envOrInt("POSTGRES_MAX_IDLE_CONNS", yc.Database.Postgres.MaxIdleConns, 10),
 		PostgresConnMaxLifetimeMin:   envOrInt("POSTGRES_CONN_MAX_LIFETIME_MINUTES", yc.Database.Postgres.ConnMaxLifetimeMin, 60),
 		PostgresConnMaxIdleTimeMin:   envOrInt("POSTGRES_CONN_MAX_IDLE_TIME_MINUTES", yc.Database.Postgres.ConnMaxIdleTimeMin, 10),
-		SQLitePath:                   envOrPath("SQLITE_PATH", yc.Database.SQLite.Path, "./data/deeix.db", yc.sourceDir),
+		SQLitePath:                   envOrPath("SQLITE_PATH", yc.Database.SQLite.Path, "./data/firecortex.db", yc.sourceDir),
 		SQLiteDSN:                    envOr("SQLITE_DSN", yc.Database.SQLite.DSN, ""),
 		SQLiteMaxOpenConns:           envOrInt("SQLITE_MAX_OPEN_CONNS", yc.Database.SQLite.MaxOpenConns, 1),
 		SQLiteBusyTimeoutMS:          envOrInt("SQLITE_BUSY_TIMEOUT_MS", yc.Database.SQLite.BusyTimeoutMS, 5000),

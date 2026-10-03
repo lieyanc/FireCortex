@@ -26,7 +26,7 @@ export type UIComponentFormValue = {
 export const DEFAULT_RENDERER_SOURCE = `<div id="root" style="padding:12px;font:14px/1.5 var(--font-sans);color:var(--foreground)"></div>
 <script>
   const root = document.getElementById("root");
-  deeix.onProps((props) => {
+  firecortex.onProps((props) => {
     root.textContent = JSON.stringify(props, null, 2);
   });
 </script>`;

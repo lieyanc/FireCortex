@@ -5,9 +5,9 @@ import (
 	"errors"
 	"strings"
 
-	userapp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/user"
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	userapp "github.com/lieyanc/FireCortex/backend/internal/application/user"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 type permissionGroupRepo interface {

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	paymentport "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/payment"
+	paymentport "github.com/lieyanc/FireCortex/backend/internal/ports/payment"
 )
 
 type roundTripFunc func(*http.Request) (*http.Response, error)

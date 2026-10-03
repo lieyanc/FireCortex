@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 const (
@@ -23,7 +23,7 @@ const (
 )
 
 // openRouterPricingIgnoredFields are provider-side charges that are handled by
-// another DEEIX billing path instead of the model token price.
+// another FireCortex billing path instead of the model token price.
 var openRouterPricingIgnoredFields = map[string]struct{}{
 	"web_search": {},
 }

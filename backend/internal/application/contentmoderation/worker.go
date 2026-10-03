@@ -3,12 +3,12 @@ package contentmoderation
 import (
 	"context"
 	"errors"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 	"strings"
 	"time"
 
-	domaincm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/contentmoderation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	domaincm "github.com/lieyanc/FireCortex/backend/internal/domain/contentmoderation"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"go.uber.org/zap"
 )
 

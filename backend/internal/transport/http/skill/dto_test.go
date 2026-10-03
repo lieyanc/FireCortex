@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	domainskill "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/skill"
+	domainskill "github.com/lieyanc/FireCortex/backend/internal/domain/skill"
 )
 
 func TestSkillSummaryResponseDoesNotExposeMarkdown(t *testing.T) {

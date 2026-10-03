@@ -46,7 +46,7 @@ import type {
   ConversationRunStatusResponse,
   RunResponse,
   SendMessageResponse,
-} from "@deeix/api-contract";
+} from "@firecortex/api-contract";
 import type { UserStorageQuotaDTO } from "@/shared/api/file.types";
 
 export type ConversationDTO = ConversationResponse;

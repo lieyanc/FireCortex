@@ -1,6 +1,6 @@
 package cli
 
-import "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/app"
+import "github.com/lieyanc/FireCortex/backend/internal/app"
 
 // Run 启动默认 HTTP 服务。
 func Run() error {

@@ -3,7 +3,7 @@ package billing
 import (
 	"time"
 
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
 )
 
 // BillingPriceView 表示套餐价格结果。

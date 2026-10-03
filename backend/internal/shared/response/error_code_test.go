@@ -16,7 +16,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/apperr"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 	"github.com/gin-gonic/gin"
 )
 
@@ -163,7 +163,7 @@ func TestCanonicalResponseCodesAreValid(t *testing.T) {
 }
 
 func TestResponseBoundaryUsesTypedAPIsAndRegisteredLiteralCodes(t *testing.T) {
-	const responseImportPath = "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/response"
+	const responseImportPath = "github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	forbidden := map[string]struct{}{
 		"Error":              {},
 		"InferErrorCode":     {},

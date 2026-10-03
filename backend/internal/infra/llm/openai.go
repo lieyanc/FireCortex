@@ -13,12 +13,12 @@ import (
 	"strings"
 	"time"
 
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 const (
-	openRouterDefaultAttributionReferer = "https://deeix.com"
-	openRouterDefaultAttributionTitle   = "DEEIX Chat"
+	openRouterDefaultAttributionReferer = "https://github.com/lieyanc/FireCortex"
+	openRouterDefaultAttributionTitle   = "FireCortex"
 	openRouterDefaultCategories         = "general-chat"
 )
 

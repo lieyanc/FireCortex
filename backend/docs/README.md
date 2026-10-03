@@ -1,4 +1,4 @@
-# DEEIX Chat Backend Documentation
+# FireCortex Backend Documentation
 
 This directory contains generated backend API documentation. Backend HTTP DTOs and Swagger annotations are the source of truth.
 

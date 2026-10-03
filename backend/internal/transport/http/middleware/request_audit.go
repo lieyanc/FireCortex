@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/requestmeta"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/requestmeta"
 	"github.com/gin-gonic/gin"
 )
 

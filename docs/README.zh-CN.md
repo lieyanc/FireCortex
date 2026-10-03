@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="../frontend/public/logo-white.svg" />
-    <img src="../frontend/public/logo-black.svg" alt="DEEIX Chat" width="160" />
+    <img src="../frontend/public/logo-black.svg" alt="FireCortex" width="160" />
   </picture>
 </p>
 
@@ -14,10 +14,10 @@
 </p>
 
 <p align="center">
-  <a href="https://deeix.com"><img alt="官网" src="https://img.shields.io/badge/官网-deeix.com-black" /></a>
-  <a href="https://deeix.com/zh/docs/deeix-chat/quickstart"><img alt="快速安装教程" src="https://img.shields.io/badge/快速安装-教程-0f766e" /></a>
-  <a href="https://t.me/deeix_chat"><img alt="Telegram" src="https://img.shields.io/badge/Telegram-deeix_chat-26A5E4?logo=telegram&logoColor=white" /></a>
-  <a href="https://x.com/DEEIX_AI"><img alt="推特 / X" src="https://img.shields.io/badge/X-%40DEEIX_AI-black?logo=x&logoColor=white" /></a>
+  <a href="https://github.com/lieyanc/FireCortex"><img alt="官网" src="https://img.shields.io/badge/官网-github.com/lieyanc/FireCortex-black" /></a>
+  <a href="https://github.com/lieyanc/FireCortex"><img alt="快速安装教程" src="https://img.shields.io/badge/快速安装-教程-0f766e" /></a>
+  <a href="https://t.me/firecortex"><img alt="Telegram" src="https://img.shields.io/badge/Telegram-firecortex-26A5E4?logo=telegram&logoColor=white" /></a>
+  <a href="https://x.com/FIRECORTEX_AI"><img alt="推特 / X" src="https://img.shields.io/badge/X-%40FIRECORTEX_AI-black?logo=x&logoColor=white" /></a>
   <a href="https://www.apache.org/licenses/LICENSE-2.0"><img alt="开源协议" src="https://img.shields.io/badge/License-Apache%202.0-blue" /></a>
   <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black" />
   <img alt="React" src="https://img.shields.io/badge/React-19-149eca" />
@@ -26,11 +26,11 @@
 
 ## 项目简介
 
-DEEIX Chat 是一款开源可部署的 AI 平台，面向需要长期、稳定、统一使用多模型能力的个人、团队与企业。它用一个清晰的使用入口承载多个上游模型和服务商，将多模态对话、模型路由、文件与 RAG、MCP 工具、用量计费、身份认证、审计日志和运维控制整合到同一个产品中。
+FireCortex 是一款开源可部署的 AI 平台，面向需要长期、稳定、统一使用多模型能力的个人、团队与企业。它用一个清晰的使用入口承载多个上游模型和服务商，将多模态对话、模型路由、文件与 RAG、MCP 工具、用量计费、身份认证、审计日志和运维控制整合到同一个产品中。
 
 系统围绕简单部署、高效静态分发和低资源的运行时占用设计，轻量而不简陋、克制而不缺能力、开放而不失秩序。
 
-![DEEIX Chat 工作区](./assets/screenshots/DEEIX-Chat.jpg)
+![FireCortex 工作区](./assets/screenshots/FireCortex.jpg)
 
 ## 核心能力
 
@@ -48,19 +48,19 @@ DEEIX Chat 是一款开源可部署的 AI 平台，面向需要长期、稳定�
 | 部署与运维 | 支持单运行时托管前端与 API、Docker 部署、SQLite 或 PostgreSQL、内存缓存或 Redis、S3 兼容存储、Swagger、结构化日志、版本接口、GeoIP 和 OpenTelemetry。 |
 
 <p align="center">
-  <img src="./assets/screenshots/DEEIX-Chat-Image.png" alt="DEEIX Chat 图片生成" width="49.45%" />
-  <img src="./assets/screenshots/DEEIX-Chat-Dark.png" alt="DEEIX Chat 深色模式" width="49.45%" />
+  <img src="./assets/screenshots/FireCortex-Image.png" alt="FireCortex 图片生成" width="49.45%" />
+  <img src="./assets/screenshots/FireCortex-Dark.png" alt="FireCortex 深色模式" width="49.45%" />
 </p>
 
 <p align="center">
-  <img src="./assets/screenshots/DEEIX-Chat-Usage.png" alt="DEEIX Chat 用量与计费" width="32.3%" />
-  <img src="./assets/screenshots/DEEIX-Chat-Artifacts.png" alt="DEEIX Chat Artifacts" width="32.3%" />
-  <img src="./assets/screenshots/DEEIX-Chat-Html.png" alt="DEEIX Chat HTML 渲染" width="32.3%" />
+  <img src="./assets/screenshots/FireCortex-Usage.png" alt="FireCortex 用量与计费" width="32.3%" />
+  <img src="./assets/screenshots/FireCortex-Artifacts.png" alt="FireCortex Artifacts" width="32.3%" />
+  <img src="./assets/screenshots/FireCortex-Html.png" alt="FireCortex HTML 渲染" width="32.3%" />
 </p>
 
 ## 系统架构与技术栈
 
-DEEIX Chat 采用前后端分离开发、单运行时部署的结构。前端构建为静态资源后由 Go 服务统一托管，API、权限、模型路由、文件、计费和审计等后端能力由同一个运行时提供；文档提取、OCR 等重型能力以可选服务接入，避免基础部署过重。
+FireCortex 采用前后端分离开发、单运行时部署的结构。前端构建为静态资源后由 Go 服务统一托管，API、权限、模型路由、文件、计费和审计等后端能力由同一个运行时提供；文档提取、OCR 等重型能力以可选服务接入，避免基础部署过重。
 
 ```mermaid
 flowchart TB
@@ -159,7 +159,7 @@ SQLite 方案不要求单独管理数据库或缓存。默认开发配置使用 
 
 ## 快速开始
 
-> 快速安装教程：[快速开始](https://deeix.com/zh/docs/deeix-chat/quickstart)。
+> 快速安装教程：[快速开始](https://github.com/lieyanc/FireCortex)。
 
 ### 本地开发
 
@@ -277,16 +277,16 @@ docker compose -f docker-compose.full.yml up -d
 
 | 数据 | 容器路径 |
 | --- | --- |
-| SQLite 数据库 | `/app/data/deeix.db` |
+| SQLite 数据库 | `/app/data/firecortex.db` |
 | 上传文件和生成文件 | `/app/storage` |
 | PostgreSQL 数据 | `/var/lib/postgresql/data`，仅全量安装 |
 | Redis 数据 | `/data`，仅全量安装 |
 
-默认应用镜像为 `ghcr.io/deeix-ai/deeix-chat:latest`。Compose 文件只引用镜像，不定义构建步骤。测试本地构建时先生成镜像，再通过 `DEEIX_CHAT_IMAGE` 选择它：
+默认应用镜像为 `ghcr.io/lieyanc/firecortex:latest`。Compose 文件只引用镜像，不定义构建步骤。测试本地构建时先生成镜像，再通过 `FIRECORTEX_IMAGE` 选择它：
 
 ```bash
-docker build -t deeix-chat:local .
-DEEIX_CHAT_IMAGE=deeix-chat:local docker compose up -d
+docker build -t firecortex:local .
+FIRECORTEX_IMAGE=firecortex:local docker compose up -d
 ```
 
 使用其他方案时，在启动命令中加入对应的 `-f docker-compose.sqlite.yml` 或 `-f docker-compose.full.yml`。
@@ -296,7 +296,7 @@ DEEIX_CHAT_IMAGE=deeix-chat:local docker compose up -d
 #### 可选安装服务
 
 这些服务不是必须安装。只有在后台或 `config.yaml` 中启用对应文件处理能力时才需要启动。
-这些 compose 文件会接入 `deeix-chat-network`；请先启动任一根目录 compose 方案，或手动执行 `docker network create deeix-chat-network`。
+这些 compose 文件会接入 `firecortex-network`；请先启动任一根目录 compose 方案，或手动执行 `docker network create firecortex-network`。
 
 ```bash
 docker compose -f docker/tika/docker-compose.yml up -d
@@ -328,14 +328,14 @@ docker compose -f docker/docling/docker-compose.yml up -d --build
    Docker 镜像构建时需要传入前端 API 地址：
 
    ```bash
-   docker build --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.example.com -t deeix-chat .
+   docker build --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.example.com -t firecortex .
    ```
 
 2. 构建并发布前端。
 
    ```bash
    pnpm install
-   NEXT_PUBLIC_API_BASE_URL=https://api.example.com pnpm --filter @deeix/web build
+   NEXT_PUBLIC_API_BASE_URL=https://api.example.com pnpm --filter @firecortex/web build
    ```
 
    静态产物在 `frontend/out`，可由 Nginx、CDN、对象存储或任意静态服务托管。如需由 Go 后端托管前端，把 `frontend/out` 放到 `server.frontend_dist_dir` 指向的目录；Docker 镜像默认是 `/app/frontend/out`。
@@ -377,7 +377,7 @@ docker compose logs app
 
 ## 配置说明
 
-> 完整配置说明：[配置说明](https://deeix.com/zh/docs/deeix-chat/configuration)。
+> 完整配置说明：[配置说明](https://github.com/lieyanc/FireCortex)。
 
 后端配置分为静态运行配置和运行时业务配置。静态运行配置用于描述品牌以及服务启动所需的基础设施、安全和存储参数，由 `config.yaml` 与环境变量提供；运行时业务配置用于认证、会话、模型、文件、计费等产品能力，写入 `system_settings` 并通过后台管理维护。环境变量会覆盖配置文件中的同名项，适合容器化、分离部署和密钥注入场景。
 
@@ -466,13 +466,13 @@ docker compose logs app
 <PUBLIC_API_BASE_URL>/api/v1/auth/providers/<provider-slug>/callback
 ```
 
-Web、App 与桌面端会自动复用当前实例的这个回调。外部身份源的授权码和 Client Secret 始终留在用户自己的服务器；公共客户端只会收到一个短时、单次使用并绑定 PKCE verifier 的 DEEIX 授权码。如果仍需使用账号身份绑定或兼容旧版 Web 客户端，请同时保留后台展示的旧版 Web 回调地址。
+Web、App 与桌面端会自动复用当前实例的这个回调。外部身份源的授权码和 Client Secret 始终留在用户自己的服务器；公共客户端只会收到一个短时、单次使用并绑定 PKCE verifier 的 FireCortex 授权码。如果仍需使用账号身份绑定或兼容旧版 Web 客户端，请同时保留后台展示的旧版 Web 回调地址。
 
 ## 功能指南
 
-- [用户指南](https://deeix.com/zh/docs/deeix-chat/new-chat)
-- [管理指南](https://deeix.com/zh/docs/deeix-chat/admin-accounts)
-- [进阶指南](https://deeix.com/zh/docs/deeix-chat/advanced-capabilities-passthrough-tools)
+- [用户指南](https://github.com/lieyanc/FireCortex)
+- [管理指南](https://github.com/lieyanc/FireCortex)
+- [进阶指南](https://github.com/lieyanc/FireCortex)
 
 ## 安全说明
 
@@ -485,11 +485,11 @@ Web、App 与桌面端会自动复用当前实例的这个回调。外部身份�
 
 ## 文档入口
 
-- [快速开始](https://deeix.com/zh/docs/deeix-chat/quickstart)
-- [配置说明](https://deeix.com/zh/docs/deeix-chat/configuration)
-- [用户指南](https://deeix.com/zh/docs/deeix-chat/new-chat)
-- [管理指南](https://deeix.com/zh/docs/deeix-chat/admin-accounts)
-- [进阶指南](https://deeix.com/zh/docs/deeix-chat/advanced-capabilities-passthrough-tools)
+- [快速开始](https://github.com/lieyanc/FireCortex)
+- [配置说明](https://github.com/lieyanc/FireCortex)
+- [用户指南](https://github.com/lieyanc/FireCortex)
+- [管理指南](https://github.com/lieyanc/FireCortex)
+- [进阶指南](https://github.com/lieyanc/FireCortex)
 - 后端说明：[backend/README.md](../backend/README.md)
 - 后端规范：[backend/docs/README.md](../backend/docs/README.md)
 - 前端说明：[frontend/README.md](../frontend/README.md)
@@ -500,7 +500,7 @@ Web、App 与桌面端会自动复用当前实例的这个回调。外部身份�
 
 ## 鸣谢
 
-DEEIX Chat 基于开源生态构建，感谢所有 AI 工具生态中的维护者和社区。
+FireCortex 基于开源生态构建，感谢所有 AI 工具生态中的维护者和社区。
 
 - [Next.js](https://nextjs.org)
 - [Go](https://go.dev)
@@ -508,12 +508,12 @@ DEEIX Chat 基于开源生态构建，感谢所有 AI 工具生态中的维护�
 
 ## 联系&交流
 
-- 官网：[deeix.com](https://deeix.com/)
+- 官网：[github.com/lieyanc/FireCortex](https://github.com/lieyanc/FireCortex)
 - 博客：[blog.cheny.me](https://blog.cheny.me/)
 - 邮箱：[support@deeix.com](mailto:support@deeix.com)
-- Telegram：[t.me/deeix_chat](https://t.me/deeix_chat)
-- 推特 / X：[@DEEIX_AI](https://x.com/DEEIX_AI)
+- Telegram：[t.me/firecortex](https://t.me/firecortex)
+- 推特 / X：[@FIRECORTEX_AI](https://x.com/FIRECORTEX_AI)
 
 ## 开源协议
 
-DEEIX Chat 使用 [Apache License 2.0](../LICENSE) 授权。
+FireCortex 使用 [Apache License 2.0](../LICENSE) 授权。

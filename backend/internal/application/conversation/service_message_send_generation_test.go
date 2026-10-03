@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/channel"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	"github.com/lieyanc/FireCortex/backend/internal/application/channel"
+	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 func testRouteGenerationContext(conversation *model.Conversation) routeGenerationContext {

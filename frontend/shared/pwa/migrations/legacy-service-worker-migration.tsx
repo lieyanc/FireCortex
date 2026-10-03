@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-const LEGACY_CACHE_PREFIX = "deeix-chat-";
+const LEGACY_CACHE_PREFIX = "firecortex-";
 
 export function LegacyPWAServiceWorkerMigration(): null {
   React.useEffect(() => {

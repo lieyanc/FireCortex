@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	domainuser "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/user"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 )
 
 // AuthEventInput describes an authentication event persisted for audit and security history.

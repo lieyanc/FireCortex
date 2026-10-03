@@ -1,4 +1,4 @@
-import type { Memories } from "@deeix/api-contract";
+import type { Memories } from "@firecortex/api-contract";
 import { authedRequest } from "@/shared/api/authed-client";
 import { pathParam } from "@/shared/api/http-client";
 import type { UserMemoryDTO } from "@/shared/api/memory.types";

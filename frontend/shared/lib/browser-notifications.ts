@@ -3,7 +3,7 @@
 import { getBrandingSnapshot } from "@/shared/config/branding";
 import { normalizeTrimmedString } from "@/shared/lib/string";
 
-const RESPONSE_COMPLETION_NOTIFICATIONS_STORAGE_KEY = "deeix-chat:response-completion-notifications";
+const RESPONSE_COMPLETION_NOTIFICATIONS_STORAGE_KEY = "firecortex:response-completion-notifications";
 const NOTIFICATION_BODY_MAX_LENGTH = 140;
 
 type ResponseCompletionNotificationInput = {

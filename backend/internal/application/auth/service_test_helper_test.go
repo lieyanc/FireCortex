@@ -1,9 +1,9 @@
 package auth
 
 import (
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/config"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/identityprovider"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/identityprovider"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 func newTestService(cfg config.Config, repo repository.AuthRepository, geoResolver GeoResolver) *Service {

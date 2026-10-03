@@ -3,7 +3,7 @@ package dberror
 import (
 	"errors"
 
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/repository"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	sqlite3 "github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
 )

@@ -3,7 +3,7 @@ package llm
 import (
 	"context"
 
-	portllm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/llm"
+	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 )
 
 type transportAdapter interface {

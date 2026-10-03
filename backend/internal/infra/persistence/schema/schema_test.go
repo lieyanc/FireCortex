@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	domainchannel "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/channel"
-	model "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/infra/persistence/models"
+	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	model "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

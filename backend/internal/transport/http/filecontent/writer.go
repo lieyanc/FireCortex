@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	appupload "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/upload"
+	appupload "github.com/lieyanc/FireCortex/backend/internal/application/upload"
 	"github.com/gin-gonic/gin"
 )
 

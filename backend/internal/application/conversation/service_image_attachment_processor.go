@@ -5,16 +5,16 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/pkg/textutil"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 	"io"
 	"strings"
 	"time"
 
-	appstorage "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/application/objectstorage"
-	domainconversation "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/conversation"
-	domainmcp "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/mcp"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/ports/objectstore"
-	"github.com/DEEIX-AI/DEEIX-Chat/backend/internal/shared/toolresult"
+	appstorage "github.com/lieyanc/FireCortex/backend/internal/application/objectstorage"
+	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainmcp "github.com/lieyanc/FireCortex/backend/internal/domain/mcp"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/objectstore"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/toolresult"
 )
 
 const (

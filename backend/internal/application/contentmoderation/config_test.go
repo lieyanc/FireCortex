@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	domaincm "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/contentmoderation"
-	domainsettings "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/settings"
+	domaincm "github.com/lieyanc/FireCortex/backend/internal/domain/contentmoderation"
+	domainsettings "github.com/lieyanc/FireCortex/backend/internal/domain/settings"
 	"go.uber.org/zap"
 )
 

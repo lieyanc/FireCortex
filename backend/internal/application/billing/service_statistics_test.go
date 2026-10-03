@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	domainbilling "github.com/DEEIX-AI/DEEIX-Chat/backend/internal/domain/billing"
+	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
 )
 
 func TestUsageStatisticsGranularity(t *testing.T) {
