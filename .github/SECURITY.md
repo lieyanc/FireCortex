@@ -4,7 +4,7 @@
 
 Please do not report security vulnerabilities through public GitHub issues.
 
-Send security reports to support@deeix.com with:
+Report vulnerabilities privately through [GitHub security advisories](https://github.com/lieyanc/FireCortex/security/advisories/new) with:
 
 - a clear description of the issue
 - affected version or commit

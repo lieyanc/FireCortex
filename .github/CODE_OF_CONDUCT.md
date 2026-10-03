@@ -24,4 +24,4 @@ Examples of unacceptable behavior:
 
 Project maintainers may remove comments, close issues, reject contributions, or restrict participation when behavior violates this code of conduct.
 
-Report conduct concerns to support@deeix.com.
+Report conduct concerns privately to the maintainers through a [GitHub security advisory](https://github.com/lieyanc/FireCortex/security/advisories/new) or by contacting @lieyanc on GitHub.

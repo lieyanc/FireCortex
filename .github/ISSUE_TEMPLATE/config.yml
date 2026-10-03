@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security vulnerability report
-        url: https://github.com/lieyanc/FireCortex/blob/main/.github/SECURITY.md
-    about: Please do not report security vulnerabilities through public GitHub issues. Email support@deeix.com instead.
+    url: https://github.com/lieyanc/FireCortex/blob/dev/.github/SECURITY.md
+    about: Please do not report security vulnerabilities through public GitHub issues. Report it privately through GitHub security advisories instead.
   - name: Contribution guidelines
-        url: https://github.com/lieyanc/FireCortex/blob/main/.github/CONTRIBUTING.md
+    url: https://github.com/lieyanc/FireCortex/blob/dev/.github/CONTRIBUTING.md
     about: Read the contribution guidelines before opening an issue or pull request.
