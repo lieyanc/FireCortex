@@ -1,12 +1,12 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./frontend/public/logo-white.svg" />
-    <img src="./frontend/public/logo-black.svg" alt="FireCortex" width="160" />
+    <img src="./frontend/public/logo-black.svg" alt="FireCortex" width="220" />
   </picture>
 </p>
 
 <p align="center">
-  An integrated AI platform for enterprise model routing, chat, files, tools, billing, identity, and operations.
+  Your external brain: one chat box that routes, equips, and runs whatever it takes to get things done.
 </p>
 
 <p align="center">
@@ -14,10 +14,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/lieyanc/FireCortex"><img alt="Website" src="https://img.shields.io/badge/Website-github.com/lieyanc/FireCortex-black" /></a>
-  <a href="https://github.com/lieyanc/FireCortex"><img alt="Guide" src="https://img.shields.io/badge/Guide-Quickstart-0f766e" /></a>
-  <a href="https://t.me/firecortex"><img alt="Telegram" src="https://img.shields.io/badge/Telegram-firecortex-26A5E4?logo=telegram&logoColor=white" /></a>
-  <a href="https://x.com/FIRECORTEX_AI"><img alt="X" src="https://img.shields.io/badge/X-%40FIRECORTEX_AI-black?logo=x&logoColor=white" /></a>
+  <a href="https://github.com/lieyanc/FireCortex/releases"><img alt="Release" src="https://img.shields.io/github/v/release/lieyanc/FireCortex?include_prereleases" /></a>
   <a href="https://www.apache.org/licenses/LICENSE-2.0"><img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-blue" /></a>
   <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black" />
   <img alt="React" src="https://img.shields.io/badge/React-19-149eca" />
@@ -26,13 +23,26 @@
 
 ## Overview
 
-FireCortex is an open-source, deployable AI platform for individuals, teams, and enterprises that need long-term, stable, and unified access to multiple model providers. It provides one clear entry point for multiple upstream models and providers, integrating multimodal chat, model routing, files and RAG, MCP tools, usage billing, identity, audit logs, and operational controls into one product.
+FireCortex is a self-hosted AI workspace built around one idea: a single chat box should be enough. Instead of making you pick a model, toggle tools, and orchestrate steps by hand, FireCortex works as an external brain that decides how each request gets handled:
 
-The system is designed around simple deployment, efficient static delivery, and a low runtime resource footprint: lightweight without feeling limited, restrained without losing capability, and open without becoming disorderly.
+- **Intelligent model routing**: choose the model that fits each request by task type, required capabilities, context size, latency, and cost.
+- **Adaptive tool injection**: expose only the tools, MCP servers, files, and memory a request actually needs, keeping prompts small and tool selection accurate.
+- **Agent runtime**: plan, call tools, observe results, and iterate across multiple steps until the task is done, with every step traceable.
 
-![FireCortex workspace](./docs/assets/screenshots/FireCortex.jpg)
+FireCortex is derived from [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat) v0.4.3 and inherits its production-grade foundation: multi-provider access, files and RAG, MCP tools, billing, identity, audit, and a lightweight single-runtime deployment. <!-- rebrand:keep -->
+
+## Roadmap
+
+| Capability | Status |
+| --- | --- |
+| FireCortex rebrand | Done |
+| Intelligent model routing | Planned |
+| Adaptive tool injection | Planned |
+| Agent runtime | Planned |
 
 ## Features
+
+The capabilities below are inherited from upstream and available today.
 
 | Area | Capabilities |
 | --- | --- |
@@ -46,17 +56,6 @@ The system is designed around simple deployment, efficient static delivery, and 
 | Identity and security | Local accounts, session management, HttpOnly refresh cookies, 2FA/TOTP, trusted devices, SSO/OIDC/OAuth, contact verification, and encrypted sensitive data. |
 | Administration and audit | Centralized management for users, roles, upstreams, models, routes, pricing, subscriptions, balances, usage logs, audit logs, auth events, and system events. |
 | Deployment and operations | Single-runtime frontend/API serving, Docker deployment, SQLite or PostgreSQL, in-memory cache or Redis, S3-compatible storage, Swagger, structured logs, version endpoint, GeoIP, and OpenTelemetry. |
-
-<p align="center">
-  <img src="./docs/assets/screenshots/FireCortex-Image.png" alt="FireCortex image generation" width="49.45%" />
-  <img src="./docs/assets/screenshots/FireCortex-Dark.png" alt="FireCortex dark mode" width="49.45%" />
-</p>
-
-<p align="center">
-  <img src="./docs/assets/screenshots/FireCortex-Usage.png" alt="FireCortex usage and billing" width="32.3%" />
-  <img src="./docs/assets/screenshots/FireCortex-Artifacts.png" alt="FireCortex artifacts" width="32.3%" />
-  <img src="./docs/assets/screenshots/FireCortex-Html.png" alt="FireCortex HTML rendering" width="32.3%" />
-</p>
 
 ## Architecture and Tech Stack
 
@@ -140,7 +139,7 @@ The backend keeps clear internal boundaries: `backend/cmd/server` is the executa
 │   └── public/                # static assets
 ├── packages/api-contract/     # generated TypeScript API contract
 ├── docker/                    # optional extraction and OCR services
-├── docs/                      # project guides and screenshots
+├── docs/                      # project guides
 ├── config*.example.yaml       # deployment profile templates
 ├── docker-compose*.yml        # deployment profiles
 └── Dockerfile                 # frontend + backend production image
@@ -470,9 +469,11 @@ Web, App, and Desktop clients then reuse that instance callback automatically. T
 
 ## Feature Guides
 
-- [User Guide](https://github.com/lieyanc/FireCortex)
-- [Admin Guide](https://github.com/lieyanc/FireCortex)
-- [Advanced Guide](https://github.com/lieyanc/FireCortex)
+FireCortex does not have its own user guides yet. The upstream guides apply to inherited features; replace the DEEIX Chat names with FireCortex and `DEEIX_*` template variables with `FIRECORTEX_*`. <!-- rebrand:keep -->
+
+- [User Guide](https://deeix.com/docs/deeix-chat/new-chat) <!-- rebrand:keep -->
+- [Admin Guide](https://deeix.com/docs/deeix-chat/admin-accounts) <!-- rebrand:keep -->
+- [Advanced Guide](https://deeix.com/docs/deeix-chat/advanced-capabilities-passthrough-tools) <!-- rebrand:keep -->
 
 ## Security Notes
 
@@ -485,11 +486,8 @@ Web, App, and Desktop clients then reuse that instance callback automatically. T
 
 ## Documentation
 
-- [Quick Start](https://github.com/lieyanc/FireCortex)
-- [Configuration](https://github.com/lieyanc/FireCortex)
-- [User Guide](https://github.com/lieyanc/FireCortex)
-- [Admin Guide](https://github.com/lieyanc/FireCortex)
-- [Advanced Guide](https://github.com/lieyanc/FireCortex)
+- Upstream sync workflow: [docs/UPSTREAM.md](./docs/UPSTREAM.md)
+- Custom branding: [docs/BRANDING.md](./docs/BRANDING.md)
 - Backend guide: [backend/README.md](./backend/README.md)
 - Backend standards: [backend/docs/README.md](./backend/docs/README.md)
 - Frontend guide: [frontend/README.md](./frontend/README.md)
@@ -502,18 +500,16 @@ Web, App, and Desktop clients then reuse that instance callback automatically. T
 
 FireCortex is built on the open-source ecosystem. Thanks to all maintainers and communities in the AI tooling ecosystem.
 
+- [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat), the upstream project FireCortex is derived from <!-- rebrand:keep -->
 - [Next.js](https://nextjs.org)
 - [Go](https://go.dev)
 - [LINUX DO](https://linux.do)
 
 ## Contact & Community
 
-- Website: [github.com/lieyanc/FireCortex](https://github.com/lieyanc/FireCortex)
-- Blog: [blog.cheny.me](https://blog.cheny.me/)
-- Email: [support@deeix.com](mailto:support@deeix.com)
-- Telegram: [t.me/firecortex](https://t.me/firecortex)
-- X: [@FIRECORTEX_AI](https://x.com/FIRECORTEX_AI)
+- Issues and feature requests: [GitHub Issues](https://github.com/lieyanc/FireCortex/issues)
+- Security reports: [GitHub security advisories](https://github.com/lieyanc/FireCortex/security/advisories/new)
 
 ## License
 
-FireCortex is licensed under the [Apache License 2.0](./LICENSE).
+FireCortex is licensed under the [Apache License 2.0](./LICENSE). See [NOTICE](./NOTICE) for upstream attribution.

@@ -1,12 +1,12 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="../frontend/public/logo-white.svg" />
-    <img src="../frontend/public/logo-black.svg" alt="FireCortex" width="160" />
+    <img src="../frontend/public/logo-black.svg" alt="FireCortex" width="220" />
   </picture>
 </p>
 
 <p align="center">
-  企业级模型路由、对话、文件、工具、计费、身份和运维的一体化 AI 平台。
+  你的“外置大脑”：一个对话框，简单高效地解决一切。
 </p>
 
 <p align="center">
@@ -14,11 +14,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/lieyanc/FireCortex"><img alt="官网" src="https://img.shields.io/badge/官网-github.com/lieyanc/FireCortex-black" /></a>
-  <a href="https://github.com/lieyanc/FireCortex"><img alt="快速安装教程" src="https://img.shields.io/badge/快速安装-教程-0f766e" /></a>
-  <a href="https://t.me/firecortex"><img alt="Telegram" src="https://img.shields.io/badge/Telegram-firecortex-26A5E4?logo=telegram&logoColor=white" /></a>
-  <a href="https://x.com/FIRECORTEX_AI"><img alt="推特 / X" src="https://img.shields.io/badge/X-%40FIRECORTEX_AI-black?logo=x&logoColor=white" /></a>
-  <a href="https://www.apache.org/licenses/LICENSE-2.0"><img alt="开源协议" src="https://img.shields.io/badge/License-Apache%202.0-blue" /></a>
+  <a href="https://github.com/lieyanc/FireCortex/releases"><img alt="Release" src="https://img.shields.io/github/v/release/lieyanc/FireCortex?include_prereleases" /></a>
+  <a href="https://www.apache.org/licenses/LICENSE-2.0"><img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-blue" /></a>
   <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black" />
   <img alt="React" src="https://img.shields.io/badge/React-19-149eca" />
   <img alt="Go" src="https://img.shields.io/badge/Go-1.26-00add8" />
@@ -26,13 +23,26 @@
 
 ## 项目简介
 
-FireCortex 是一款开源可部署的 AI 平台，面向需要长期、稳定、统一使用多模型能力的个人、团队与企业。它用一个清晰的使用入口承载多个上游模型和服务商，将多模态对话、模型路由、文件与 RAG、MCP 工具、用量计费、身份认证、审计日志和运维控制整合到同一个产品中。
+FireCortex 是一个可自托管的 AI 工作台，核心理念只有一个：一个对话框就够了。你不需要手动挑选模型、开关工具或编排步骤，FireCortex 像“外置大脑”一样决定每个请求该如何处理：
 
-系统围绕简单部署、高效静态分发和低资源的运行时占用设计，轻量而不简陋、克制而不缺能力、开放而不失秩序。
+- **智能模型路由**：按任务类型、所需能力、上下文长度、延迟与成本，为每个请求选择最合适的模型。
+- **自适应工具注入**：只向当前请求暴露真正需要的工具、MCP 服务、文件与记忆，让提示词保持精简、工具选择更准确。
+- **Agent Runtime**：规划、调用工具、观察结果并多步迭代直至任务完成，每一步都可追溯。
 
-![FireCortex 工作区](./assets/screenshots/FireCortex.jpg)
+FireCortex 基于 [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat) v0.4.3 二次开发，继承其生产级基础能力：多上游模型接入、文件与 RAG、MCP 工具、计费、身份、审计以及轻量的单运行时部署。 <!-- rebrand:keep -->
+
+## 路线图
+
+| 能力 | 状态 |
+| --- | --- |
+| 品牌重构为 FireCortex | 已完成 |
+| 智能模型路由 | 规划中 |
+| 自适应工具注入 | 规划中 |
+| Agent Runtime | 规划中 |
 
 ## 核心能力
+
+以下能力继承自上游，当前即可使用。
 
 | 模块 | 能力 |
 | --- | --- |
@@ -46,17 +56,6 @@ FireCortex 是一款开源可部署的 AI 平台，面向需要长期、稳定�
 | 身份与安全 | 覆盖本地账号、会话管理、HttpOnly Refresh Cookie、2FA/TOTP、可信设备、SSO/OIDC/OAuth、联系方式验证和敏感信息加密。 |
 | 管理与审计 | 后台集中管理用户、角色、上游、模型、路由、价格、订阅、余额、调用日志、审计日志、认证事件和系统事件。 |
 | 部署与运维 | 支持单运行时托管前端与 API、Docker 部署、SQLite 或 PostgreSQL、内存缓存或 Redis、S3 兼容存储、Swagger、结构化日志、版本接口、GeoIP 和 OpenTelemetry。 |
-
-<p align="center">
-  <img src="./assets/screenshots/FireCortex-Image.png" alt="FireCortex 图片生成" width="49.45%" />
-  <img src="./assets/screenshots/FireCortex-Dark.png" alt="FireCortex 深色模式" width="49.45%" />
-</p>
-
-<p align="center">
-  <img src="./assets/screenshots/FireCortex-Usage.png" alt="FireCortex 用量与计费" width="32.3%" />
-  <img src="./assets/screenshots/FireCortex-Artifacts.png" alt="FireCortex Artifacts" width="32.3%" />
-  <img src="./assets/screenshots/FireCortex-Html.png" alt="FireCortex HTML 渲染" width="32.3%" />
-</p>
 
 ## 系统架构与技术栈
 
@@ -140,7 +139,7 @@ flowchart TB
 │   └── public/                # 静态资源
 ├── packages/api-contract/     # 生成的 TypeScript API 契约
 ├── docker/                    # 可选文档提取与 OCR 服务
-├── docs/                      # 项目指南和截图
+├── docs/                      # 项目指南
 ├── config*.example.yaml       # 部署方案配置模板
 ├── docker-compose*.yml        # 部署方案
 └── Dockerfile                 # 前后端生产镜像
@@ -470,9 +469,11 @@ Web、App 与桌面端会自动复用当前实例的这个回调。外部身份�
 
 ## 功能指南
 
-- [用户指南](https://github.com/lieyanc/FireCortex)
-- [管理指南](https://github.com/lieyanc/FireCortex)
-- [进阶指南](https://github.com/lieyanc/FireCortex)
+FireCortex 暂未提供独立的使用指南。继承自上游的功能可参考上游文档，阅读时将 DEEIX Chat 替换为 FireCortex，`DEEIX_*` 模板变量替换为 `FIRECORTEX_*`。 <!-- rebrand:keep -->
+
+- [用户指南](https://deeix.com/zh/docs/deeix-chat/new-chat) <!-- rebrand:keep -->
+- [管理指南](https://deeix.com/zh/docs/deeix-chat/admin-accounts) <!-- rebrand:keep -->
+- [进阶指南](https://deeix.com/zh/docs/deeix-chat/advanced-capabilities-passthrough-tools) <!-- rebrand:keep -->
 
 ## 安全说明
 
@@ -485,11 +486,8 @@ Web、App 与桌面端会自动复用当前实例的这个回调。外部身份�
 
 ## 文档入口
 
-- [快速开始](https://github.com/lieyanc/FireCortex)
-- [配置说明](https://github.com/lieyanc/FireCortex)
-- [用户指南](https://github.com/lieyanc/FireCortex)
-- [管理指南](https://github.com/lieyanc/FireCortex)
-- [进阶指南](https://github.com/lieyanc/FireCortex)
+- 上游同步流程：[docs/UPSTREAM.md](./UPSTREAM.md)
+- 自定义品牌：[docs/BRANDING.md](./BRANDING.md)
 - 后端说明：[backend/README.md](../backend/README.md)
 - 后端规范：[backend/docs/README.md](../backend/docs/README.md)
 - 前端说明：[frontend/README.md](../frontend/README.md)
@@ -502,18 +500,16 @@ Web、App 与桌面端会自动复用当前实例的这个回调。外部身份�
 
 FireCortex 基于开源生态构建，感谢所有 AI 工具生态中的维护者和社区。
 
+- [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat)：FireCortex 的上游项目 <!-- rebrand:keep -->
 - [Next.js](https://nextjs.org)
 - [Go](https://go.dev)
 - [LINUX DO](https://linux.do)
 
 ## 联系&交流
 
-- 官网：[github.com/lieyanc/FireCortex](https://github.com/lieyanc/FireCortex)
-- 博客：[blog.cheny.me](https://blog.cheny.me/)
-- 邮箱：[support@deeix.com](mailto:support@deeix.com)
-- Telegram：[t.me/firecortex](https://t.me/firecortex)
-- 推特 / X：[@FIRECORTEX_AI](https://x.com/FIRECORTEX_AI)
+- 问题反馈与功能建议：[GitHub Issues](https://github.com/lieyanc/FireCortex/issues)
+- 安全漏洞报告：[GitHub Security Advisories](https://github.com/lieyanc/FireCortex/security/advisories/new)
 
 ## 开源协议
 
-FireCortex 使用 [Apache License 2.0](../LICENSE) 授权。
+FireCortex 使用 [Apache License 2.0](../LICENSE) 授权，上游署名见 [NOTICE](../NOTICE)。

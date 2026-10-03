@@ -29,6 +29,7 @@ import {
   writeCachedLatestRelease,
 } from "@/features/admin/model/update-check";
 import { AboutSettingsContent } from "@/shared/components/about-settings-content";
+import { UPSTREAM_PROJECT } from "@/shared/config/upstream";
 import { useDialogSnapshot } from "@/shared/hooks/use-dialog-snapshot";
 import { cn } from "@/lib/utils";
 
@@ -216,13 +217,12 @@ export function AdminAboutPage() {
       versionActions={<AdminUpdateCheck />}
       labels={{
         details: t("details"),
-        official: t("official"),
-        website: t("website"),
         repository: t("repository"),
-        social: t("social"),
-        blog: t("blog"),
-        contact: t("contact"),
+        releases: t("releases"),
+        issues: t("issues"),
+        upstream: t("upstream"),
         copyright: t("copyright"),
+        basedOn: t("basedOn", { project: UPSTREAM_PROJECT.name, author: UPSTREAM_PROJECT.author }),
         license: t("license"),
       }}
     />

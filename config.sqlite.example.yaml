@@ -36,7 +36,7 @@ branding:
   # Optional. Frontend product branding; changes take effect after restarting the app.
   title: FireCortex
   short_name: FireCortex
-  description: FireCortex is a multi-model AI conversation system.
+  description: FireCortex is your external brain: one chat box to get anything done.
   logo_url: ""
   favicon_url: /favicon.ico
   pwa_icon_192_url: /pwa/icon-192.png

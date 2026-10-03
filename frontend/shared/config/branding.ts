@@ -4,7 +4,7 @@ import { pwaAsset } from "@/shared/pwa/assets";
 export const DEFAULT_BRANDING: BrandingDTO = {
   title: "FireCortex",
   shortName: "FireCortex",
-  description: "FireCortex is a multi-model AI conversation system.",
+  description: "FireCortex is your external brain: one chat box to get anything done.",
   logoURL: "",
   faviconURL: "/favicon.ico",
   pwaIcon192URL: pwaAsset("/pwa/icon-192.png"),

@@ -2,13 +2,13 @@
 
 > **许可与商标说明**
 >
-> FireCortex Copyright 2026 FireCortex。源代码依据 [Apache License 2.0](../LICENSE) 授权。品牌配置不会移除或替换仓库及分发产物中的 [NOTICE](../NOTICE)、许可证副本或版权声明。Apache License 2.0 不授予 FireCortex 名称、Logo 或其他商标的使用权。
+> FireCortex 基于 [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat)（Copyright 2026 DEEIX）二次开发，源代码依据 [Apache License 2.0](../LICENSE) 授权。品牌配置不会移除或替换仓库及分发产物中的 [NOTICE](../NOTICE)、许可证副本或版权声明。Apache License 2.0 不授予 FireCortex 或 DEEIX 名称、Logo 及其他商标的使用权。 <!-- rebrand:keep -->
 
 FireCortex 的产品标题、HTML Meta Description、Logo、浏览器图标和 PWA 图标由根目录 `config.yaml` 统一配置。后端启动时读取配置并通过公开品牌接口提供给静态前端，因此修改品牌不需要重新构建前端或 Docker 镜像，只需更新配置并重启应用。
 
 未配置或配置为空时，对应位置使用仓库内置品牌资源。品牌接口不可用时，前端也会保留内置品牌，不阻塞页面加载。
 
-品牌配置只影响允许定制的产品展示区域。用户端和管理端的“关于”页面始终展示 FireCortex 官方 Logo、产品介绍、版权、官网、仓库和许可证信息。配置自定义 Logo 时，公开分享页和聊天截图仍会显示固定的 `Powered by FireCortex` 来源标识。
+品牌配置只影响允许定制的产品展示区域。用户端和管理端的“关于”页面始终展示 FireCortex Logo、产品介绍、版权、仓库、上游项目署名和许可证信息。配置自定义 Logo 时，公开分享页和聊天截图仍会显示固定的 `Powered by FireCortex` 来源标识。
 
 ## 配置项
 
@@ -31,7 +31,7 @@ branding:
 | --- | --- | --- | --- |
 | `branding.title` | HTML 标题、PWA 名称及前端默认产品名称 | 简短的纯文本产品名称 | `FireCortex` |
 | `branding.short_name` | PWA 短名称、生成占位动画和 Artifact 标识 | 推荐不超过 12 个字符 | `FireCortex` |
-| `branding.description` | HTML Meta Description 和 PWA description | 简洁的纯文本页面摘要 | `FireCortex is a multi-model AI conversation system.` |
+| `branding.description` | HTML Meta Description 和 PWA description | 简洁的纯文本页面摘要 | `FireCortex is your external brain: one chat box to get anything done.` |
 | `branding.logo_url` | 登录页、侧边栏、移动端标题、公开分享页和聊天截图 | SVG 优先；PNG/WebP 至少 `1200 x 369`，推荐约 `3.25:1` | 浅色使用 `frontend/public/logo.svg`，深色使用 `frontend/public/logo-white.svg` |
 | `branding.favicon_url` | 浏览器标签页、书签 | SVG、ICO，或至少 `64 x 64` 的 PNG | `frontend/public/favicon.ico` |
 | `branding.pwa_icon_192_url` | PWA manifest、浏览器通知 | `192 x 192` PNG | `frontend/public/pwa/icon-192.png` |
@@ -49,7 +49,7 @@ branding:
 
 以下内容不受品牌配置影响：
 
-- 用户端和管理端“关于”页面中的 FireCortex Logo、产品介绍、版权、官网、仓库、社交账号和许可证信息。
+- 用户端和管理端“关于”页面中的 FireCortex Logo、产品介绍、版权、仓库、上游项目署名和许可证信息。
 - 自定义 Logo 场景下的 `Powered by FireCortex` 来源标识和固定 FireCortex Logo。
 - 仓库及 Docker 镜像中的 `LICENSE` 和 `NOTICE` 文件。
 
@@ -96,7 +96,7 @@ Docker 镜像内的前端仍是 Next.js 静态导出文件，由同一个 Go 服
 至少检查以下位置：
 
 - 浅色和深色主题中的登录页、侧边栏、移动端标题和公开分享页。
-- 用户端和管理端“关于”页面仍完整展示 FireCortex 官方信息。
+- 用户端和管理端“关于”页面仍完整展示 FireCortex 信息与上游项目署名。
 - 聊天截图和公开分享页中的自定义品牌及 FireCortex 来源标识。
 - 浏览器标题、Meta Description、favicon 和 Apple Touch Icon。
 - `/api/v1/branding`、`/api/v1/branding/manifest.webmanifest` 和同源兼容地址 `/manifest.webmanifest` 中的品牌名称、启动地址和图标。

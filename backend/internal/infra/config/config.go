@@ -18,7 +18,7 @@ const (
 	defaultAppName                      = "FireCortex"
 	defaultBrandTitle                   = "FireCortex"
 	defaultBrandShortName               = "FireCortex"
-	defaultBrandDescription             = "FireCortex is a multi-model AI conversation system."
+	defaultBrandDescription             = "FireCortex is your external brain: one chat box to get anything done."
 	defaultBrandFaviconURL              = "/favicon.ico"
 	defaultBrandPWAIcon192URL           = "/pwa/icon-192.png"
 	defaultBrandPWAIcon512URL           = "/pwa/icon-512.png"

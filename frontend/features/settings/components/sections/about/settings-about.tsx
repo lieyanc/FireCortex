@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 
 import { AboutSettingsContent } from "@/shared/components/about-settings-content";
+import { UPSTREAM_PROJECT } from "@/shared/config/upstream";
 
 export function SettingsAbout() {
   const t = useTranslations("settings.aboutPage");
@@ -14,13 +15,12 @@ export function SettingsAbout() {
       consoleLabel={t("userConsole")}
       labels={{
         details: t("details"),
-        official: t("official"),
-        website: t("website"),
         repository: t("repository"),
-        social: t("social"),
-        blog: t("blog"),
-        contact: t("contact"),
+        releases: t("releases"),
+        issues: t("issues"),
+        upstream: t("upstream"),
         copyright: t("copyright"),
+        basedOn: t("basedOn", { project: UPSTREAM_PROJECT.name, author: UPSTREAM_PROJECT.author }),
         license: t("license"),
       }}
     />

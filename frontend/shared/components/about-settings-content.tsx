@@ -2,13 +2,14 @@
 
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { ExternalLink, Globe, Mail, Newspaper } from "lucide-react";
+import { CircleDot, ExternalLink, Tag } from "lucide-react";
 
 import packageMeta from "@/package.json";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { IdentityProviderIcon } from "@/shared/components/identity-provider-icon";
 import { FireCortexLogo } from "@/shared/components/app-logo";
+import { UPSTREAM_PROJECT } from "@/shared/config/upstream";
 import {
   SettingsPage,
   SettingsSection,
@@ -17,13 +18,12 @@ import { cn } from "@/lib/utils";
 
 type AboutLabels = {
   details: string;
-  official: string;
-  website: string;
   repository: string;
-  social: string;
-  blog: string;
-  contact: string;
+  releases: string;
+  issues: string;
+  upstream: string;
   copyright: string;
+  basedOn: string;
   license: string;
 };
 
@@ -94,40 +94,28 @@ export function AboutSettingsContent({
 }: AboutSettingsContentProps) {
   const links: AboutLinkItem[] = [
     {
-      label: labels.website,
-      value: "github.com/lieyanc/FireCortex",
-      href: "https://github.com/lieyanc/FireCortex",
-      icon: Globe,
-    },
-    {
-      label: labels.official,
-      value: "FireCortex",
-      href: "https://github.com/lieyanc",
-      providerIcon: { name: "GitHub", slug: "github" },
-    },
-    {
-      label: labels.social,
-      value: "@FIRECORTEX_AI",
-      href: "https://x.com/FIRECORTEX_AI",
-      providerIcon: { name: "X", slug: "x" },
-    },
-    {
       label: labels.repository,
-      value: "FireCortex",
+      value: "lieyanc/FireCortex",
       href: "https://github.com/lieyanc/FireCortex",
       providerIcon: { name: "GitHub", slug: "github" },
     },
     {
-      label: labels.blog,
-      value: "blog.cheny.me",
-      href: "https://blog.cheny.me/",
-      icon: Newspaper,
+      label: labels.releases,
+      value: "GitHub Releases",
+      href: "https://github.com/lieyanc/FireCortex/releases",
+      icon: Tag,
     },
     {
-      label: labels.contact,
-      value: "support@deeix.com",
-      href: "mailto:support@deeix.com",
-      icon: Mail,
+      label: labels.issues,
+      value: "GitHub Issues",
+      href: "https://github.com/lieyanc/FireCortex/issues",
+      icon: CircleDot,
+    },
+    {
+      label: labels.upstream,
+      value: UPSTREAM_PROJECT.repositoryLabel,
+      href: UPSTREAM_PROJECT.repositoryURL,
+      providerIcon: { name: "GitHub", slug: "github" },
     },
   ];
 
@@ -171,6 +159,7 @@ export function AboutSettingsContent({
         </div>
         <div className="space-y-1 px-0.5 pt-4 text-xs text-muted-foreground">
           <p>{labels.copyright}</p>
+          <p>{labels.basedOn}</p>
           <a
             href="https://www.apache.org/licenses/LICENSE-2.0"
             target="_blank"
