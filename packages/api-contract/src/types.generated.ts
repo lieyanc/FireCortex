@@ -3855,6 +3855,33 @@ export interface UpdateServerToolsStatusRequest {
   toolIDs: number[];
 }
 
+export interface UpdateStatusResponse {
+  channel: "stable" | "dev";
+  currentCommit: string;
+  currentVersion: string;
+  downloadProgress: number;
+  /** Enabled 表示后台自动检查是否开启；手动检查不受影响。 */
+  enabled: boolean;
+  error: string;
+  hasUpdate: boolean;
+  isPrerelease: boolean;
+  /** LastCheck 是最近一次检查时间（RFC3339），从未检查时为空。 */
+  lastCheck: string;
+  latestVersion: string;
+  /** Progress 是整体进度（0-100），DownloadProgress 是下载阶段进度（0-100）。 */
+  progress: number;
+  releaseNotes: string;
+  repo: string;
+  source: "github" | "proxy";
+  /** State 取值 idle | checking | downloading | ready | applying | failed。 */
+  state: "idle" | "checking" | "downloading" | "ready" | "applying" | "failed";
+}
+
+export interface UpdateStatusResponseDoc {
+  data: UpdateStatusResponse;
+  errorMsg: string;
+}
+
 export interface UpdateToolRequest {
   attachmentArgument?: string;
   attachmentEncoding?: "base64" | "data_url";
@@ -7454,6 +7481,70 @@ export namespace Admin {
     export type RequestBody = never;
     export type RequestHeaders = {};
     export type ResponseBody = SystemEventListResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin/system
+   * @name SystemUpdateList
+   * @summary 查询自更新状态
+   * @request GET:/admin/system/update
+   * @secure
+   */
+  export namespace SystemUpdateList {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = UpdateStatusResponseDoc;
+  }
+
+  /**
+   * @description ready 状态下安装已下载的版本并重启；否则在后台检查、下载，stable 通道下载校验后自动重启，dev 通道停在 ready 等待再次确认。
+   * @tags admin/system
+   * @name SystemUpdateApplyCreate
+   * @summary 下载并应用更新
+   * @request POST:/admin/system/update/apply
+   * @secure
+   */
+  export namespace SystemUpdateApplyCreate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = UpdateStatusResponseDoc;
+  }
+
+  /**
+   * @description 检查失败不返回错误响应，而是体现在返回状态的 state=failed 与 error 字段中。
+   * @tags admin/system
+   * @name SystemUpdateCheckCreate
+   * @summary 检查新版本（只检查不下载）
+   * @request POST:/admin/system/update/check
+   * @secure
+   */
+  export namespace SystemUpdateCheckCreate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = UpdateStatusResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin/system
+   * @name SystemUpdateDismissCreate
+   * @summary 放弃已下载的待安装版本
+   * @request POST:/admin/system/update/dismiss
+   * @secure
+   */
+  export namespace SystemUpdateDismissCreate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = UpdateStatusResponseDoc;
   }
 
   /**

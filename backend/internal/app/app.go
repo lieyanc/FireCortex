@@ -87,6 +87,7 @@ import (
 	promptpresethttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/promptpreset"
 	settingshttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/settings"
 	skillhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/skill"
+	systemhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/system"
 	uicomponenthttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/uicomponent"
 	userhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/user"
 	usersettingshttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/usersettings"
@@ -115,6 +116,8 @@ type App struct {
 	backgroundCancel       context.CancelFunc
 	// shutdown 是进程关停排空信号：翻转就绪探针并断开订阅型长连接。
 	shutdown *lifecycle.Shutdown
+	// restart 由自更新触发：Run 按停机流程排空并释放资源后，交给 updater 原地 exec 新版本。
+	restart *restartCoordinator
 }
 
 type subscriptionGroupAdapter struct {
@@ -454,6 +457,10 @@ func NewApp() (*App, error) {
 	knowledgeBaseHandler := knowledgebasehttp.NewHandler(knowledgeBaseService, runtimeCfg)
 	knowledgeBaseModule := knowledgebasehttp.NewModule(knowledgeBaseHandler)
 
+	restart := newRestartCoordinator(httpTimeoutSeconds(cfg.HTTPShutdownTimeoutSeconds, 10), log)
+	selfUpdater := newSelfUpdater(runtimeCfg.Snapshot(), log, restart, conversationService.HasActiveGenerations)
+	systemModule := systemhttp.NewModule(systemhttp.NewHandler(selfUpdater))
+
 	hc := newHealthChecker(db, cfg.CacheDriver, redisClient)
 	rateLimiter := buildRateLimiter(cfg, redisClient, memoryCache)
 	engine, err := platformhttp.NewEngine(runtimeCfg, log, platformhttp.Modules{
@@ -474,6 +481,7 @@ func NewApp() (*App, error) {
 		Settings:          settingsModule,
 		UserSettings:      userSettingsModule,
 		User:              userModule,
+		System:            systemModule,
 		Shutdown:          shutdownSignal,
 		StartupLog: func(log *zap.Logger) {
 			if log == nil || bootstrapSuperAdmin == nil {
@@ -497,6 +505,7 @@ func NewApp() (*App, error) {
 	conversationService.StartBackgroundWorkers(backgroundCtx)
 	contentModerationService.StartBackgroundWorkers(backgroundCtx)
 	channelService.StartModelIconAssetCleanup(backgroundCtx)
+	selfUpdater.StartBackground(backgroundCtx)
 
 	app := &App{
 		cfg:                    runtimeCfg.Snapshot(),
@@ -515,6 +524,7 @@ func NewApp() (*App, error) {
 		tracingShutdown:        tracingShutdown,
 		backgroundCancel:       backgroundCancel,
 		shutdown:               shutdownSignal,
+		restart:                restart,
 	}
 	keepTracing = true
 	return app, nil
@@ -544,11 +554,15 @@ func (a *App) Run() error {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
+	restarting := false
 	select {
 	case err := <-errCh:
 		return err
 	case sig := <-quit:
 		a.logger.Info("server_shutting_down", zap.String("signal", sig.String()))
+	case <-a.restart.requested:
+		restarting = true
+		a.logger.Info("server_restarting_for_update")
 	}
 
 	// 阶段一：进入排空。就绪探针翻转为 503 引导负载均衡摘流，
@@ -576,6 +590,14 @@ func (a *App) Run() error {
 		a.backgroundCancel()
 	}
 	a.logger.Info("server_stopped")
+	if restarting {
+		// 进程即将被新版本原地替换：释放资源后交还 updater 执行 exec，Run 不再返回。
+		// 恢复默认信号处理，保证等待期间 SIGTERM 仍能终止进程。
+		signal.Stop(quit)
+		a.Close()
+		close(a.restart.ready)
+		select {}
+	}
 	return nil
 }
 

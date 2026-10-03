@@ -339,6 +339,15 @@ type yamlConfig struct {
 			SamplingRate float64 `yaml:"sampling_rate"`
 		} `yaml:"tracing"`
 	} `yaml:"observability"`
+	Update struct {
+		Enabled              *bool  `yaml:"enabled"`
+		Channel              string `yaml:"channel"`
+		CheckIntervalSeconds int    `yaml:"check_interval_seconds"`
+		Source               string `yaml:"source"`
+		ProxyBaseURL         string `yaml:"proxy_base_url"`
+		Repo                 string `yaml:"repo"`
+		DownloadDir          string `yaml:"download_dir"`
+	} `yaml:"update"`
 }
 
 // Config 管理后端服务的运行参数。
@@ -425,6 +434,14 @@ type Config struct {
 	OTelExporterOTLPInsecure     bool
 	OTelExporterOTLPProtocol     string
 	OTelSamplingRate             float64
+	// 自更新（OTA）：后台检查开关、通道与下载源，手动检查不受 UpdateEnabled 限制
+	UpdateEnabled              bool
+	UpdateChannel              string
+	UpdateCheckIntervalSeconds int
+	UpdateSource               string
+	UpdateProxyBaseURL         string
+	UpdateRepo                 string
+	UpdateDownloadDir          string
 
 	// ── 动态配置（由 DB 种子初始化默认值，settings.RuntimeSettings.ApplyTo 覆盖） ──
 	// 认证配置
@@ -670,6 +687,13 @@ func Load() Config {
 		OTelExporterOTLPInsecure:     envOrBoolPtr("OTEL_EXPORTER_OTLP_INSECURE", yc.Observability.Tracing.Insecure, false),
 		OTelExporterOTLPProtocol:     normalizeOTelExporterOTLPProtocol(envOr("OTEL_EXPORTER_OTLP_PROTOCOL", yc.Observability.Tracing.Protocol, "grpc")),
 		OTelSamplingRate:             envOrFloat("OTEL_TRACES_SAMPLER_ARG", envOrFloat("OTEL_SAMPLING_RATE", yc.Observability.Tracing.SamplingRate, 1), 1),
+		UpdateEnabled:                envOrBoolPtr("UPDATE_ENABLED", yc.Update.Enabled, false),
+		UpdateChannel:                envOr("UPDATE_CHANNEL", yc.Update.Channel, "stable"),
+		UpdateCheckIntervalSeconds:   envOrInt("UPDATE_CHECK_INTERVAL_SECONDS", yc.Update.CheckIntervalSeconds, 3600),
+		UpdateSource:                 envOr("UPDATE_SOURCE", yc.Update.Source, "github"),
+		UpdateProxyBaseURL:           envOr("UPDATE_PROXY_BASE_URL", yc.Update.ProxyBaseURL, ""),
+		UpdateRepo:                   envOr("UPDATE_REPO", yc.Update.Repo, ""),
+		UpdateDownloadDir:            envOrPath("UPDATE_DOWNLOAD_DIR", yc.Update.DownloadDir, "./data/updates", yc.sourceDir),
 
 		// 动态配置默认值（会被 DB 覆盖）
 		TokenTTLHours:                     24,

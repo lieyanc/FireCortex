@@ -147,6 +147,8 @@ storage:
     root_dir: ./data/storage
 geoip:
   database_path: ./data/geoip.mmdb
+update:
+  download_dir: ./data/updates
 `)
 	if err := os.WriteFile(configPath, configBody, 0o644); err != nil {
 		t.Fatalf("write root config: %v", err)
@@ -163,6 +165,7 @@ geoip:
 	assertPath(t, "frontend dist", cfg.FrontendDistDir, filepath.Join(root, "frontend", "out"))
 	assertPath(t, "storage root", cfg.StorageRootDir, filepath.Join(root, "data", "storage"))
 	assertPath(t, "geoip database", cfg.GeoIPDatabasePath, filepath.Join(root, "data", "geoip.mmdb"))
+	assertPath(t, "update download dir", cfg.UpdateDownloadDir, filepath.Join(root, "data", "updates"))
 }
 
 func TestLoadReadsTurnstileSiteverifyURL(t *testing.T) {
@@ -397,6 +400,7 @@ func cleanupConfigEnv(t *testing.T) {
 		"FRONTEND_DIST_DIR",
 		"STORAGE_ROOT_DIR",
 		"GEOIP_DATABASE_PATH",
+		"UPDATE_DOWNLOAD_DIR",
 		"TURNSTILE_SITEVERIFY_URL",
 		"SSRF_ALLOWED_HOSTS",
 		"SSRF_ALLOWED_CIDRS",

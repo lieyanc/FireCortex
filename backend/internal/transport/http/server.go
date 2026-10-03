@@ -32,6 +32,7 @@ import (
 	promptpresethttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/promptpreset"
 	settingshttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/settings"
 	skillhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/skill"
+	systemhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/system"
 	uicomponenthttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/uicomponent"
 	userhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/user"
 	usersettingshttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/usersettings"
@@ -75,6 +76,7 @@ type Modules struct {
 	Settings          *settingshttp.Module
 	User              *userhttp.Module
 	UserSettings      *usersettingshttp.Module
+	System            *systemhttp.Module
 	StartupLog        func(*zap.Logger)
 	// Shutdown 是进程关停排空信号；排空期间就绪探针返回 503，引导负载均衡摘除流量。
 	Shutdown *lifecycle.Shutdown
@@ -196,7 +198,7 @@ func NewEngine(cfg *config.Runtime, log *zap.Logger, modules Modules, hc HealthC
 	if modules.User != nil {
 		modules.User.RegisterRoutes(authRequired)
 	}
-	if modules.Admin != nil || modules.Auth != nil || modules.Billing != nil || modules.Channel != nil || modules.MCP != nil || modules.Settings != nil || modules.Announcement != nil || modules.PromptPreset != nil || modules.Skill != nil || modules.KnowledgeBase != nil || modules.ContentModeration != nil {
+	if modules.Admin != nil || modules.Auth != nil || modules.Billing != nil || modules.Channel != nil || modules.MCP != nil || modules.Settings != nil || modules.Announcement != nil || modules.PromptPreset != nil || modules.Skill != nil || modules.KnowledgeBase != nil || modules.ContentModeration != nil || modules.System != nil {
 		adminGroup := authRequired.Group("/admin")
 		adminGroup.Use(middleware.AdminOnly())
 		if modules.Auth != nil {
@@ -234,6 +236,9 @@ func NewEngine(cfg *config.Runtime, log *zap.Logger, modules Modules, hc HealthC
 		}
 		if modules.KnowledgeBase != nil {
 			modules.KnowledgeBase.RegisterAdminRoutes(adminGroup)
+		}
+		if modules.System != nil {
+			modules.System.RegisterAdminRoutes(adminGroup)
 		}
 	}
 

@@ -7680,6 +7680,104 @@
                 }
             }
         },
+        "/admin/system/update": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/system"
+                ],
+                "summary": "查询自更新状态",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/UpdateStatusResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/system/update/apply": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "ready 状态下安装已下载的版本并重启；否则在后台检查、下载，stable 通道下载校验后自动重启，dev 通道停在 ready 等待再次确认。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/system"
+                ],
+                "summary": "下载并应用更新",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/UpdateStatusResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/system/update/check": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "检查失败不返回错误响应，而是体现在返回状态的 state=failed 与 error 字段中。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/system"
+                ],
+                "summary": "检查新版本（只检查不下载）",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/UpdateStatusResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/system/update/dismiss": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/system"
+                ],
+                "summary": "放弃已下载的待安装版本",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/UpdateStatusResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/ui-components": {
             "get": {
                 "security": [
@@ -27479,6 +27577,108 @@
                     "items": {
                         "type": "integer"
                     }
+                }
+            }
+        },
+        "UpdateStatusResponse": {
+            "type": "object",
+            "required": [
+                "channel",
+                "currentCommit",
+                "currentVersion",
+                "downloadProgress",
+                "enabled",
+                "error",
+                "hasUpdate",
+                "isPrerelease",
+                "lastCheck",
+                "latestVersion",
+                "progress",
+                "releaseNotes",
+                "repo",
+                "source",
+                "state"
+            ],
+            "properties": {
+                "channel": {
+                    "type": "string",
+                    "enum": [
+                        "stable",
+                        "dev"
+                    ]
+                },
+                "currentCommit": {
+                    "type": "string"
+                },
+                "currentVersion": {
+                    "type": "string"
+                },
+                "downloadProgress": {
+                    "type": "number"
+                },
+                "enabled": {
+                    "description": "Enabled 表示后台自动检查是否开启；手动检查不受影响。",
+                    "type": "boolean"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "hasUpdate": {
+                    "type": "boolean"
+                },
+                "isPrerelease": {
+                    "type": "boolean"
+                },
+                "lastCheck": {
+                    "description": "LastCheck 是最近一次检查时间（RFC3339），从未检查时为空。",
+                    "type": "string"
+                },
+                "latestVersion": {
+                    "type": "string"
+                },
+                "progress": {
+                    "description": "Progress 是整体进度（0-100），DownloadProgress 是下载阶段进度（0-100）。",
+                    "type": "number"
+                },
+                "releaseNotes": {
+                    "type": "string"
+                },
+                "repo": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string",
+                    "enum": [
+                        "github",
+                        "proxy"
+                    ]
+                },
+                "state": {
+                    "description": "State 取值 idle | checking | downloading | ready | applying | failed。",
+                    "type": "string",
+                    "enum": [
+                        "idle",
+                        "checking",
+                        "downloading",
+                        "ready",
+                        "applying",
+                        "failed"
+                    ]
+                }
+            }
+        },
+        "UpdateStatusResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/UpdateStatusResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
                 }
             }
         },
