@@ -31,4 +31,4 @@ The project is under active development. Security fixes are applied to the main 
 
 ## Deployment Security
 
-Production deployments must use production configuration, strong secrets, HTTPS, restricted CORS, and a production database. Do not deploy the repository's local development `config.yaml`.
+Production deployments must use production configuration, strong secrets, HTTPS, restricted CORS, and a production database. Do not deploy the repository's local development `config.json`.

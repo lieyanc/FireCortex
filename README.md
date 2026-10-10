@@ -143,7 +143,7 @@ The backend keeps clear internal boundaries: `backend/cmd/server` is the executa
 ├── deploy/                    # systemd unit example
 ├── docs/                      # project guides
 ├── scripts/                   # binary build, rebrand, and upstream sync scripts
-└── config*.example.yaml       # deployment profile templates
+└── config*.example.json       # deployment profile overlays
 ```
 
 `frontend/` and `backend/` are independent workspaces managed by pnpm and Turborepo. `packages/api-contract/` connects them through generated Swagger types; update the Go transport contract first, then regenerate the shared package.
@@ -169,10 +169,10 @@ Local development is intended for editing source code and running the frontend a
 1. Prepare backend configuration:
 
 ```bash
-cp config.example.yaml config.yaml
+cp config.example.json config.json
 ```
 
-Adjust `database.postgres.dsn`, `database.redis.*`, and public URLs in `config.yaml` for your local environment.
+`pnpm dev` starts the backend with `CONFIG_FILE=../config.json`, so the development config lives at the repository root. The example only contains the development overrides; on first start the backend fills in the remaining keys from the built-in template and generates the secrets. Adjust `database.postgres.dsn`, `database.redis.*`, and public URLs in `config.json` for your local environment.
 
 2. Install workspace dependencies and prepare the frontend environment:
 
@@ -245,9 +245,11 @@ Choose a configuration profile first:
 
 | Profile | Use case | Config file | External services |
 | --- | --- | --- | --- |
-| Lightweight | Local evaluation, personal use, small single-node deployments | `config.sqlite.example.yaml` | None. SQLite + sqlite-vec + in-memory cache |
-| PostgreSQL + Redis | Multi-node or high-concurrency production deployments | `config.full.example.yaml` | PostgreSQL with pgvector, Redis |
-| Development | Source development with `pnpm dev` | `config.example.yaml` | PostgreSQL with pgvector, Redis |
+| Lightweight | Local evaluation, personal use, small single-node deployments | `config.sqlite.example.json` | None. SQLite + sqlite-vec + in-memory cache |
+| PostgreSQL + Redis | Multi-node or high-concurrency production deployments | `config.full.example.json` | PostgreSQL with pgvector, Redis |
+| Development | Source development with `pnpm dev` | `config.example.json` | PostgreSQL with pgvector, Redis |
+
+The example files are partial overlays: they contain only the keys that the profile changes, and the server fills in everything else from its built-in template on startup.
 
 SQLite + memory cache is single-process only. It is good for local use, evaluation, and small single-node deployments. Use PostgreSQL + Redis for multi-node or high-concurrency production deployments.
 
@@ -267,18 +269,22 @@ sudo chmod +x firecortex
 
 On macOS, verify with `shasum -a 256 -c SHA256SUMS --ignore-missing`.
 
-#### 2. Prepare `config.yaml`
+#### 2. Prepare `config.json`
 
-The binary reads `./config.yaml` or `../config.yaml` relative to its working directory, or the file named by `CONFIG_FILE`. Relative paths inside the config file, such as `./data/firecortex.db` and `./storage`, resolve against the directory that contains the config file.
+The binary reads `config.json` from its working directory, or the file named by `CONFIG_FILE`. If the file does not exist, the first start writes it from the built-in template (defaults: `app.env` set to `prod`, PostgreSQL + Redis) and generates the secrets (see [Configuration](#configuration)). Relative paths inside the config file, such as `./data/firecortex.db` and `./storage`, resolve against the directory that contains the config file.
+
+To start from a profile, download its example as `config.json`:
 
 ```bash
 ref=dev   # or the release tag you installed
-sudo curl -fL -o config.yaml "https://raw.githubusercontent.com/lieyanc/FireCortex/$ref/config.sqlite.example.yaml"
+sudo curl -fL -o config.json "https://raw.githubusercontent.com/lieyanc/FireCortex/$ref/config.sqlite.example.json"
 ```
 
-Use `config.full.example.yaml` instead for the PostgreSQL + Redis profile. Before exposing the service, set `app.env: prod`, replace `security.jwt_secret` and `security.data_encryption_key` with strong random values, and set `server.public_api_base_url`, `server.public_web_base_url`, and `server.cors_allow_origin` to your public HTTPS origin.
+Use `config.full.example.json` instead for the PostgreSQL + Redis profile. Alternatively, start the binary without a config file and edit the released `config.json`, for example set `database.driver` to `sqlite` and `cache.driver` to `memory` for the lightweight profile, then restart.
 
-The PostgreSQL + Redis profile needs both services reachable from the host. PostgreSQL needs the pgvector extension for embeddings, RAG, and semantic context; FireCortex runs `CREATE EXTENSION IF NOT EXISTS vector` on startup, so run it once as a superuser if the application role cannot create extensions. If you prefer containers for these dependencies, the following commands match the credentials in `config.full.example.yaml` (change the passwords for real deployments):
+The examples contain no secrets: `security.jwt_secret` and `security.data_encryption_key` are generated on first start. Keep them stable afterwards; `data_encryption_key` protects stored upstream API keys and other secrets, and changing it makes them unreadable. The examples set `app.env` to `dev`; before exposing the service, set `app.env` to `prod` and set `server.public_api_base_url`, `server.public_web_base_url`, and `server.cors_allow_origin` to your public HTTPS origin.
+
+The PostgreSQL + Redis profile needs both services reachable from the host. PostgreSQL needs the pgvector extension for embeddings, RAG, and semantic context; FireCortex runs `CREATE EXTENSION IF NOT EXISTS vector` on startup, so run it once as a superuser if the application role cannot create extensions. If you prefer containers for these dependencies, the following commands match the credentials in `config.full.example.json` (change the passwords for real deployments):
 
 ```bash
 docker run -d --name firecortex-postgres --restart unless-stopped \
@@ -292,7 +298,7 @@ docker run -d --name firecortex-redis --restart unless-stopped \
 
 #### 3. Run
 
-For a quick trial, run the binary from the directory that contains `config.yaml`:
+For a quick trial, run the binary from the directory that contains `config.json`:
 
 ```bash
 ./firecortex
@@ -303,7 +309,7 @@ For long-running deployments, use the systemd unit in [`deploy/firecortex.servic
 ```bash
 sudo useradd --system --home-dir /opt/firecortex --shell /usr/sbin/nologin firecortex
 sudo chown -R firecortex:firecortex /opt/firecortex
-sudo chmod 600 /opt/firecortex/config.yaml
+sudo chmod 600 /opt/firecortex/config.json
 sudo curl -fL -o /etc/systemd/system/firecortex.service \
   "https://raw.githubusercontent.com/lieyanc/FireCortex/$ref/deploy/firecortex.service"
 sudo systemctl daemon-reload
@@ -314,9 +320,9 @@ The server listens on all interfaces on `server.http_port`. For public access, r
 
 #### Configuration and Persistence
 
-Configuration priority is `environment variables > config.yaml > built-in defaults`. `config.yaml` is for static infrastructure and security configuration such as server URLs, database, cache, storage, GeoIP, tracing, updates, JWT, and encryption keys. Runtime business settings are stored in the database and managed in the admin console.
+Configuration priority is `environment variables > config.json > built-in template`. `config.json` is for static infrastructure and security configuration such as server URLs, database, cache, storage, GeoIP, tracing, updates, JWT, and encryption keys. Runtime business settings are stored in the database and managed in the admin console.
 
-With the example configs, persistent data lives next to `config.yaml`:
+With the default paths, persistent data lives next to `config.json`:
 
 | Data | Default path |
 | --- | --- |
@@ -325,7 +331,7 @@ With the example configs, persistent data lives next to `config.yaml`:
 | GeoIP MMDB cache | `./data/geoip/` |
 | Downloaded updates | `./data/updates` |
 
-Back up `config.yaml`, `data/`, and `storage/` (or your PostgreSQL database and S3 bucket). `data_encryption_key` must stay the same across restarts and upgrades; without it, encrypted secrets stored in the database cannot be read.
+Back up `config.json`, `data/`, and `storage/` (or your PostgreSQL database and S3 bucket). `data_encryption_key` must stay the same across restarts and upgrades; without it, encrypted secrets stored in the database cannot be read.
 
 `APP_ENV` accepts `dev`/`development` and `prod`/`production`, normalizes them to `dev` or `prod`, and defaults to `prod` when omitted. Use `dev` only for local development. Public production deployments should keep `APP_ENV=prod` or `APP_ENV=production` and use production secrets.
 
@@ -366,7 +372,7 @@ FireCortex updates itself from GitHub Releases. Administrators see the running v
 | `stable` | `vX.Y.Z` releases | Downloads a newer release and restarts once it is verified. |
 | `dev` | The rolling `dev-latest` prerelease | Downloads a newer build, then waits for an administrator to confirm the restart. |
 
-Set `update.enabled: true` to check in the background every `update.check_interval_seconds` (minimum `60`).
+Set `update.enabled` to `true` to check in the background every `update.check_interval_seconds` (minimum `60`).
 
 Applying an update works as follows:
 
@@ -377,19 +383,24 @@ Applying an update works as follows:
 Requirements and caveats:
 
 - The process needs write permission on the directory that contains the executable and on `update.download_dir`. The provided systemd unit satisfies this for `/opt/firecortex`.
-- Integrity relies on SHA-256 checksums only; releases are not signed. Trust rests on HTTPS and GitHub. With `update.source: proxy`, downloads go through `update.proxy_base_url`, so use only a mirror host you control.
+- Integrity relies on SHA-256 checksums only; releases are not signed. Trust rests on HTTPS and GitHub. With `update.source` set to `proxy`, downloads go through `update.proxy_base_url`, so use only a mirror host you control.
 - There is no automatic rollback if a new version fails to start. Keep `Restart=always` in systemd so a crash at least restarts the service. To roll back or update by hand, repeat the install steps with the release you want and run `sudo systemctl restart firecortex`.
 
-```yaml
-update:
-  enabled: false
-  channel: stable                 # stable or dev
-  check_interval_seconds: 3600
-  source: github                  # github or proxy
-  proxy_base_url: "https://dl.repo.chycloud.top"
-  repo: lieyanc/FireCortex
-  download_dir: ./data/updates
+```json
+{
+  "update": {
+    "enabled": false,
+    "channel": "stable",
+    "check_interval_seconds": 3600,
+    "source": "github",
+    "proxy_base_url": "",
+    "repo": "",
+    "download_dir": "./data/updates"
+  }
+}
 ```
+
+`channel` is `stable` or `dev`, and `source` is `github` or `proxy`. An empty `repo` defaults to `lieyanc/FireCortex`, and an empty `proxy_base_url` defaults to `https://dl.repo.chycloud.top`.
 
 ### Build from Source
 
@@ -458,7 +469,7 @@ If the database does not contain a superadmin account, the backend creates the i
 | Initial username | `admin` |
 | Initial password | Inspect backend startup logs, search for `bootstrap superadmin created`, and read the `password` field. |
 | First login | The system requires changing the username and password. |
-| Later changes | Use the account flow or admin console; credentials are not managed through `config.yaml`. |
+| Later changes | Use the account flow or admin console; credentials are not managed through `config.json`. |
 
 If a superadmin already exists, the service does not regenerate or print the initial password again.
 
@@ -466,11 +477,19 @@ If a superadmin already exists, the service does not regenerate or print the ini
 
 > Full configuration guide: [Configuration](https://github.com/lieyanc/FireCortex).
 
-Backend configuration is split into static runtime configuration and runtime business settings. Static runtime configuration describes branding and the infrastructure, security, and storage parameters required to start the service, and is provided through `config.yaml` and environment variables. Runtime business settings cover product capabilities such as authentication, conversations, models, files, and billing; they are stored in `system_settings` and maintained from the admin console. Environment variables override matching config-file values, which is useful for systemd `Environment=` overrides, separated deployments, and secret injection.
+Backend configuration is split into static runtime configuration and runtime business settings. Static runtime configuration describes branding and the infrastructure, security, and storage parameters required to start the service, and is provided through `config.json` and environment variables. Runtime business settings cover product capabilities such as authentication, conversations, models, files, and billing; they are stored in `system_settings` and maintained from the admin console. Environment variables override matching config-file values, which is useful for systemd `Environment=` overrides, separated deployments, and secret injection.
 
-At startup, the backend resolves the default config file from the working directory: starting from the repository root reads `config.yaml`, while starting from `backend/` reads `../config.yaml`. Relative paths inside the config file resolve against the directory containing it. If the config file is stored elsewhere, set `CONFIG_FILE` to a path accessible from the running process. The effective priority is `environment variables > config.yaml > built-in defaults`.
+At startup, the backend reads `config.json` from the working directory, or the path in `CONFIG_FILE` if the config file is stored elsewhere. For source development, `make run` (used by `pnpm dev`) sets `CONFIG_FILE=../config.json` by default, so the file lives at the repository root. Relative paths inside the config file resolve against the directory containing it.
 
-Frontend branding is also runtime configuration. Set the `branding` section in `config.yaml`, then restart the application; rebuilding the frontend or binary is not required. See [Custom branding](docs/BRANDING.md).
+The complete default configuration is a JSON template compiled into the binary:
+
+- If the config file is missing, it is created from the template with mode `0600` and freshly generated random `security.jwt_secret` and `security.data_encryption_key` values (64 hex characters each). The log shows `config: created ... from the built-in template`.
+- If the config file exists, keys missing from it, including keys added by a newer version after an update, are filled in from the template and the file is saved. Existing values and key order are kept; unknown keys are kept and reported as warnings. A missing `jwt_secret` or `data_encryption_key` key is filled with a random value, while a key explicitly set to `""` stays empty and falls back to a development placeholder that `APP_ENV=prod` validation rejects.
+- Configs from older YAML-based versions are migrated once: if `config.json` is missing but a `config.yaml` or `config.yml` with the same base name exists next to it, its values are copied into `config.json`. No secrets are generated in that case, so existing encrypted data stays readable. The YAML file is not read afterwards and can be deleted. A `CONFIG_FILE` that still points at `x.yaml` or `x.yml` is redirected to `x.json` in the same directory and migrated the same way.
+
+The effective priority is `environment variables > config.json > built-in template`. Environment variable values are never written back to the file.
+
+Frontend branding is also runtime configuration. Set the `branding` section in `config.json`, then restart the application; rebuilding the frontend or binary is not required. See [Custom branding](docs/BRANDING.md).
 
 Static configuration environment variables:
 
@@ -548,7 +567,7 @@ Static configuration environment variables:
 | Updates | `UPDATE_REPO` | GitHub repository that publishes releases, default `lieyanc/FireCortex`. |
 | Updates | `UPDATE_DOWNLOAD_DIR` | Directory for downloaded update binaries, default `./data/updates`. |
 
-Authentication, registration, conversation settings, model option policies, file processing, RAG, embedding, MCP, billing, payments, and announcements are runtime business settings, not static YAML configuration. Their defaults are seeded by the backend and maintained in the admin console.
+Authentication, registration, conversation settings, model option policies, file processing, RAG, embedding, MCP, billing, payments, and announcements are runtime business settings, not static file configuration. Their defaults are seeded by the backend and maintained in the admin console.
 
 When SSRF protection is enabled in production, administrator-saved model, MCP, Embedding, OIDC/OAuth2, and custom Turnstile endpoints are authorized locally by exact origin (`scheme + host + port`) and do not require entries in the global allowlist. Model, MCP, and Embedding redirects retain standard compatibility: public cross-origin targets are allowed, while private cross-origin targets must match `SSRF_ALLOWED_HOSTS` or `SSRF_ALLOWED_CIDRS`; OIDC/OAuth2 and Turnstile keep their stricter identity boundary. Generated media is downloaded, validated, and stored by the backend: a private artifact URL inherits trust only when it has the same origin as the selected model endpoint; public cross-origin artifact URLs remain subject to the strict public-network policy, and private cross-origin artifact URLs are blocked. The global allowlist also remains available for deployment-level integrations that cannot be tied to an administrator-saved endpoint, such as selected GeoIP or extraction deployments. Link-local, multicast, unspecified, and known metadata targets always remain blocked. Invalid allowlist entries stop backend startup, and global allowlist changes require a restart.
 

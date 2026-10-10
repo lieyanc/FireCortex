@@ -111,24 +111,32 @@ backend/
 
 ## 配置
 
-默认读取仓库根目录下的 `config.yaml`，常用配置也支持环境变量覆盖。从 `backend/` 目录启动时会读取 `../config.yaml`。也可以通过 `CONFIG_FILE` 指定配置文件路径。配置文件中的相对路径以配置文件所在目录为基准解析。下面的配置复制命令从仓库根目录执行，并选择其中一个方案。
+配置文件为 JSON 格式的 `config.json`，默认读取进程工作目录下的 `./config.json`，也可以通过 `CONFIG_FILE` 指定路径。`make run`（`pnpm dev` 同样使用它）从 `backend/` 目录启动，默认设置 `CONFIG_FILE=../config.json`，因此开发配置放在仓库根目录。配置文件中的相对路径（包括内置默认值）以配置文件所在目录为基准解析。
 
-默认开发配置（外部 PostgreSQL + Redis）：
+完整的默认配置是编译进二进制的 JSON 模板 [`internal/infra/config/template.json`](./internal/infra/config/template.json)，启动时：
+
+- 配置文件不存在：按模板释放完整的 `config.json`（权限 `0600`），并随机生成 `security.jwt_secret` 与 `security.data_encryption_key`。
+- 配置文件已存在：把模板中缺少的键（包括版本更新后新增的键）补全并写回，保留已有取值与键顺序；未知键会保留并在启动日志中提示。缺失的 `jwt_secret`/`data_encryption_key` 键会随机生成，显式写为 `""` 的密钥保持为空。
+- 旧版 YAML 迁移：`config.json` 不存在而同目录有同名 `config.yaml`/`config.yml` 时，首次启动会把其中的值迁移到 `config.json`（不生成新密钥，已加密数据保持可读），之后不再读取 YAML 文件，可以删除。`CONFIG_FILE` 仍指向 `.yaml`/`.yml` 时改用同目录同名的 `.json`。
+
+根目录的示例配置只包含对应方案需要修改的键，其余键在首次启动时由模板补全。下面的复制命令从仓库根目录执行，并选择其中一个方案；也可以不复制，直接启动后编辑释放出的 `config.json`。
+
+默认开发配置（外部 PostgreSQL + Redis，配合 `pnpm dev`）：
 
 ```bash
-cp config.example.yaml config.yaml
+cp config.example.json config.json
 ```
 
 PostgreSQL + Redis 同源部署配置（前端与 API 由同一个二进制提供）：
 
 ```bash
-cp config.full.example.yaml config.yaml
+cp config.full.example.json config.json
 ```
 
 SQLite + 进程内缓存配置：
 
 ```bash
-cp config.sqlite.example.yaml config.yaml
+cp config.sqlite.example.json config.json
 ```
 
 关键配置：
@@ -150,26 +158,30 @@ cp config.sqlite.example.yaml config.yaml
 - `OTEL_EXPORTER_OTLP_INSECURE`：是否使用明文传输
 - `OTEL_EXPORTER_OTLP_PROTOCOL`：OTLP exporter 协议，支持 `grpc`、`http`、`http/protobuf`，默认 `grpc`
 - `OTEL_TRACES_SAMPLER_ARG` / `OTEL_SAMPLING_RATE`：Trace 采样率，范围 `0~1`
-- `UPDATE_ENABLED` / `UPDATE_CHANNEL` / `UPDATE_CHECK_INTERVAL_SECONDS` / `UPDATE_SOURCE` / `UPDATE_PROXY_BASE_URL` / `UPDATE_REPO` / `UPDATE_DOWNLOAD_DIR`：OTA 自更新配置，对应 YAML `update.*`，行为说明见[项目主 README](../README.md#updating)
+- `UPDATE_ENABLED` / `UPDATE_CHANNEL` / `UPDATE_CHECK_INTERVAL_SECONDS` / `UPDATE_SOURCE` / `UPDATE_PROXY_BASE_URL` / `UPDATE_REPO` / `UPDATE_DOWNLOAD_DIR`：OTA 自更新配置，对应配置文件 `update.*`，行为说明见[项目主 README](../README.md#updating)
 
-对应 YAML：
+对应 `config.json`：
 
-```yaml
-observability:
-  tracing:
-    # 未配置 enabled 时，endpoint 非空会自动启用 Trace。
-    # enabled 为 true 时 endpoint 必填；enabled 为 false 时强制关闭。
-    # enabled: true
-    endpoint: "http://127.0.0.1:4317"
-    headers: ""
-    insecure: true
-    protocol: grpc
-    sampling_rate: 1
+```json
+{
+  "observability": {
+    "tracing": {
+      "enabled": null,
+      "endpoint": "http://127.0.0.1:4317",
+      "headers": "",
+      "insecure": true,
+      "protocol": "grpc",
+      "sampling_rate": 1
+    }
+  }
+}
 ```
 
-`config.yaml` 是静态基础设施配置入口，环境变量优先级高于 YAML，整体优先级为 `环境变量 > config.yaml > 代码内置默认值`。未显式配置 `enabled` 时，`endpoint` 非空会自动启用 Trace；显式配置 `enabled: true` 时，`endpoint` 必填。运行时业务设置由数据库 settings 覆盖，不把 OpenTelemetry collector、header/token 等部署层配置放入后台管理。
+`enabled` 为 `null` 时，`endpoint` 非空会自动启用 Trace；为 `true` 时 `endpoint` 必填；为 `false` 时强制关闭。
 
-初始化超级管理员用户名为 `admin`。当数据库中没有超级管理员时，后端会生成随机密码并只在首次创建账号的启动日志中输出一次，日志关键字为 `bootstrap superadmin created`。首次登录会强制修改用户名和密码；后续账号变更不通过 `config.yaml`。
+`config.json` 是静态基础设施配置入口，环境变量优先级高于配置文件，整体优先级为 `环境变量 > config.json > 内置模板`，环境变量不会写回配置文件。未显式配置 `enabled` 时，`endpoint` 非空会自动启用 Trace；显式配置 `enabled: true` 时，`endpoint` 必填。运行时业务设置由数据库 settings 覆盖，不把 OpenTelemetry collector、header/token 等部署层配置放入后台管理。
+
+初始化超级管理员用户名为 `admin`。当数据库中没有超级管理员时，后端会生成随机密码并只在首次创建账号的启动日志中输出一次，日志关键字为 `bootstrap superadmin created`。首次登录会强制修改用户名和密码；后续账号变更不通过 `config.json`。
 
 `APP_ENV` 未配置时默认 `prod`。`dev`/`development` 只用于本地开发；公网生产部署应保持 `APP_ENV=prod` 或 `APP_ENV=production` 并使用生产密钥。
 
@@ -228,7 +240,7 @@ https://pay.example.com/epay/submit.php
 使用本机或外部 PostgreSQL（需要 pgvector）、Redis：
 
 ```bash
-cp config.example.yaml config.yaml
+cp config.example.json config.json
 # 按本机环境修改 database.postgres.dsn 和 database.redis.*
 ```
 
@@ -237,7 +249,7 @@ cp config.example.yaml config.yaml
 使用 SQLite 和进程内缓存，无需外部依赖：
 
 ```bash
-cp config.sqlite.example.yaml config.yaml
+cp config.sqlite.example.json config.json
 ```
 
 启动后端：
@@ -270,26 +282,34 @@ http://localhost:8080/swagger/index.html
 
 默认本地存储：
 
-```yaml
-storage:
-  backend: local
-  local:
-    root_dir: ./storage
+```json
+{
+  "storage": {
+    "backend": "local",
+    "local": {
+      "root_dir": "./storage"
+    }
+  }
+}
 ```
 
 S3 兼容对象存储：
 
-```yaml
-storage:
-  backend: s3
-  s3:
-    endpoint: ""
-    region: auto
-    bucket: ""
-    prefix: ""
-    access_key_id: ""
-    secret_access_key: ""
-    force_path_style: true
+```json
+{
+  "storage": {
+    "backend": "s3",
+    "s3": {
+      "endpoint": "",
+      "region": "auto",
+      "bucket": "",
+      "prefix": "",
+      "access_key_id": "",
+      "secret_access_key": "",
+      "force_path_style": true
+    }
+  }
+}
 ```
 
 R2、OSS、MinIO、AWS S3 等统一走 S3 兼容协议，不为不同厂商维护重复实现。
@@ -312,24 +332,30 @@ PostgreSQL 使用 4000 维 `halfvec` HNSW 表达式索引召回候选，再按�
 
 默认使用 HTTP GeoIP 服务：
 
-```yaml
-geoip:
-  provider: ipwhois
+```json
+{
+  "geoip": {
+    "provider": "ipwhois"
+  }
+}
 ```
 
 生产环境如果希望降低外部依赖并提升审计稳定性，可改用本地 MMDB 数据库：
 
-```yaml
-geoip:
-  provider: mmdb
-  database_url: "https://example.com/geoip.mmdb"
-  database_path: "./data/geoip/geoip.mmdb"
-  database_max_bytes: 104857600
-  refresh_interval_hours: 168
-  timeout_ms: 2500
+```json
+{
+  "geoip": {
+    "provider": "mmdb",
+    "database_url": "https://example.com/geoip.mmdb",
+    "database_path": "./data/geoip/geoip.mmdb",
+    "database_max_bytes": 104857600,
+    "refresh_interval_hours": 168,
+    "timeout_ms": 2500
+  }
+}
 ```
 
-启用 `provider: mmdb` 时，启动会优先加载本地文件；本地文件不存在或过期时，根据 `database_url` 下载并校验新数据库。刷新成功后热切换内存中的 reader，刷新失败则保留上一份可用数据库。
+`provider` 为 `mmdb` 时，启动会优先加载本地文件；本地文件不存在或过期时，根据 `database_url` 下载并校验新数据库。刷新成功后热切换内存中的 reader，刷新失败则保留上一份可用数据库。
 
 ## 文件处理
 

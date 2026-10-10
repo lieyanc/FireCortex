@@ -143,7 +143,7 @@ flowchart TB
 ├── deploy/                    # systemd 单元示例
 ├── docs/                      # 项目指南
 ├── scripts/                   # 二进制构建、品牌替换和上游同步脚本
-└── config*.example.yaml       # 部署方案配置模板
+└── config*.example.json       # 部署方案配置覆盖片段
 ```
 
 `frontend/` 和 `backend/` 是由 pnpm 与 Turborepo 管理的独立工作区。`packages/api-contract/` 通过生成的 Swagger 类型连接两者；修改 HTTP 契约时先更新 Go 传输层，再重新生成共享包。
@@ -169,10 +169,10 @@ flowchart TB
 1. 准备后端配置：
 
 ```bash
-cp config.example.yaml config.yaml
+cp config.example.json config.json
 ```
 
-根据本机环境调整 `config.yaml` 中的 `database.postgres.dsn`、`database.redis.*` 和公开访问地址。
+`pnpm dev` 会以 `CONFIG_FILE=../config.json` 启动后端，因此开发配置位于仓库根目录。示例文件只包含开发环境需要覆盖的配置项；后端首次启动时会用内置模板补全其余配置项并生成密钥。根据本机环境调整 `config.json` 中的 `database.postgres.dsn`、`database.redis.*` 和公开访问地址。
 
 2. 安装工作区依赖并准备前端环境：
 
@@ -245,9 +245,11 @@ FireCortex 以单个自包含二进制文件发布。Web 界面嵌入在可执�
 
 | 方案 | 适合场景 | 配置文件 | 外部服务 |
 | --- | --- | --- | --- |
-| 轻量安装 | 本地试用、个人部署、小型单节点 | `config.sqlite.example.yaml` | 无，SQLite + sqlite-vec + 内存缓存 |
-| PostgreSQL + Redis | 多节点或高并发生产部署 | `config.full.example.yaml` | 带 pgvector 的 PostgreSQL、Redis |
-| 开发 | 配合 `pnpm dev` 进行源码开发 | `config.example.yaml` | 带 pgvector 的 PostgreSQL、Redis |
+| 轻量安装 | 本地试用、个人部署、小型单节点 | `config.sqlite.example.json` | 无，SQLite + sqlite-vec + 内存缓存 |
+| PostgreSQL + Redis | 多节点或高并发生产部署 | `config.full.example.json` | 带 pgvector 的 PostgreSQL、Redis |
+| 开发 | 配合 `pnpm dev` 进行源码开发 | `config.example.json` | 带 pgvector 的 PostgreSQL、Redis |
+
+示例文件是部分覆盖片段：只包含该方案需要修改的配置项，其余配置由服务启动时从内置模板补全。
 
 SQLite + memory cache 只适合单进程。多节点、高并发或更严格的生产部署建议使用 PostgreSQL + Redis。
 
@@ -267,18 +269,22 @@ sudo chmod +x firecortex
 
 macOS 上使用 `shasum -a 256 -c SHA256SUMS --ignore-missing` 校验。
 
-#### 2. 准备 `config.yaml`
+#### 2. 准备 `config.json`
 
-二进制文件会按运行目录读取 `./config.yaml` 或 `../config.yaml`，也可以通过 `CONFIG_FILE` 指定。配置文件中的相对路径（例如 `./data/firecortex.db` 和 `./storage`）以配置文件所在目录为基准解析。
+二进制文件会读取运行目录下的 `config.json`，也可以通过 `CONFIG_FILE` 指定。文件不存在时，首次启动会根据内置模板写出该文件（默认 `app.env` 为 `prod`，使用 PostgreSQL + Redis）并生成密钥（见[配置说明](#配置说明)）。配置文件中的相对路径（例如 `./data/firecortex.db` 和 `./storage`）以配置文件所在目录为基准解析。
+
+如需从某个方案开始，把对应示例下载为 `config.json`：
 
 ```bash
 ref=dev   # 或已安装版本的发布标签
-sudo curl -fL -o config.yaml "https://raw.githubusercontent.com/lieyanc/FireCortex/$ref/config.sqlite.example.yaml"
+sudo curl -fL -o config.json "https://raw.githubusercontent.com/lieyanc/FireCortex/$ref/config.sqlite.example.json"
 ```
 
-PostgreSQL + Redis 方案改用 `config.full.example.yaml`。对外提供服务前，请设置 `app.env: prod`，把 `security.jwt_secret` 和 `security.data_encryption_key` 替换为高强度随机值，并把 `server.public_api_base_url`、`server.public_web_base_url` 和 `server.cors_allow_origin` 设置为公开的 HTTPS 地址。
+PostgreSQL + Redis 方案改用 `config.full.example.json`。也可以不准备配置文件直接启动二进制，再编辑释放出的 `config.json`，例如轻量安装把 `database.driver` 设为 `sqlite`、`cache.driver` 设为 `memory`，然后重启。
 
-PostgreSQL + Redis 方案要求宿主机能访问这两个服务。Embedding、RAG 和语义上下文需要 PostgreSQL 的 pgvector 扩展；FireCortex 启动时会执行 `CREATE EXTENSION IF NOT EXISTS vector`，如果应用账号无权创建扩展，请先用超级用户执行一次。如果希望用容器运行这些依赖，以下命令与 `config.full.example.yaml` 中的凭据一致（正式部署请修改密码）：
+示例文件不包含密钥：`security.jwt_secret` 和 `security.data_encryption_key` 会在首次启动时生成，之后请保持不变。`data_encryption_key` 用于保护已保存的上游 API Key 等密钥，修改后这些数据将无法读取。示例文件把 `app.env` 设为 `dev`；对外提供服务前，请把 `app.env` 设为 `prod`，并把 `server.public_api_base_url`、`server.public_web_base_url` 和 `server.cors_allow_origin` 设置为公开的 HTTPS 地址。
+
+PostgreSQL + Redis 方案要求宿主机能访问这两个服务。Embedding、RAG 和语义上下文需要 PostgreSQL 的 pgvector 扩展；FireCortex 启动时会执行 `CREATE EXTENSION IF NOT EXISTS vector`，如果应用账号无权创建扩展，请先用超级用户执行一次。如果希望用容器运行这些依赖，以下命令与 `config.full.example.json` 中的凭据一致（正式部署请修改密码）：
 
 ```bash
 docker run -d --name firecortex-postgres --restart unless-stopped \
@@ -292,7 +298,7 @@ docker run -d --name firecortex-redis --restart unless-stopped \
 
 #### 3. 运行
 
-快速试用时，在 `config.yaml` 所在目录直接运行二进制文件：
+快速试用时，在 `config.json` 所在目录直接运行二进制文件：
 
 ```bash
 ./firecortex
@@ -303,7 +309,7 @@ docker run -d --name firecortex-redis --restart unless-stopped \
 ```bash
 sudo useradd --system --home-dir /opt/firecortex --shell /usr/sbin/nologin firecortex
 sudo chown -R firecortex:firecortex /opt/firecortex
-sudo chmod 600 /opt/firecortex/config.yaml
+sudo chmod 600 /opt/firecortex/config.json
 sudo curl -fL -o /etc/systemd/system/firecortex.service \
   "https://raw.githubusercontent.com/lieyanc/FireCortex/$ref/deploy/firecortex.service"
 sudo systemctl daemon-reload
@@ -314,9 +320,9 @@ sudo systemctl enable --now firecortex
 
 #### 配置与持久化
 
-配置优先级是：`环境变量 > config.yaml > 代码内置默认值`。`config.yaml` 负责品牌和静态基础设施、安全配置，例如品牌资源、服务地址、数据库、缓存、存储、GeoIP、Trace、更新、JWT 和加密密钥。运行时业务配置存储在数据库中，并通过后台管理修改。
+配置优先级是：`环境变量 > config.json > 内置模板`。`config.json` 负责品牌和静态基础设施、安全配置，例如品牌资源、服务地址、数据库、缓存、存储、GeoIP、Trace、更新、JWT 和加密密钥。运行时业务配置存储在数据库中，并通过后台管理修改。
 
-使用示例配置时，持久化数据位于 `config.yaml` 旁边：
+使用默认路径时，持久化数据位于 `config.json` 旁边：
 
 | 数据 | 默认路径 |
 | --- | --- |
@@ -325,7 +331,7 @@ sudo systemctl enable --now firecortex
 | GeoIP MMDB 缓存 | `./data/geoip/` |
 | 下载的更新 | `./data/updates` |
 
-请备份 `config.yaml`、`data/` 和 `storage/`（或 PostgreSQL 数据库与 S3 存储桶）。`data_encryption_key` 在重启和升级之间必须保持不变，否则数据库中加密保存的密钥将无法读取。
+请备份 `config.json`、`data/` 和 `storage/`（或 PostgreSQL 数据库与 S3 存储桶）。`data_encryption_key` 在重启和升级之间必须保持不变，否则数据库中加密保存的密钥将无法读取。
 
 `APP_ENV` 支持 `dev`/`development` 和 `prod`/`production`，内部会规范化为 `dev` 或 `prod`；未配置时默认 `prod`。`dev` 只用于本地开发；公网生产部署应保持 `APP_ENV=prod` 或 `APP_ENV=production` 并使用生产密钥。
 
@@ -366,7 +372,7 @@ FireCortex 会从 GitHub Releases 自我更新。管理员可以在 **后台管�
 | `stable` | `vX.Y.Z` 正式版 | 下载新版本并在校验通过后自动重启。 |
 | `dev` | 滚动预发布版本 `dev-latest` | 下载新构建，然后等待管理员确认后重启。 |
 
-设置 `update.enabled: true` 后，服务会每隔 `update.check_interval_seconds`（最小 `60`）在后台检查一次。
+把 `update.enabled` 设为 `true` 后，服务会每隔 `update.check_interval_seconds`（最小 `60`）在后台检查一次。
 
 应用更新的过程：
 
@@ -377,19 +383,24 @@ FireCortex 会从 GitHub Releases 自我更新。管理员可以在 **后台管�
 要求与注意事项：
 
 - 进程需要对可执行文件所在目录和 `update.download_dir` 拥有写权限。仓库提供的 systemd 单元已为 `/opt/firecortex` 满足这一点。
-- 完整性只依赖 SHA-256 校验和，发布文件没有签名，信任基础是 HTTPS 和 GitHub。使用 `update.source: proxy` 时下载经过 `update.proxy_base_url`，请只使用你自己控制的镜像主机。
+- 完整性只依赖 SHA-256 校验和，发布文件没有签名，信任基础是 HTTPS 和 GitHub。`update.source` 设为 `proxy` 时下载经过 `update.proxy_base_url`，请只使用你自己控制的镜像主机。
 - 新版本启动失败时没有自动回滚。请在 systemd 中保留 `Restart=always`，至少保证崩溃后会重启。需要回滚或手动更新时，按安装步骤下载目标版本，再执行 `sudo systemctl restart firecortex`。
 
-```yaml
-update:
-  enabled: false
-  channel: stable                 # stable 或 dev
-  check_interval_seconds: 3600
-  source: github                  # github 或 proxy
-  proxy_base_url: "https://dl.repo.chycloud.top"
-  repo: lieyanc/FireCortex
-  download_dir: ./data/updates
+```json
+{
+  "update": {
+    "enabled": false,
+    "channel": "stable",
+    "check_interval_seconds": 3600,
+    "source": "github",
+    "proxy_base_url": "",
+    "repo": "",
+    "download_dir": "./data/updates"
+  }
+}
 ```
+
+`channel` 可选 `stable` 或 `dev`，`source` 可选 `github` 或 `proxy`。`repo` 为空时默认 `lieyanc/FireCortex`，`proxy_base_url` 为空时默认 `https://dl.repo.chycloud.top`。
 
 ### 从源码构建
 
@@ -458,7 +469,7 @@ journalctl -u firecortex -e
 | 初始用户名 | `admin` |
 | 初始密码 | 查看后端启动日志，搜索 `bootstrap superadmin created`，读取其中的 `password` 字段。 |
 | 首次登录 | 系统会要求修改用户名和密码。 |
-| 后续变更 | 通过账户流程或后台管理完成；不会通过 `config.yaml` 修改。 |
+| 后续变更 | 通过账户流程或后台管理完成；不会通过 `config.json` 修改。 |
 
 如果数据库中已经存在超级管理员，服务不会重新生成或再次输出初始密码。
 
@@ -466,11 +477,19 @@ journalctl -u firecortex -e
 
 > 完整配置说明：[配置说明](https://github.com/lieyanc/FireCortex)。
 
-后端配置分为静态运行配置和运行时业务配置。静态运行配置用于描述品牌以及服务启动所需的基础设施、安全和存储参数，由 `config.yaml` 与环境变量提供；运行时业务配置用于认证、会话、模型、文件、计费等产品能力，写入 `system_settings` 并通过后台管理维护。环境变量会覆盖配置文件中的同名项，适合 systemd `Environment=` 覆盖、分离部署和密钥注入场景。
+后端配置分为静态运行配置和运行时业务配置。静态运行配置用于描述品牌以及服务启动所需的基础设施、安全和存储参数，由 `config.json` 与环境变量提供；运行时业务配置用于认证、会话、模型、文件、计费等产品能力，写入 `system_settings` 并通过后台管理维护。环境变量会覆盖配置文件中的同名项，适合 systemd `Environment=` 覆盖、分离部署和密钥注入场景。
 
-后端启动时会按运行目录解析默认配置文件：从仓库根目录启动读取 `config.yaml`，从 `backend/` 目录启动读取 `../config.yaml`。配置文件中的相对路径以配置文件所在目录为基准解析；如果配置文件放在其他位置，请使用 `CONFIG_FILE` 指向运行进程可访问的路径。最终生效优先级是 `环境变量 > config.yaml > 代码内置默认值`。
+后端启动时读取运行目录下的 `config.json`；如果配置文件放在其他位置，请使用 `CONFIG_FILE` 指向运行进程可访问的路径。源码开发时，`make run`（`pnpm dev` 会调用它）默认设置 `CONFIG_FILE=../config.json`，因此配置文件位于仓库根目录。配置文件中的相对路径以配置文件所在目录为基准解析。
 
-前端品牌同样属于运行时配置。在 `config.yaml` 中设置 `branding` 后重启应用即可生效，无需重新构建前端或二进制文件。详见[自定义品牌资源](./BRANDING.md)。
+完整的默认配置是编译进二进制的 JSON 模板：
+
+- 配置文件不存在时，会根据模板创建该文件，权限为 `0600`，并随机生成 `security.jwt_secret` 和 `security.data_encryption_key`（各 64 个十六进制字符）。日志会输出 `config: created ... from the built-in template`。
+- 配置文件已存在时，文件中缺少的配置项（包括更新后新版本新增的配置项）会从模板补全并写回文件。已有的值和键顺序保持不变；未知配置项会保留并输出警告。缺少 `jwt_secret` 或 `data_encryption_key` 键时会填入随机值；显式设为 `""` 的键保持为空，随后回退到开发用占位值，`APP_ENV=prod` 的校验会拒绝该值。
+- 旧版 YAML 配置会自动迁移一次：如果 `config.json` 不存在，但同目录下存在同名的 `config.yaml` 或 `config.yml`，其中的值会迁移到 `config.json`。这种情况下不会生成密钥，已有的加密数据仍可读取。迁移后不再读取 YAML 文件，可以将其删除。仍指向 `x.yaml` 或 `x.yml` 的 `CONFIG_FILE` 会改为使用同目录下的 `x.json`，并按同样方式迁移。
+
+最终生效优先级是 `环境变量 > config.json > 内置模板`。环境变量的值不会写回配置文件。
+
+前端品牌同样属于运行时配置。在 `config.json` 中设置 `branding` 后重启应用即可生效，无需重新构建前端或二进制文件。详见[自定义品牌资源](./BRANDING.md)。
 
 静态配置环境变量：
 
@@ -548,7 +567,7 @@ journalctl -u firecortex -e
 | 更新 | `UPDATE_REPO` | 发布版本的 GitHub 仓库，默认 `lieyanc/FireCortex`。 |
 | 更新 | `UPDATE_DOWNLOAD_DIR` | 更新二进制的下载目录，默认 `./data/updates`。 |
 
-认证、注册、会话配置、模型参数策略、文件处理、RAG、Embedding、MCP、计费、支付和公告等运行时业务配置不属于静态 YAML 配置，默认值由后端种子初始化，并在后台管理中维护。
+认证、注册、会话配置、模型参数策略、文件处理、RAG、Embedding、MCP、计费、支付和公告等运行时业务配置不属于静态配置文件，默认值由后端种子初始化，并在后台管理中维护。
 
 生产环境启用 SSRF 防护后，管理员保存的模型、MCP、Embedding、OIDC/OAuth2 和自定义 Turnstile endpoint 均按精确 origin（协议、主机和端口）获得局部授权，不需要加入全局白名单。模型、MCP 与 Embedding 保留标准重定向兼容性：跨 origin 的公网目标可以继续访问，跨 origin 的私网目标必须命中 `SSRF_ALLOWED_HOSTS` 或 `SSRF_ALLOWED_CIDRS`；OIDC/OAuth2 与 Turnstile 继续维持更严格的身份边界。模型生成的图片或视频由后端下载、校验并转存：私网制品 URL 只有与本次选中的模型 endpoint 同 origin 时才继承该局部信任；跨 origin 的公网制品仍按严格公网策略下载，跨 origin 的私网制品会被拦截。全局白名单也继续用于无法绑定管理员保存 endpoint 的部署级集成，例如部分 GeoIP 或提取服务部署。链路本地、组播、未指定地址和已知云元数据目标始终禁止。白名单配置不合法会阻止后端启动；全局白名单修改后需重启生效。
 

@@ -174,14 +174,16 @@ pnpm dev:web
 如果需要同时启动 Go API：
 
 ```bash
-cp config.example.yaml config.yaml
+cp config.example.json config.json
 pnpm dev
 ```
+
+`pnpm dev` 读取仓库根目录的 `config.json`。示例文件只包含开发环境需要覆盖的配置项，后端首次启动时会用内置模板补全其余配置并生成密钥。
 
 如果本机没有 PostgreSQL 和 Redis，可以改用不需要外部依赖的 SQLite 配置，并在 `server.cors_allow_origin` 中加入 `http://localhost:3000,http://127.0.0.1:3000`、把 `server.public_web_base_url` 改为 `http://localhost:3000`：
 
 ```bash
-cp config.sqlite.example.yaml config.yaml
+cp config.sqlite.example.json config.json
 ```
 
 只启动前端时访问 `http://localhost:3000`。后端默认监听 `http://localhost:8080`；未设置 `NEXT_PUBLIC_API_BASE_URL` 时，开发配置默认使用该地址。

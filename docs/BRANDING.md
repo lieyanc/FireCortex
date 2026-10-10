@@ -4,7 +4,7 @@
 >
 > FireCortex 基于 [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat)（Copyright 2026 DEEIX）二次开发，源代码依据 [Apache License 2.0](../LICENSE) 授权。品牌配置不会移除或替换仓库及分发产物中的 [NOTICE](../NOTICE)、许可证副本或版权声明。Apache License 2.0 不授予 FireCortex 或 DEEIX 名称、Logo 及其他商标的使用权。 <!-- rebrand:keep -->
 
-FireCortex 的产品标题、HTML Meta Description、Logo、浏览器图标和 PWA 图标由根目录 `config.yaml` 统一配置。后端启动时读取配置并通过公开品牌接口提供给静态前端，因此修改品牌不需要重新构建前端或二进制文件，只需更新配置并重启应用。
+FireCortex 的产品标题、HTML Meta Description、Logo、浏览器图标和 PWA 图标由 `config.json` 中的 `branding` 统一配置。后端启动时读取配置并通过公开品牌接口提供给静态前端，因此修改品牌不需要重新构建前端或二进制文件，只需更新配置并重启应用。
 
 未配置或配置为空时，对应位置使用仓库内置品牌资源。品牌接口不可用时，前端也会保留内置品牌，不阻塞页面加载。
 
@@ -14,20 +14,23 @@ FireCortex 的产品标题、HTML Meta Description、Logo、浏览器图标和 P
 
 前端产品品牌统一使用 `branding`。`app.name` 仍是后端服务名称，不会因前端品牌定制而改变：
 
-```yaml
-branding:
-  title: Example Chat
-  short_name: Example
-  description: Example Chat is a multi-model AI conversation system.
-  logo_url: https://example.com/logo.svg
-  favicon_url: https://example.com/favicon.ico
-  pwa_icon_192_url: https://example.com/icon-192.png
-  pwa_icon_512_url: https://example.com/icon-512.png
-  pwa_maskable_icon_512_url: https://example.com/icon-maskable-512.png
-  apple_touch_icon_180_url: https://example.com/apple-touch-icon-180.png
+```json
+{
+  "branding": {
+    "title": "Example Chat",
+    "short_name": "Example",
+    "description": "Example Chat is a multi-model AI conversation system.",
+    "logo_url": "https://example.com/logo.svg",
+    "favicon_url": "https://example.com/favicon.ico",
+    "pwa_icon_192_url": "https://example.com/icon-192.png",
+    "pwa_icon_512_url": "https://example.com/icon-512.png",
+    "pwa_maskable_icon_512_url": "https://example.com/icon-maskable-512.png",
+    "apple_touch_icon_180_url": "https://example.com/apple-touch-icon-180.png"
+  }
+}
 ```
 
-| YAML 配置 | 使用位置 | 推荐格式与尺寸 | 内置资源 |
+| 配置项 | 使用位置 | 推荐格式与尺寸 | 内置资源 |
 | --- | --- | --- | --- |
 | `branding.title` | HTML 标题、PWA 名称及前端默认产品名称 | 简短的纯文本产品名称 | `FireCortex` |
 | `branding.short_name` | PWA 短名称、生成占位动画和 Artifact 标识 | 推荐不超过 12 个字符 | `FireCortex` |
@@ -76,7 +79,7 @@ branding:
 
 ## 生效与检查
 
-更新 `config.yaml` 后重启应用。静态页面水合时由根级品牌 Provider 请求一次 `/api/v1/branding`，品牌应用完成前页面不会显示，因此首个可见画面直接使用运行时品牌；接口异常时最多等待 3 秒便回退到内置品牌。Provider 在后续客户端路由切换中持续持有同一份标题、图标和文案，不会逐页请求或重新读取配置文件。
+更新 `config.json` 后重启应用。静态页面水合时由根级品牌 Provider 请求一次 `/api/v1/branding`，品牌应用完成前页面不会显示，因此首个可见画面直接使用运行时品牌；接口异常时最多等待 3 秒便回退到内置品牌。Provider 在后续客户端路由切换中持续持有同一份标题、图标和文案，不会逐页请求或重新读取配置文件。
 
 ### 同源部署
 
@@ -84,7 +87,7 @@ branding:
 
 ### 分离部署
 
-前端可以继续部署为纯静态文件，后端独立部署。构建前端时通过 `NEXT_PUBLIC_API_BASE_URL` 指定后端公开地址；该变量只用于定位 API，不包含任何品牌值。品牌仍在部署时由后端 `config.yaml` 提供，修改品牌不需要重新构建前端。
+前端可以继续部署为纯静态文件，后端独立部署。构建前端时通过 `NEXT_PUBLIC_API_BASE_URL` 指定后端公开地址；该变量只用于定位 API，不包含任何品牌值。品牌仍在部署时由后端 `config.json` 提供，修改品牌不需要重新构建前端。
 
 分离部署还需要：
 
