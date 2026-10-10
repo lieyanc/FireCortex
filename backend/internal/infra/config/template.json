@@ -1,0 +1,114 @@
+{
+  "app": {
+    "name": "FireCortex",
+    "env": "prod"
+  },
+  "server": {
+    "http_port": "8080",
+    "cors_allow_origin": "http://127.0.0.1:8080,http://localhost:8080",
+    "trusted_proxies": "",
+    "public_api_base_url": "",
+    "public_web_base_url": "",
+    "frontend_dist_dir": "",
+    "read_header_timeout_seconds": 10,
+    "read_timeout_seconds": 120,
+    "idle_timeout_seconds": 120,
+    "max_header_bytes": 1048576,
+    "shutdown_timeout_seconds": 10
+  },
+  "security": {
+    "jwt_secret": "",
+    "mcp_user_context_secret": "",
+    "data_encryption_key": "",
+    "ssrf_protection_enabled": false,
+    "ssrf_allowed_hosts": "",
+    "ssrf_allowed_cidrs": "",
+    "turnstile_siteverify_url": "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+  },
+  "branding": {
+    "title": "FireCortex",
+    "short_name": "FireCortex",
+    "description": "FireCortex is your external brain: one chat box to get anything done.",
+    "logo_url": "",
+    "favicon_url": "/favicon.ico",
+    "pwa_icon_192_url": "/pwa/icon-192.png",
+    "pwa_icon_512_url": "/pwa/icon-512.png",
+    "pwa_maskable_icon_512_url": "/pwa/icon-maskable-512.png",
+    "apple_touch_icon_180_url": "/pwa/apple-touch-icon.png"
+  },
+  "database": {
+    "driver": "postgres",
+    "postgres": {
+      "dsn": "host=127.0.0.1 user=firecortex password=firecortex_dev_2026 dbname=firecortex port=5432 sslmode=disable TimeZone=Asia/Shanghai",
+      "max_open_conns": 30,
+      "max_idle_conns": 10,
+      "conn_max_lifetime_minutes": 60,
+      "conn_max_idle_time_minutes": 10
+    },
+    "sqlite": {
+      "path": "./data/firecortex.db",
+      "dsn": "",
+      "max_open_conns": 1,
+      "busy_timeout_ms": 5000,
+      "cache_size_kb": 20480,
+      "mmap_size_bytes": 268435456,
+      "synchronous": "NORMAL",
+      "temp_store": "MEMORY"
+    },
+    "redis": {
+      "addr": "127.0.0.1:6379",
+      "username": "",
+      "password": "",
+      "db": 0,
+      "tls_enabled": false,
+      "tls_insecure_skip_verify": false
+    }
+  },
+  "cache": {
+    "driver": "redis"
+  },
+  "storage": {
+    "backend": "local",
+    "local": {
+      "root_dir": "./storage"
+    },
+    "s3": {
+      "endpoint": "",
+      "region": "auto",
+      "bucket": "",
+      "prefix": "",
+      "access_key_id": "",
+      "secret_access_key": "",
+      "force_path_style": true
+    }
+  },
+  "geoip": {
+    "provider": "ipwhois",
+    "base_url": "https://ipwho.is",
+    "token": "",
+    "timeout_ms": 2500,
+    "database_url": "",
+    "database_path": "./data/geoip/geoip.mmdb",
+    "database_max_bytes": 104857600,
+    "refresh_interval_hours": 168
+  },
+  "observability": {
+    "tracing": {
+      "enabled": null,
+      "endpoint": "",
+      "headers": "",
+      "insecure": false,
+      "protocol": "grpc",
+      "sampling_rate": 1
+    }
+  },
+  "update": {
+    "enabled": false,
+    "channel": "stable",
+    "check_interval_seconds": 3600,
+    "source": "github",
+    "proxy_base_url": "",
+    "repo": "",
+    "download_dir": "./data/updates"
+  }
+}

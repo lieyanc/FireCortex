@@ -1,0 +1,24 @@
+{
+  "app": {
+    "env": "dev"
+  },
+  "server": {
+    "cors_allow_origin": "http://127.0.0.1:8080,http://localhost:8080,http://127.0.0.1:3000,http://localhost:3000",
+    "trusted_proxies": "127.0.0.1/32,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128,fc00::/7",
+    "public_api_base_url": "http://127.0.0.1:8080",
+    "public_web_base_url": "http://localhost:3000"
+  },
+  "database": {
+    "driver": "postgres",
+    "postgres": {
+      "dsn": "postgres://firecortex:firecortex_dev_2026@127.0.0.1:5432/firecortex?sslmode=disable&TimeZone=Asia/Shanghai"
+    },
+    "redis": {
+      "addr": "127.0.0.1:6379",
+      "password": "firecortex_redis_dev"
+    }
+  },
+  "cache": {
+    "driver": "redis"
+  }
+}

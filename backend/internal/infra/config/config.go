@@ -11,31 +11,16 @@ import (
 	"sync/atomic"
 
 	sharedsecurity "github.com/lieyanc/FireCortex/backend/internal/shared/security"
-	"gopkg.in/yaml.v3"
 )
 
 const (
-	defaultAppName                      = "FireCortex"
-	defaultBrandTitle                   = "FireCortex"
-	defaultBrandShortName               = "FireCortex"
-	defaultBrandDescription             = "FireCortex is your external brain: one chat box to get anything done."
-	defaultBrandFaviconURL              = "/favicon.ico"
-	defaultBrandPWAIcon192URL           = "/pwa/icon-192.png"
-	defaultBrandPWAIcon512URL           = "/pwa/icon-512.png"
-	defaultBrandPWAMaskableIcon512URL   = "/pwa/icon-maskable-512.png"
-	defaultBrandAppleTouchIcon180URL    = "/pwa/apple-touch-icon.png"
-	defaultJWTSecret                    = "firecortex-dev-secret"
-	defaultDataEncryptionKey            = "firecortex-dev-data-encryption-key"
-	defaultAdminUsername                = "admin"
-	defaultAdminDisplayName             = "System Admin"
-	defaultGeoIPMaxBytes                = 100 * 1024 * 1024
-	defaultHTTPReadHeaderTimeoutSeconds = 10
-	defaultHTTPReadTimeoutSeconds       = 120
-	defaultHTTPIdleTimeoutSeconds       = 120
-	defaultHTTPMaxHeaderBytes           = 1 << 20
-	// defaultHTTPShutdownTimeoutSeconds 是优雅关停排空 in-flight 请求的默认窗口。
-	// 容器编排下应小于 terminationGracePeriodSeconds，为强断兜底与资源释放留余量。
-	defaultHTTPShutdownTimeoutSeconds = 10
+	// 未配置密钥时的开发占位值；prod 环境下 Validate 拒绝使用。
+	// 首次释放 config.json 时会生成随机密钥，因此只有显式清空密钥才会落到这里。
+	defaultJWTSecret         = "firecortex-dev-secret"
+	defaultDataEncryptionKey = "firecortex-dev-data-encryption-key"
+	defaultAdminUsername     = "admin"
+	defaultAdminDisplayName  = "System Admin"
+
 	// DefaultFileFullContextMaxBytes 是全文注入的默认提取文本大小上限（2 MiB）。
 	DefaultFileFullContextMaxBytes int64 = 2 * 1024 * 1024
 
@@ -232,128 +217,11 @@ func DefaultModelOptionDeniedPathsJSON() string {
 }`
 }
 
-// yamlConfig 对应 config.yaml 的字段映射（仅保留基础设施与安全凭据）。
-type yamlConfig struct {
-	sourceDir string
-
-	App struct {
-		Name string `yaml:"name"`
-		Env  string `yaml:"env"`
-	} `yaml:"app"`
-	Branding struct {
-		Title                 string `yaml:"title"`
-		ShortName             string `yaml:"short_name"`
-		Description           string `yaml:"description"`
-		LogoURL               string `yaml:"logo_url"`
-		FaviconURL            string `yaml:"favicon_url"`
-		PWAIcon192URL         string `yaml:"pwa_icon_192_url"`
-		PWAIcon512URL         string `yaml:"pwa_icon_512_url"`
-		PWAMaskableIcon512URL string `yaml:"pwa_maskable_icon_512_url"`
-		AppleTouchIcon180URL  string `yaml:"apple_touch_icon_180_url"`
-	} `yaml:"branding"`
-	Server struct {
-		HTTPPort                 string `yaml:"http_port"`
-		CORSAllowOrigin          string `yaml:"cors_allow_origin"`
-		TrustedProxies           string `yaml:"trusted_proxies"`
-		PublicAPIBaseURL         string `yaml:"public_api_base_url"`
-		PublicWebBaseURL         string `yaml:"public_web_base_url"`
-		FrontendDistDir          string `yaml:"frontend_dist_dir"`
-		ReadHeaderTimeoutSeconds int    `yaml:"read_header_timeout_seconds"`
-		ReadTimeoutSeconds       int    `yaml:"read_timeout_seconds"`
-		IdleTimeoutSeconds       int    `yaml:"idle_timeout_seconds"`
-		MaxHeaderBytes           int    `yaml:"max_header_bytes"`
-		ShutdownTimeoutSeconds   int    `yaml:"shutdown_timeout_seconds"`
-	} `yaml:"server"`
-	Security struct {
-		JWTSecret              string `yaml:"jwt_secret"`
-		MCPUserContextSecret   string `yaml:"mcp_user_context_secret"`
-		DataEncryptionKey      string `yaml:"data_encryption_key"`
-		SSRFProtectionEnabled  *bool  `yaml:"ssrf_protection_enabled"`
-		SSRFAllowedHosts       string `yaml:"ssrf_allowed_hosts"`
-		SSRFAllowedCIDRs       string `yaml:"ssrf_allowed_cidrs"`
-		TurnstileSiteverifyURL string `yaml:"turnstile_siteverify_url"`
-	} `yaml:"security"`
-	Database struct {
-		Driver   string `yaml:"driver"`
-		Postgres struct {
-			DSN                string `yaml:"dsn"`
-			MaxOpenConns       int    `yaml:"max_open_conns"`
-			MaxIdleConns       int    `yaml:"max_idle_conns"`
-			ConnMaxLifetimeMin int    `yaml:"conn_max_lifetime_minutes"`
-			ConnMaxIdleTimeMin int    `yaml:"conn_max_idle_time_minutes"`
-		} `yaml:"postgres"`
-		SQLite struct {
-			Path          string `yaml:"path"`
-			DSN           string `yaml:"dsn"`
-			MaxOpenConns  int    `yaml:"max_open_conns"`
-			BusyTimeoutMS int    `yaml:"busy_timeout_ms"`
-			CacheSizeKB   int    `yaml:"cache_size_kb"`
-			MmapSizeBytes int64  `yaml:"mmap_size_bytes"`
-			Synchronous   string `yaml:"synchronous"`
-			TempStore     string `yaml:"temp_store"`
-		} `yaml:"sqlite"`
-		Redis struct {
-			Addr                  string `yaml:"addr"`
-			Username              string `yaml:"username"`
-			Password              string `yaml:"password"`
-			DB                    int    `yaml:"db"`
-			TLSEnabled            *bool  `yaml:"tls_enabled"`
-			TLSInsecureSkipVerify *bool  `yaml:"tls_insecure_skip_verify"`
-		} `yaml:"redis"`
-	} `yaml:"database"`
-	Cache struct {
-		Driver string `yaml:"driver"`
-	} `yaml:"cache"`
-	Storage struct {
-		Backend string `yaml:"backend"`
-		Local   struct {
-			RootDir string `yaml:"root_dir"`
-		} `yaml:"local"`
-		S3 struct {
-			Endpoint        string `yaml:"endpoint"`
-			Region          string `yaml:"region"`
-			Bucket          string `yaml:"bucket"`
-			Prefix          string `yaml:"prefix"`
-			AccessKeyID     string `yaml:"access_key_id"`
-			SecretAccessKey string `yaml:"secret_access_key"`
-			ForcePathStyle  *bool  `yaml:"force_path_style"`
-		} `yaml:"s3"`
-	} `yaml:"storage"`
-	GeoIP struct {
-		Provider             string `yaml:"provider"`
-		BaseURL              string `yaml:"base_url"`
-		Token                string `yaml:"token"`
-		TimeoutMS            int    `yaml:"timeout_ms"`
-		DatabaseURL          string `yaml:"database_url"`
-		DatabasePath         string `yaml:"database_path"`
-		DatabaseMaxBytes     int64  `yaml:"database_max_bytes"`
-		RefreshIntervalHours int    `yaml:"refresh_interval_hours"`
-	} `yaml:"geoip"`
-	Observability struct {
-		Tracing struct {
-			Enabled      *bool   `yaml:"enabled"`
-			Endpoint     string  `yaml:"endpoint"`
-			Headers      string  `yaml:"headers"`
-			Insecure     *bool   `yaml:"insecure"`
-			Protocol     string  `yaml:"protocol"`
-			SamplingRate float64 `yaml:"sampling_rate"`
-		} `yaml:"tracing"`
-	} `yaml:"observability"`
-	Update struct {
-		Enabled              *bool  `yaml:"enabled"`
-		Channel              string `yaml:"channel"`
-		CheckIntervalSeconds int    `yaml:"check_interval_seconds"`
-		Source               string `yaml:"source"`
-		ProxyBaseURL         string `yaml:"proxy_base_url"`
-		Repo                 string `yaml:"repo"`
-		DownloadDir          string `yaml:"download_dir"`
-	} `yaml:"update"`
-}
-
 // Config 管理后端服务的运行参数。
-// 静态字段由 YAML/ENV 加载；动态字段由 settings.RuntimeSettings.ApplyTo 从数据库覆盖。
+// 静态字段由 config.json/ENV 加载；动态字段由 settings.RuntimeSettings.ApplyTo 从数据库覆盖。
 type Config struct {
-	// ── 静态配置（YAML/ENV） ──
+	// ── 静态配置（config.json/ENV） ──
+	ConfigFile                   string // 实际读取的配置文件路径
 	AppName                      string
 	Env                          string
 	BrandTitle                   string
@@ -594,106 +462,110 @@ type Config struct {
 	MCPToolPrompt                 string
 }
 
-// defaultYAMLPaths 固定读取仓库根目录的 config.yaml。
-// 从仓库根目录或二进制所在的工作目录启动时读取 ./config.yaml；从 backend/ 启动时读取 ../config.yaml。
-var defaultYAMLPaths = []string{
-	"config.yaml",
-	"../config.yaml",
-}
-
-// Load 加载配置：先读仓库根目录 config.yaml，再用环境变量覆盖。
+// Load 加载配置：读取 config.json（不存在时从内置模板释放，缺键时补全），再用环境变量覆盖。
+// 优先级为环境变量 > config.json > 内置模板；环境变量不会写回配置文件。
 // 动态业务配置使用硬编码默认值，启动后由 settings.RuntimeSettings 从 DB 覆盖。
-func Load() Config {
-	yc := loadYAML()
+func Load() (Config, error) {
+	path := resolveConfigFile()
+	fc, err := loadFile(path)
+	if err != nil {
+		return Config{}, err
+	}
+	def := templateConfig()
+	sourceDir := ""
+	if absolutePath, absErr := filepath.Abs(path); absErr == nil {
+		sourceDir = filepath.Dir(absolutePath)
+	}
 	return Config{
 		// 静态基础设施
-		AppName:                      envOr("APP_NAME", yc.App.Name, defaultAppName),
-		Env:                          normalizeEnv(envOrNonEmpty("APP_ENV", yc.App.Env, "prod")),
-		BrandTitle:                   valueOrDefault(yc.Branding.Title, defaultBrandTitle),
-		BrandShortName:               valueOrDefault(yc.Branding.ShortName, defaultBrandShortName),
-		BrandDescription:             valueOrDefault(yc.Branding.Description, defaultBrandDescription),
-		BrandLogoURL:                 strings.TrimSpace(yc.Branding.LogoURL),
-		BrandFaviconURL:              valueOrDefault(yc.Branding.FaviconURL, defaultBrandFaviconURL),
-		BrandPWAIcon192URL:           valueOrDefault(yc.Branding.PWAIcon192URL, defaultBrandPWAIcon192URL),
-		BrandPWAIcon512URL:           valueOrDefault(yc.Branding.PWAIcon512URL, defaultBrandPWAIcon512URL),
-		BrandPWAMaskableIcon512URL:   valueOrDefault(yc.Branding.PWAMaskableIcon512URL, defaultBrandPWAMaskableIcon512URL),
-		BrandAppleTouchIcon180URL:    valueOrDefault(yc.Branding.AppleTouchIcon180URL, defaultBrandAppleTouchIcon180URL),
-		HTTPPort:                     envOr("HTTP_PORT", yc.Server.HTTPPort, "8080"),
-		CORSAllowOrigin:              envOr("CORS_ALLOW_ORIGIN", yc.Server.CORSAllowOrigin, "http://127.0.0.1:8080,http://localhost:8080"),
-		TrustedProxies:               envOr("TRUSTED_PROXIES", yc.Server.TrustedProxies, ""),
-		PublicAPIBaseURL:             envOr("PUBLIC_API_BASE_URL", yc.Server.PublicAPIBaseURL, ""),
-		PublicWebBaseURL:             envOr("PUBLIC_WEB_BASE_URL", yc.Server.PublicWebBaseURL, ""),
-		FrontendDistDir:              envOrPath("FRONTEND_DIST_DIR", yc.Server.FrontendDistDir, "", yc.sourceDir),
-		HTTPReadHeaderTimeoutSeconds: envOrInt("HTTP_READ_HEADER_TIMEOUT_SECONDS", yc.Server.ReadHeaderTimeoutSeconds, defaultHTTPReadHeaderTimeoutSeconds),
-		HTTPReadTimeoutSeconds:       envOrInt("HTTP_READ_TIMEOUT_SECONDS", yc.Server.ReadTimeoutSeconds, defaultHTTPReadTimeoutSeconds),
-		HTTPIdleTimeoutSeconds:       envOrInt("HTTP_IDLE_TIMEOUT_SECONDS", yc.Server.IdleTimeoutSeconds, defaultHTTPIdleTimeoutSeconds),
-		HTTPMaxHeaderBytes:           envOrInt("HTTP_MAX_HEADER_BYTES", yc.Server.MaxHeaderBytes, defaultHTTPMaxHeaderBytes),
-		HTTPShutdownTimeoutSeconds:   envOrInt("HTTP_SHUTDOWN_TIMEOUT_SECONDS", yc.Server.ShutdownTimeoutSeconds, defaultHTTPShutdownTimeoutSeconds),
-		JWTSecret:                    envOr("JWT_SECRET", yc.Security.JWTSecret, defaultJWTSecret),
-		MCPUserContextSecret:         envOr("MCP_USER_CONTEXT_SECRET", yc.Security.MCPUserContextSecret, ""),
-		DataEncryptionKey:            envOr("DATA_ENCRYPTION_KEY", yc.Security.DataEncryptionKey, defaultDataEncryptionKey),
-		SSRFProtectionEnabled:        envOrBoolPtr("SSRF_PROTECTION_ENABLED", yc.Security.SSRFProtectionEnabled, false),
-		SSRFAllowedHosts:             envOr("SSRF_ALLOWED_HOSTS", yc.Security.SSRFAllowedHosts, ""),
-		SSRFAllowedCIDRs:             envOr("SSRF_ALLOWED_CIDRS", yc.Security.SSRFAllowedCIDRs, ""),
-		DatabaseDriver:               normalizeDatabaseDriver(envOr("DATABASE_DRIVER", yc.Database.Driver, "postgres")),
-		PostgresDSN:                  normalizePostgresDSN(envOr("POSTGRES_DSN", yc.Database.Postgres.DSN, "host=127.0.0.1 user=firecortex password=firecortex_dev_2026 dbname=firecortex port=5432 sslmode=disable TimeZone=Asia/Shanghai")),
-		PostgresMaxOpenConns:         envOrInt("POSTGRES_MAX_OPEN_CONNS", yc.Database.Postgres.MaxOpenConns, 30),
-		PostgresMaxIdleConns:         envOrInt("POSTGRES_MAX_IDLE_CONNS", yc.Database.Postgres.MaxIdleConns, 10),
-		PostgresConnMaxLifetimeMin:   envOrInt("POSTGRES_CONN_MAX_LIFETIME_MINUTES", yc.Database.Postgres.ConnMaxLifetimeMin, 60),
-		PostgresConnMaxIdleTimeMin:   envOrInt("POSTGRES_CONN_MAX_IDLE_TIME_MINUTES", yc.Database.Postgres.ConnMaxIdleTimeMin, 10),
-		SQLitePath:                   envOrPath("SQLITE_PATH", yc.Database.SQLite.Path, "./data/firecortex.db", yc.sourceDir),
-		SQLiteDSN:                    envOr("SQLITE_DSN", yc.Database.SQLite.DSN, ""),
-		SQLiteMaxOpenConns:           envOrInt("SQLITE_MAX_OPEN_CONNS", yc.Database.SQLite.MaxOpenConns, 1),
-		SQLiteBusyTimeoutMS:          envOrInt("SQLITE_BUSY_TIMEOUT_MS", yc.Database.SQLite.BusyTimeoutMS, 5000),
-		SQLiteCacheSizeKB:            envOrInt("SQLITE_CACHE_SIZE_KB", yc.Database.SQLite.CacheSizeKB, 20480),
-		SQLiteMmapSizeBytes:          envOrInt64("SQLITE_MMAP_SIZE_BYTES", yc.Database.SQLite.MmapSizeBytes, 268435456),
-		SQLiteSynchronous:            normalizeSQLiteSynchronous(envOr("SQLITE_SYNCHRONOUS", yc.Database.SQLite.Synchronous, "NORMAL")),
-		SQLiteTempStore:              normalizeSQLiteTempStore(envOr("SQLITE_TEMP_STORE", yc.Database.SQLite.TempStore, "MEMORY")),
-		CacheDriver:                  normalizeCacheDriver(envOr("CACHE_DRIVER", yc.Cache.Driver, "redis")),
-		RedisAddr:                    envOr("REDIS_ADDR", yc.Database.Redis.Addr, "127.0.0.1:6379"),
-		RedisUsername:                envOr("REDIS_USERNAME", yc.Database.Redis.Username, ""),
-		RedisPassword:                envOr("REDIS_PASSWORD", yc.Database.Redis.Password, ""),
-		RedisDB:                      envOrInt("REDIS_DB", yc.Database.Redis.DB, 0),
-		RedisTLSEnabled:              envOrBoolPtr("REDIS_TLS_ENABLED", yc.Database.Redis.TLSEnabled, false),
-		RedisTLSInsecureSkipVerify:   envOrBoolPtr("REDIS_TLS_INSECURE_SKIP_VERIFY", yc.Database.Redis.TLSInsecureSkipVerify, false),
-		StorageBackend:               envOr("STORAGE_BACKEND", yc.Storage.Backend, "local"),
-		StorageRootDir:               envOrPath("STORAGE_ROOT_DIR", yc.Storage.Local.RootDir, "./storage", yc.sourceDir),
-		StorageS3Endpoint:            envOr("STORAGE_S3_ENDPOINT", yc.Storage.S3.Endpoint, ""),
-		StorageS3Region:              envOr("STORAGE_S3_REGION", yc.Storage.S3.Region, "auto"),
-		StorageS3Bucket:              envOr("STORAGE_S3_BUCKET", yc.Storage.S3.Bucket, ""),
-		StorageS3Prefix:              envOr("STORAGE_S3_PREFIX", yc.Storage.S3.Prefix, ""),
-		StorageS3AccessKeyID:         envOr("STORAGE_S3_ACCESS_KEY_ID", yc.Storage.S3.AccessKeyID, ""),
-		StorageS3SecretAccessKey:     envOr("STORAGE_S3_SECRET_ACCESS_KEY", yc.Storage.S3.SecretAccessKey, ""),
-		StorageS3ForcePathStyle:      envOrBoolPtr("STORAGE_S3_FORCE_PATH_STYLE", yc.Storage.S3.ForcePathStyle, true),
+		ConfigFile:                   path,
+		AppName:                      envOr("APP_NAME", fc.App.Name, def.App.Name),
+		Env:                          normalizeEnv(envOrNonEmpty("APP_ENV", fc.App.Env, def.App.Env)),
+		BrandTitle:                   valueOrDefault(fc.Branding.Title, def.Branding.Title),
+		BrandShortName:               valueOrDefault(fc.Branding.ShortName, def.Branding.ShortName),
+		BrandDescription:             valueOrDefault(fc.Branding.Description, def.Branding.Description),
+		BrandLogoURL:                 strings.TrimSpace(fc.Branding.LogoURL),
+		BrandFaviconURL:              valueOrDefault(fc.Branding.FaviconURL, def.Branding.FaviconURL),
+		BrandPWAIcon192URL:           valueOrDefault(fc.Branding.PWAIcon192URL, def.Branding.PWAIcon192URL),
+		BrandPWAIcon512URL:           valueOrDefault(fc.Branding.PWAIcon512URL, def.Branding.PWAIcon512URL),
+		BrandPWAMaskableIcon512URL:   valueOrDefault(fc.Branding.PWAMaskableIcon512URL, def.Branding.PWAMaskableIcon512URL),
+		BrandAppleTouchIcon180URL:    valueOrDefault(fc.Branding.AppleTouchIcon180URL, def.Branding.AppleTouchIcon180URL),
+		HTTPPort:                     envOr("HTTP_PORT", fc.Server.HTTPPort, def.Server.HTTPPort),
+		CORSAllowOrigin:              envOr("CORS_ALLOW_ORIGIN", fc.Server.CORSAllowOrigin, def.Server.CORSAllowOrigin),
+		TrustedProxies:               envOr("TRUSTED_PROXIES", fc.Server.TrustedProxies, def.Server.TrustedProxies),
+		PublicAPIBaseURL:             envOr("PUBLIC_API_BASE_URL", fc.Server.PublicAPIBaseURL, def.Server.PublicAPIBaseURL),
+		PublicWebBaseURL:             envOr("PUBLIC_WEB_BASE_URL", fc.Server.PublicWebBaseURL, def.Server.PublicWebBaseURL),
+		FrontendDistDir:              envOrPath("FRONTEND_DIST_DIR", fc.Server.FrontendDistDir, def.Server.FrontendDistDir, sourceDir),
+		HTTPReadHeaderTimeoutSeconds: envOrInt("HTTP_READ_HEADER_TIMEOUT_SECONDS", fc.Server.ReadHeaderTimeoutSeconds, def.Server.ReadHeaderTimeoutSeconds),
+		HTTPReadTimeoutSeconds:       envOrInt("HTTP_READ_TIMEOUT_SECONDS", fc.Server.ReadTimeoutSeconds, def.Server.ReadTimeoutSeconds),
+		HTTPIdleTimeoutSeconds:       envOrInt("HTTP_IDLE_TIMEOUT_SECONDS", fc.Server.IdleTimeoutSeconds, def.Server.IdleTimeoutSeconds),
+		HTTPMaxHeaderBytes:           envOrInt("HTTP_MAX_HEADER_BYTES", fc.Server.MaxHeaderBytes, def.Server.MaxHeaderBytes),
+		HTTPShutdownTimeoutSeconds:   envOrInt("HTTP_SHUTDOWN_TIMEOUT_SECONDS", fc.Server.ShutdownTimeoutSeconds, def.Server.ShutdownTimeoutSeconds),
+		JWTSecret:                    envOr("JWT_SECRET", fc.Security.JWTSecret, defaultJWTSecret),
+		MCPUserContextSecret:         envOr("MCP_USER_CONTEXT_SECRET", fc.Security.MCPUserContextSecret, def.Security.MCPUserContextSecret),
+		DataEncryptionKey:            envOr("DATA_ENCRYPTION_KEY", fc.Security.DataEncryptionKey, defaultDataEncryptionKey),
+		SSRFProtectionEnabled:        envOrBool("SSRF_PROTECTION_ENABLED", fc.Security.SSRFProtectionEnabled),
+		SSRFAllowedHosts:             envOr("SSRF_ALLOWED_HOSTS", fc.Security.SSRFAllowedHosts, def.Security.SSRFAllowedHosts),
+		SSRFAllowedCIDRs:             envOr("SSRF_ALLOWED_CIDRS", fc.Security.SSRFAllowedCIDRs, def.Security.SSRFAllowedCIDRs),
+		DatabaseDriver:               normalizeDatabaseDriver(envOr("DATABASE_DRIVER", fc.Database.Driver, def.Database.Driver)),
+		PostgresDSN:                  normalizePostgresDSN(envOr("POSTGRES_DSN", fc.Database.Postgres.DSN, def.Database.Postgres.DSN)),
+		PostgresMaxOpenConns:         envOrInt("POSTGRES_MAX_OPEN_CONNS", fc.Database.Postgres.MaxOpenConns, def.Database.Postgres.MaxOpenConns),
+		PostgresMaxIdleConns:         envOrInt("POSTGRES_MAX_IDLE_CONNS", fc.Database.Postgres.MaxIdleConns, def.Database.Postgres.MaxIdleConns),
+		PostgresConnMaxLifetimeMin:   envOrInt("POSTGRES_CONN_MAX_LIFETIME_MINUTES", fc.Database.Postgres.ConnMaxLifetimeMin, def.Database.Postgres.ConnMaxLifetimeMin),
+		PostgresConnMaxIdleTimeMin:   envOrInt("POSTGRES_CONN_MAX_IDLE_TIME_MINUTES", fc.Database.Postgres.ConnMaxIdleTimeMin, def.Database.Postgres.ConnMaxIdleTimeMin),
+		SQLitePath:                   envOrPath("SQLITE_PATH", fc.Database.SQLite.Path, def.Database.SQLite.Path, sourceDir),
+		SQLiteDSN:                    envOr("SQLITE_DSN", fc.Database.SQLite.DSN, def.Database.SQLite.DSN),
+		SQLiteMaxOpenConns:           envOrInt("SQLITE_MAX_OPEN_CONNS", fc.Database.SQLite.MaxOpenConns, def.Database.SQLite.MaxOpenConns),
+		SQLiteBusyTimeoutMS:          envOrInt("SQLITE_BUSY_TIMEOUT_MS", fc.Database.SQLite.BusyTimeoutMS, def.Database.SQLite.BusyTimeoutMS),
+		SQLiteCacheSizeKB:            envOrInt("SQLITE_CACHE_SIZE_KB", fc.Database.SQLite.CacheSizeKB, def.Database.SQLite.CacheSizeKB),
+		SQLiteMmapSizeBytes:          envOrInt64("SQLITE_MMAP_SIZE_BYTES", fc.Database.SQLite.MmapSizeBytes, def.Database.SQLite.MmapSizeBytes),
+		SQLiteSynchronous:            normalizeSQLiteSynchronous(envOr("SQLITE_SYNCHRONOUS", fc.Database.SQLite.Synchronous, def.Database.SQLite.Synchronous)),
+		SQLiteTempStore:              normalizeSQLiteTempStore(envOr("SQLITE_TEMP_STORE", fc.Database.SQLite.TempStore, def.Database.SQLite.TempStore)),
+		CacheDriver:                  normalizeCacheDriver(envOr("CACHE_DRIVER", fc.Cache.Driver, def.Cache.Driver)),
+		RedisAddr:                    envOr("REDIS_ADDR", fc.Database.Redis.Addr, def.Database.Redis.Addr),
+		RedisUsername:                envOr("REDIS_USERNAME", fc.Database.Redis.Username, def.Database.Redis.Username),
+		RedisPassword:                envOr("REDIS_PASSWORD", fc.Database.Redis.Password, def.Database.Redis.Password),
+		RedisDB:                      envOrInt("REDIS_DB", fc.Database.Redis.DB, def.Database.Redis.DB),
+		RedisTLSEnabled:              envOrBool("REDIS_TLS_ENABLED", fc.Database.Redis.TLSEnabled),
+		RedisTLSInsecureSkipVerify:   envOrBool("REDIS_TLS_INSECURE_SKIP_VERIFY", fc.Database.Redis.TLSInsecureSkipVerify),
+		StorageBackend:               envOr("STORAGE_BACKEND", fc.Storage.Backend, def.Storage.Backend),
+		StorageRootDir:               envOrPath("STORAGE_ROOT_DIR", fc.Storage.Local.RootDir, def.Storage.Local.RootDir, sourceDir),
+		StorageS3Endpoint:            envOr("STORAGE_S3_ENDPOINT", fc.Storage.S3.Endpoint, def.Storage.S3.Endpoint),
+		StorageS3Region:              envOr("STORAGE_S3_REGION", fc.Storage.S3.Region, def.Storage.S3.Region),
+		StorageS3Bucket:              envOr("STORAGE_S3_BUCKET", fc.Storage.S3.Bucket, def.Storage.S3.Bucket),
+		StorageS3Prefix:              envOr("STORAGE_S3_PREFIX", fc.Storage.S3.Prefix, def.Storage.S3.Prefix),
+		StorageS3AccessKeyID:         envOr("STORAGE_S3_ACCESS_KEY_ID", fc.Storage.S3.AccessKeyID, def.Storage.S3.AccessKeyID),
+		StorageS3SecretAccessKey:     envOr("STORAGE_S3_SECRET_ACCESS_KEY", fc.Storage.S3.SecretAccessKey, def.Storage.S3.SecretAccessKey),
+		StorageS3ForcePathStyle:      envOrBool("STORAGE_S3_FORCE_PATH_STYLE", fc.Storage.S3.ForcePathStyle),
 		AdminUsername:                defaultAdminUsername,
 		AdminDisplayName:             defaultAdminDisplayName,
-		GeoIPProvider:                envOr("GEOIP_PROVIDER", yc.GeoIP.Provider, "ipwhois"),
-		GeoIPBaseURL:                 envOr("GEOIP_BASE_URL", yc.GeoIP.BaseURL, "https://ipwho.is"),
-		GeoIPToken:                   envOr("GEOIP_TOKEN", yc.GeoIP.Token, ""),
-		GeoIPTimeoutMS:               envOrInt("GEOIP_TIMEOUT_MS", yc.GeoIP.TimeoutMS, 2500),
-		GeoIPDatabaseURL:             envOr("GEOIP_DATABASE_URL", yc.GeoIP.DatabaseURL, ""),
-		GeoIPDatabasePath:            envOrPath("GEOIP_DATABASE_PATH", yc.GeoIP.DatabasePath, "./data/geoip/geoip.mmdb", yc.sourceDir),
-		GeoIPDatabaseMaxBytes:        envOrInt64("GEOIP_DATABASE_MAX_BYTES", yc.GeoIP.DatabaseMaxBytes, defaultGeoIPMaxBytes),
-		GeoIPRefreshIntervalHours:    envOrInt("GEOIP_REFRESH_INTERVAL_HOURS", yc.GeoIP.RefreshIntervalHours, 168),
+		GeoIPProvider:                envOr("GEOIP_PROVIDER", fc.GeoIP.Provider, def.GeoIP.Provider),
+		GeoIPBaseURL:                 envOr("GEOIP_BASE_URL", fc.GeoIP.BaseURL, def.GeoIP.BaseURL),
+		GeoIPToken:                   envOr("GEOIP_TOKEN", fc.GeoIP.Token, def.GeoIP.Token),
+		GeoIPTimeoutMS:               envOrInt("GEOIP_TIMEOUT_MS", fc.GeoIP.TimeoutMS, def.GeoIP.TimeoutMS),
+		GeoIPDatabaseURL:             envOr("GEOIP_DATABASE_URL", fc.GeoIP.DatabaseURL, def.GeoIP.DatabaseURL),
+		GeoIPDatabasePath:            envOrPath("GEOIP_DATABASE_PATH", fc.GeoIP.DatabasePath, def.GeoIP.DatabasePath, sourceDir),
+		GeoIPDatabaseMaxBytes:        envOrInt64("GEOIP_DATABASE_MAX_BYTES", fc.GeoIP.DatabaseMaxBytes, def.GeoIP.DatabaseMaxBytes),
+		GeoIPRefreshIntervalHours:    envOrInt("GEOIP_REFRESH_INTERVAL_HOURS", fc.GeoIP.RefreshIntervalHours, def.GeoIP.RefreshIntervalHours),
 		SMTPHost:                     "",
 		SMTPPort:                     587,
 		SMTPUsername:                 "",
 		SMTPPassword:                 "",
 		SMTPFrom:                     "",
-		TurnstileSiteverifyURL:       envOr("TURNSTILE_SITEVERIFY_URL", yc.Security.TurnstileSiteverifyURL, DefaultTurnstileSiteverifyURL),
-		OTelEnabled:                  envOrBoolOptional("OTEL_ENABLED", yc.Observability.Tracing.Enabled),
-		OTelExporterOTLPEndpoint:     envOr("OTEL_EXPORTER_OTLP_ENDPOINT", yc.Observability.Tracing.Endpoint, ""),
-		OTelExporterOTLPHeaders:      envOr("OTEL_EXPORTER_OTLP_HEADERS", yc.Observability.Tracing.Headers, ""),
-		OTelExporterOTLPInsecure:     envOrBoolPtr("OTEL_EXPORTER_OTLP_INSECURE", yc.Observability.Tracing.Insecure, false),
-		OTelExporterOTLPProtocol:     normalizeOTelExporterOTLPProtocol(envOr("OTEL_EXPORTER_OTLP_PROTOCOL", yc.Observability.Tracing.Protocol, "grpc")),
-		OTelSamplingRate:             envOrFloat("OTEL_TRACES_SAMPLER_ARG", envOrFloat("OTEL_SAMPLING_RATE", yc.Observability.Tracing.SamplingRate, 1), 1),
-		UpdateEnabled:                envOrBoolPtr("UPDATE_ENABLED", yc.Update.Enabled, false),
-		UpdateChannel:                envOr("UPDATE_CHANNEL", yc.Update.Channel, "stable"),
-		UpdateCheckIntervalSeconds:   envOrInt("UPDATE_CHECK_INTERVAL_SECONDS", yc.Update.CheckIntervalSeconds, 3600),
-		UpdateSource:                 envOr("UPDATE_SOURCE", yc.Update.Source, "github"),
-		UpdateProxyBaseURL:           envOr("UPDATE_PROXY_BASE_URL", yc.Update.ProxyBaseURL, ""),
-		UpdateRepo:                   envOr("UPDATE_REPO", yc.Update.Repo, ""),
-		UpdateDownloadDir:            envOrPath("UPDATE_DOWNLOAD_DIR", yc.Update.DownloadDir, "./data/updates", yc.sourceDir),
+		TurnstileSiteverifyURL:       envOr("TURNSTILE_SITEVERIFY_URL", fc.Security.TurnstileSiteverifyURL, def.Security.TurnstileSiteverifyURL),
+		OTelEnabled:                  envOrBoolOptional("OTEL_ENABLED", fc.Observability.Tracing.Enabled),
+		OTelExporterOTLPEndpoint:     envOr("OTEL_EXPORTER_OTLP_ENDPOINT", fc.Observability.Tracing.Endpoint, def.Observability.Tracing.Endpoint),
+		OTelExporterOTLPHeaders:      envOr("OTEL_EXPORTER_OTLP_HEADERS", fc.Observability.Tracing.Headers, def.Observability.Tracing.Headers),
+		OTelExporterOTLPInsecure:     envOrBool("OTEL_EXPORTER_OTLP_INSECURE", fc.Observability.Tracing.Insecure),
+		OTelExporterOTLPProtocol:     normalizeOTelExporterOTLPProtocol(envOr("OTEL_EXPORTER_OTLP_PROTOCOL", fc.Observability.Tracing.Protocol, def.Observability.Tracing.Protocol)),
+		OTelSamplingRate:             envOrFloat("OTEL_TRACES_SAMPLER_ARG", envOrFloat("OTEL_SAMPLING_RATE", fc.Observability.Tracing.SamplingRate, def.Observability.Tracing.SamplingRate), def.Observability.Tracing.SamplingRate),
+		UpdateEnabled:                envOrBool("UPDATE_ENABLED", fc.Update.Enabled),
+		UpdateChannel:                envOr("UPDATE_CHANNEL", fc.Update.Channel, def.Update.Channel),
+		UpdateCheckIntervalSeconds:   envOrInt("UPDATE_CHECK_INTERVAL_SECONDS", fc.Update.CheckIntervalSeconds, def.Update.CheckIntervalSeconds),
+		UpdateSource:                 envOr("UPDATE_SOURCE", fc.Update.Source, def.Update.Source),
+		UpdateProxyBaseURL:           envOr("UPDATE_PROXY_BASE_URL", fc.Update.ProxyBaseURL, def.Update.ProxyBaseURL),
+		UpdateRepo:                   envOr("UPDATE_REPO", fc.Update.Repo, def.Update.Repo),
+		UpdateDownloadDir:            envOrPath("UPDATE_DOWNLOAD_DIR", fc.Update.DownloadDir, def.Update.DownloadDir, sourceDir),
 
 		// 动态配置默认值（会被 DB 覆盖）
 		TokenTTLHours:                     24,
@@ -830,7 +702,7 @@ func Load() Config {
 		MCPMaxLLMCallsPerRun:              5,
 		MCPMaxToolCallsPerRun:             8,
 		MCPToolPrompt:                     "",
-	}
+	}, nil
 }
 
 // Validate 检查关键配置是否合法。
@@ -862,25 +734,25 @@ func (c Config) Validate() error {
 	}
 
 	if strings.TrimSpace(c.JWTSecret) == "" || strings.TrimSpace(c.JWTSecret) == defaultJWTSecret {
-		return errors.New("invalid production config: JWT_SECRET must be explicitly set")
+		return errors.New("invalid production config: JWT_SECRET/security.jwt_secret must be explicitly set")
 	}
 	if len(strings.TrimSpace(c.JWTSecret)) < 16 {
-		return errors.New("invalid production config: JWT_SECRET is too short")
+		return errors.New("invalid production config: JWT_SECRET/security.jwt_secret is too short")
 	}
 	if strings.TrimSpace(c.DataEncryptionKey) == "" || strings.TrimSpace(c.DataEncryptionKey) == defaultDataEncryptionKey {
-		return errors.New("invalid production config: DATA_ENCRYPTION_KEY must be explicitly set")
+		return errors.New("invalid production config: DATA_ENCRYPTION_KEY/security.data_encryption_key must be explicitly set")
 	}
 	if len(strings.TrimSpace(c.DataEncryptionKey)) < 32 {
-		return errors.New("invalid production config: DATA_ENCRYPTION_KEY is too short")
+		return errors.New("invalid production config: DATA_ENCRYPTION_KEY/security.data_encryption_key is too short")
 	}
 
 	if strings.TrimSpace(c.CORSAllowOrigin) == "" || strings.TrimSpace(c.CORSAllowOrigin) == "*" {
-		return errors.New("invalid production config: CORS_ALLOW_ORIGIN must be explicitly set (wildcard * is not allowed)")
+		return errors.New("invalid production config: CORS_ALLOW_ORIGIN/server.cors_allow_origin must be explicitly set (wildcard * is not allowed)")
 	}
-	if err := validatePublicURL(c.PublicAPIBaseURL, "PUBLIC_API_BASE_URL"); err != nil {
+	if err := validatePublicURL(c.PublicAPIBaseURL, "PUBLIC_API_BASE_URL/server.public_api_base_url"); err != nil {
 		return err
 	}
-	if err := validatePublicURL(c.PublicWebBaseURL, "PUBLIC_WEB_BASE_URL"); err != nil {
+	if err := validatePublicURL(c.PublicWebBaseURL, "PUBLIC_WEB_BASE_URL/server.public_web_base_url"); err != nil {
 		return err
 	}
 
@@ -954,46 +826,13 @@ func validatePublicURL(raw string, label string) error {
 	return nil
 }
 
-// loadYAML 尝试读取仓库根目录 config.yaml，找不到则返回空结构。
-func loadYAML() yamlConfig {
-	// 支持通过环境变量指定配置文件路径
-	if custom := os.Getenv("CONFIG_FILE"); custom != "" {
-		if yc, err := readYAML(custom); err == nil {
-			return yc
-		}
-		fmt.Fprintf(os.Stderr, "warning: CONFIG_FILE=%s not readable, falling back to defaults\n", custom)
-	}
-
-	for _, path := range defaultYAMLPaths {
-		if yc, err := readYAML(path); err == nil {
-			return yc
-		}
-	}
-	return yamlConfig{}
-}
-
-func readYAML(path string) (yamlConfig, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return yamlConfig{}, err
-	}
-	var yc yamlConfig
-	if err = yaml.Unmarshal(data, &yc); err != nil {
-		return yamlConfig{}, err
-	}
-	if absolutePath, absErr := filepath.Abs(path); absErr == nil {
-		yc.sourceDir = filepath.Dir(absolutePath)
-	}
-	return yc, nil
-}
-
-// envOr 优先级：环境变量 > YAML 值 > 硬编码默认值。
-func envOr(envKey string, yamlVal string, defaultVal string) string {
+// envOr 优先级：环境变量 > 配置文件值 > 模板默认值。
+func envOr(envKey string, fileVal string, defaultVal string) string {
 	if v, ok := os.LookupEnv(envKey); ok {
 		return v
 	}
-	if yamlVal != "" {
-		return yamlVal
+	if fileVal != "" {
+		return fileVal
 	}
 	return defaultVal
 }
@@ -1005,12 +844,12 @@ func valueOrDefault(value string, defaultValue string) string {
 	return defaultValue
 }
 
-func envOrNonEmpty(envKey string, yamlVal string, defaultVal string) string {
+func envOrNonEmpty(envKey string, fileVal string, defaultVal string) string {
 	if v, ok := os.LookupEnv(envKey); ok && strings.TrimSpace(v) != "" {
 		return v
 	}
-	if strings.TrimSpace(yamlVal) != "" {
-		return yamlVal
+	if strings.TrimSpace(fileVal) != "" {
+		return fileVal
 	}
 	return defaultVal
 }
@@ -1139,14 +978,14 @@ func normalizeSQLiteTempStore(value string) string {
 	}
 }
 
-func envOrPath(envKey string, yamlVal string, defaultVal string, sourceDir string) string {
+func envOrPath(envKey string, fileVal string, defaultVal string, sourceDir string) string {
 	if v, ok := os.LookupEnv(envKey); ok {
 		return v
 	}
-	if yamlVal != "" {
-		return resolveConfigPath(yamlVal, sourceDir)
+	if fileVal != "" {
+		return resolveConfigPath(fileVal, sourceDir)
 	}
-	return defaultVal
+	return resolveConfigPath(defaultVal, sourceDir)
 }
 
 func resolveConfigPath(value string, sourceDir string) string {
@@ -1157,61 +996,58 @@ func resolveConfigPath(value string, sourceDir string) string {
 	return filepath.Clean(filepath.Join(sourceDir, trimmed))
 }
 
-func envOrInt(envKey string, yamlVal int, defaultVal int) int {
+func envOrInt(envKey string, fileVal int, defaultVal int) int {
 	if v, ok := os.LookupEnv(envKey); ok {
 		if parsed, err := strconv.Atoi(v); err == nil {
 			return parsed
 		}
 	}
-	if yamlVal != 0 {
-		return yamlVal
+	if fileVal != 0 {
+		return fileVal
 	}
 	return defaultVal
 }
 
-func envOrInt64(envKey string, yamlVal int64, defaultVal int64) int64 {
+func envOrInt64(envKey string, fileVal int64, defaultVal int64) int64 {
 	if v, ok := os.LookupEnv(envKey); ok {
 		if parsed, err := strconv.ParseInt(v, 10, 64); err == nil {
 			return parsed
 		}
 	}
-	if yamlVal != 0 {
-		return yamlVal
+	if fileVal != 0 {
+		return fileVal
 	}
 	return defaultVal
 }
 
-func envOrFloat(envKey string, yamlVal float64, defaultVal float64) float64 {
+func envOrFloat(envKey string, fileVal float64, defaultVal float64) float64 {
 	if v, ok := os.LookupEnv(envKey); ok {
 		if parsed, err := strconv.ParseFloat(v, 64); err == nil {
 			return parsed
 		}
 	}
-	if yamlVal != 0 {
-		return yamlVal
+	if fileVal != 0 {
+		return fileVal
 	}
 	return defaultVal
 }
 
-func envOrBoolOptional(envKey string, yamlVal *bool) *bool {
+func envOrBoolOptional(envKey string, fileVal *bool) *bool {
 	if v, ok := os.LookupEnv(envKey); ok {
 		if parsed, err := strconv.ParseBool(v); err == nil {
 			return &parsed
 		}
 	}
-	return yamlVal
+	return fileVal
 }
 
-func envOrBoolPtr(envKey string, yamlVal *bool, defaultVal bool) bool {
+func envOrBool(envKey string, fileVal bool) bool {
 	if v, ok := os.LookupEnv(envKey); ok {
 		if parsed, err := strconv.ParseBool(v); err == nil {
 			return parsed
 		}
 	}
-	if yamlVal != nil {
-		return *yamlVal
-	}
-	return defaultVal
+	return fileVal
 }
 
 // TrustedProxyList 返回受信代理列表，支持逗号分隔。

@@ -13,7 +13,7 @@ func TestLoadDefaultsUseBootstrapAdmin(t *testing.T) {
 	cleanupConfigEnv(t)
 	chdir(t, t.TempDir())
 
-	cfg := Load()
+	cfg := mustLoad(t)
 	if cfg.Env != "prod" {
 		t.Fatalf("expected default env prod, got %q", cfg.Env)
 	}
@@ -36,7 +36,7 @@ func TestLoadTreatsBlankAPPEnvAsUnset(t *testing.T) {
 	chdir(t, t.TempDir())
 	t.Setenv("APP_ENV", " ")
 
-	cfg := Load()
+	cfg := mustLoad(t)
 	if cfg.Env != "prod" {
 		t.Fatalf("expected blank APP_ENV to default to prod, got %q", cfg.Env)
 	}
@@ -59,7 +59,7 @@ func TestLoadNormalizesAPPEnvAliases(t *testing.T) {
 			chdir(t, t.TempDir())
 			t.Setenv("APP_ENV", tt.env)
 
-			cfg := Load()
+			cfg := mustLoad(t)
 			if cfg.Env != tt.want {
 				t.Fatalf("expected APP_ENV %q to normalize to %q, got %q", tt.env, tt.want, cfg.Env)
 			}
@@ -83,7 +83,7 @@ func TestLoadNormalizesLegacyPostgresDSNTimeZone(t *testing.T) {
 	chdir(t, t.TempDir())
 	t.Setenv("POSTGRES_DSN", "postgres://firecortex:secret%2Fvalue@postgres:5432/firecortex?sslmode=disable&TimeZone=Asia%2FShanghai")
 
-	cfg := Load()
+	cfg := mustLoad(t)
 	if cfg.PostgresDSN != "postgres://firecortex:secret%2Fvalue@postgres:5432/firecortex?sslmode=disable&TimeZone=Asia/Shanghai" {
 		t.Fatalf("expected legacy timezone to be normalized without decoding credentials, got %q", cfg.PostgresDSN)
 	}
@@ -126,7 +126,7 @@ func TestNormalizePostgresDSNTimeZone(t *testing.T) {
 	}
 }
 
-func TestLoadReadsRepositoryRootConfigFromBackendWorkingDirectory(t *testing.T) {
+func TestLoadResolvesRelativePathsAgainstConfigFile(t *testing.T) {
 	cleanupConfigEnv(t)
 
 	root := filepath.Join(t.TempDir(), "repo")
@@ -138,24 +138,17 @@ func TestLoadReadsRepositoryRootConfigFromBackendWorkingDirectory(t *testing.T) 
 		root = resolvedRoot
 		backendDir = filepath.Join(root, "backend")
 	}
-	configPath := filepath.Join(root, "config.yaml")
-	configBody := []byte(`
-server:
-  frontend_dist_dir: ./frontend/out
-storage:
-  local:
-    root_dir: ./data/storage
-geoip:
-  database_path: ./data/geoip.mmdb
-update:
-  download_dir: ./data/updates
-`)
-	if err := os.WriteFile(configPath, configBody, 0o644); err != nil {
-		t.Fatalf("write root config: %v", err)
-	}
+	configPath := filepath.Join(root, "config.json")
+	writeFile(t, configPath, `{
+  "server": {"frontend_dist_dir": "./frontend/out"},
+  "storage": {"local": {"root_dir": "./data/storage"}},
+  "geoip": {"database_path": "./data/geoip.mmdb"},
+  "update": {"download_dir": "./data/updates"}
+}`)
+	t.Setenv("CONFIG_FILE", configPath)
 	chdir(t, backendDir)
 
-	cfg := Load()
+	cfg := mustLoad(t)
 	if cfg.AdminUsername != defaultAdminUsername {
 		t.Fatalf("expected built-in admin username, got %q", cfg.AdminUsername)
 	}
@@ -166,28 +159,21 @@ update:
 	assertPath(t, "storage root", cfg.StorageRootDir, filepath.Join(root, "data", "storage"))
 	assertPath(t, "geoip database", cfg.GeoIPDatabasePath, filepath.Join(root, "data", "geoip.mmdb"))
 	assertPath(t, "update download dir", cfg.UpdateDownloadDir, filepath.Join(root, "data", "updates"))
+	assertPath(t, "sqlite path", cfg.SQLitePath, filepath.Join(root, "data", "firecortex.db"))
 }
 
 func TestLoadReadsTurnstileSiteverifyURL(t *testing.T) {
 	cleanupConfigEnv(t)
 
-	configPath := filepath.Join(t.TempDir(), "config.yaml")
-	configBody := []byte(`
-security:
-  turnstile_siteverify_url: "https://turnstile.example.test/siteverify"
-`)
-	if err := os.WriteFile(configPath, configBody, 0o644); err != nil {
-		t.Fatalf("write config: %v", err)
-	}
-	t.Setenv("CONFIG_FILE", configPath)
+	useConfigFile(t, `{"security": {"turnstile_siteverify_url": "https://turnstile.example.test/siteverify"}}`)
 
-	cfg := Load()
+	cfg := mustLoad(t)
 	if cfg.TurnstileSiteverifyURL != "https://turnstile.example.test/siteverify" {
 		t.Fatalf("expected turnstile siteverify url from config, got %q", cfg.TurnstileSiteverifyURL)
 	}
 
 	t.Setenv("TURNSTILE_SITEVERIFY_URL", "https://turnstile-env.example.test/siteverify")
-	cfg = Load()
+	cfg = mustLoad(t)
 	if cfg.TurnstileSiteverifyURL != "https://turnstile-env.example.test/siteverify" {
 		t.Fatalf("expected turnstile siteverify url from env, got %q", cfg.TurnstileSiteverifyURL)
 	}
@@ -196,19 +182,15 @@ security:
 func TestLoadReadsSSRFAllowlistWithEnvironmentPriority(t *testing.T) {
 	cleanupConfigEnv(t)
 
-	configPath := filepath.Join(t.TempDir(), "config.yaml")
-	configBody := []byte(`
-security:
-  ssrf_protection_enabled: true
-  ssrf_allowed_hosts: "new-api, host.docker.internal"
-  ssrf_allowed_cidrs: "172.17.0.0/16, 10.20.0.0/16"
-`)
-	if err := os.WriteFile(configPath, configBody, 0o644); err != nil {
-		t.Fatalf("write config: %v", err)
-	}
-	t.Setenv("CONFIG_FILE", configPath)
+	useConfigFile(t, `{
+  "security": {
+    "ssrf_protection_enabled": true,
+    "ssrf_allowed_hosts": "new-api, host.docker.internal",
+    "ssrf_allowed_cidrs": "172.17.0.0/16, 10.20.0.0/16"
+  }
+}`)
 
-	cfg := Load()
+	cfg := mustLoad(t)
 	if cfg.SSRFAllowedHosts != "new-api, host.docker.internal" {
 		t.Fatalf("unexpected allowed hosts: %q", cfg.SSRFAllowedHosts)
 	}
@@ -218,9 +200,9 @@ security:
 
 	t.Setenv("SSRF_ALLOWED_HOSTS", "internal-api")
 	t.Setenv("SSRF_ALLOWED_CIDRS", "192.168.50.0/24")
-	cfg = Load()
+	cfg = mustLoad(t)
 	if cfg.SSRFAllowedHosts != "internal-api" || cfg.SSRFAllowedCIDRs != "192.168.50.0/24" {
-		t.Fatalf("environment should override YAML allowlist: hosts=%q CIDRs=%q", cfg.SSRFAllowedHosts, cfg.SSRFAllowedCIDRs)
+		t.Fatalf("environment should override file allowlist: hosts=%q CIDRs=%q", cfg.SSRFAllowedHosts, cfg.SSRFAllowedCIDRs)
 	}
 }
 
@@ -318,27 +300,22 @@ func TestOutboundPolicyEnforcementBelongsToConfig(t *testing.T) {
 func TestLoadReadsBrandingFromConfig(t *testing.T) {
 	cleanupConfigEnv(t)
 
-	configPath := filepath.Join(t.TempDir(), "config.yaml")
-	configBody := []byte(`
-app:
-  name: Example Backend
-branding:
-  title: Example Chat
-  short_name: Example
-  description: Example description
-  logo_url: https://cdn.example.com/logo.svg
-  favicon_url: https://cdn.example.com/favicon.ico
-  pwa_icon_192_url: https://cdn.example.com/icon-192.png
-  pwa_icon_512_url: https://cdn.example.com/icon-512.png
-  pwa_maskable_icon_512_url: https://cdn.example.com/icon-maskable.png
-  apple_touch_icon_180_url: https://cdn.example.com/apple-touch-icon.png
-`)
-	if err := os.WriteFile(configPath, configBody, 0o644); err != nil {
-		t.Fatalf("write config: %v", err)
-	}
-	t.Setenv("CONFIG_FILE", configPath)
+	useConfigFile(t, `{
+  "app": {"name": "Example Backend"},
+  "branding": {
+    "title": "Example Chat",
+    "short_name": "Example",
+    "description": "Example description",
+    "logo_url": "https://cdn.example.com/logo.svg",
+    "favicon_url": "https://cdn.example.com/favicon.ico",
+    "pwa_icon_192_url": "https://cdn.example.com/icon-192.png",
+    "pwa_icon_512_url": "https://cdn.example.com/icon-512.png",
+    "pwa_maskable_icon_512_url": "https://cdn.example.com/icon-maskable.png",
+    "apple_touch_icon_180_url": "https://cdn.example.com/apple-touch-icon.png"
+  }
+}`)
 
-	cfg := Load()
+	cfg := mustLoad(t)
 	if cfg.AppName != "Example Backend" || cfg.BrandTitle != "Example Chat" || cfg.BrandShortName != "Example" || cfg.BrandDescription != "Example description" {
 		t.Fatalf("unexpected branding text: %+v", cfg)
 	}
@@ -405,6 +382,8 @@ func cleanupConfigEnv(t *testing.T) {
 		"SSRF_ALLOWED_HOSTS",
 		"SSRF_ALLOWED_CIDRS",
 		"POSTGRES_DSN",
+		"JWT_SECRET",
+		"DATA_ENCRYPTION_KEY",
 	}
 	for _, key := range keys {
 		key := key
@@ -419,6 +398,31 @@ func cleanupConfigEnv(t *testing.T) {
 			}
 			_ = os.Unsetenv(key)
 		})
+	}
+}
+
+func mustLoad(t *testing.T) Config {
+	t.Helper()
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	return cfg
+}
+
+// useConfigFile 写入临时 config.json 并通过 CONFIG_FILE 指向它，返回其路径。
+func useConfigFile(t *testing.T, body string) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "config.json")
+	writeFile(t, path, body)
+	t.Setenv("CONFIG_FILE", path)
+	return path
+}
+
+func writeFile(t *testing.T, path string, body string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+		t.Fatalf("write %s: %v", path, err)
 	}
 }
 

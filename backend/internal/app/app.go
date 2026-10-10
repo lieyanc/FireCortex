@@ -155,7 +155,10 @@ func (o avatarContentOpener) OpenAvatarFileContent(ctx context.Context, userID u
 
 // NewApp 创建应用。
 func NewApp() (*App, error) {
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		return nil, err
+	}
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}

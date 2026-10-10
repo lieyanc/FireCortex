@@ -15,8 +15,9 @@ build: check-version
 	mkdir -p ../.cache/firecortex
 	go build -trimpath -ldflags "$(LDFLAGS)" -o ../.cache/firecortex/firecortex ./cmd/server
 
+# Development reads the repository root config.json unless CONFIG_FILE is set.
 run:
-	go run -ldflags "$(LDFLAGS)" ./cmd/server
+	CONFIG_FILE="$${CONFIG_FILE:-../config.json}" go run -ldflags "$(LDFLAGS)" ./cmd/server
 
 test:
 	go test ./...
