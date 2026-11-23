@@ -5,6 +5,7 @@ import enAdminContentModeration from "@/i18n/messages/en-US/admin-content-modera
 import enAdminConversation from "@/i18n/messages/en-US/admin-conversation.json";
 import enAdminFiles from "@/i18n/messages/en-US/admin-files.json";
 import enAdminGroups from "@/i18n/messages/en-US/admin-groups.json";
+import enAdminInfrastructure from "@/i18n/messages/en-US/admin-infrastructure.json";
 import enAdminLogin from "@/i18n/messages/en-US/admin-login.json";
 import enAdminLogs from "@/i18n/messages/en-US/admin-logs.json";
 import enAdminModelRouter from "@/i18n/messages/en-US/admin-model-router.json";
@@ -33,6 +34,7 @@ import enLibrary from "@/i18n/messages/en-US/library.json";
 import enUIComponents from "@/i18n/messages/en-US/ui-components.json";
 import enRecent from "@/i18n/messages/en-US/recent.json";
 import enSettings from "@/i18n/messages/en-US/settings.json";
+import enSetup from "@/i18n/messages/en-US/setup.json";
 import enShare from "@/i18n/messages/en-US/share.json";
 import { replaceDefaultBrandTitle } from "@/shared/config/branding";
 
@@ -56,11 +58,13 @@ const ENGLISH_MESSAGES = {
   files: enFiles,
   knowledgeBases: enKnowledgeBases,
   settings: enSettings,
+  setup: enSetup,
   adminAnnouncements: enAdminAnnouncements,
   adminBilling: enAdminBilling,
   adminConversation: enAdminConversation,
   adminFiles: enAdminFiles,
   adminGroups: enAdminGroups,
+  adminInfrastructure: enAdminInfrastructure,
   adminLogin: enAdminLogin,
   adminLogs: enAdminLogs,
   adminModelRouter: enAdminModelRouter,
@@ -148,11 +152,13 @@ export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages
     files,
     knowledgeBases,
     settings,
+    setup,
     adminAnnouncements,
     adminBilling,
     adminConversation,
     adminFiles,
     adminGroups,
+    adminInfrastructure,
     adminLogin,
     adminLogs,
     adminModelRouter,
@@ -184,11 +190,13 @@ export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages
     import("@/i18n/messages/zh-CN/files.json"),
     import("@/i18n/messages/zh-CN/knowledge-bases.json"),
     import("@/i18n/messages/zh-CN/settings.json"),
+    import("@/i18n/messages/zh-CN/setup.json"),
     import("@/i18n/messages/zh-CN/admin-announcements.json"),
     import("@/i18n/messages/zh-CN/admin-billing.json"),
     import("@/i18n/messages/zh-CN/admin-conversation.json"),
     import("@/i18n/messages/zh-CN/admin-files.json"),
     import("@/i18n/messages/zh-CN/admin-groups.json"),
+    import("@/i18n/messages/zh-CN/admin-infrastructure.json"),
     import("@/i18n/messages/zh-CN/admin-login.json"),
     import("@/i18n/messages/zh-CN/admin-logs.json"),
     import("@/i18n/messages/zh-CN/admin-model-router.json"),
@@ -222,11 +230,13 @@ export async function loadLocaleMessages(locale: AppLocale): Promise<AppMessages
     files: files.default,
     knowledgeBases: knowledgeBases.default,
     settings: settings.default,
+    setup: setup.default,
     adminAnnouncements: adminAnnouncements.default,
     adminBilling: adminBilling.default,
     adminConversation: adminConversation.default,
     adminFiles: adminFiles.default,
     adminGroups: adminGroups.default,
+    adminInfrastructure: adminInfrastructure.default,
     adminLogin: adminLogin.default,
     adminLogs: adminLogs.default,
     adminModelRouter: adminModelRouter.default,

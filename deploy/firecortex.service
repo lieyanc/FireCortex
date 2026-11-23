@@ -1,10 +1,14 @@
 # Example systemd unit for a FireCortex binary installed in /opt/firecortex.
 #
+# Quickest setup (recommended): run the built-in installer on Linux:
+#   sudo ./firecortex install-service --dir /opt/firecortex --data-dir /opt/firecortex/data/managed
+#
+# Manual installation:
 #   sudo useradd --system --home-dir /opt/firecortex --shell /usr/sbin/nologin firecortex
 #   sudo install -d -o firecortex -g firecortex /opt/firecortex
-#   # Place the firecortex binary in /opt/firecortex, owned by firecortex. The first
-#   # start writes /opt/firecortex/config.json from the built-in template (mode 0600,
-#   # random secrets); edit it and restart. Later starts fill in keys added by updates.
+#   # Place the firecortex binary in /opt/firecortex, owned by firecortex.
+#   # On a fresh install without config.json, FireCortex enters Setup Mode and prints
+#   # a one-time Setup Token to journalctl for browser-based initialization.
 #   sudo cp deploy/firecortex.service /etc/systemd/system/
 #   sudo systemctl daemon-reload
 #   sudo systemctl enable --now firecortex
@@ -15,15 +19,17 @@
 [Unit]
 Description=FireCortex
 Documentation=https://github.com/lieyanc/FireCortex
-Wants=network-online.target
-After=network-online.target
-# Uncomment when PostgreSQL or Redis run on the same host.
+Wants=network-online.target docker.service
+After=network-online.target docker.service
+# Uncomment when using host-installed PostgreSQL or Redis instead of Docker managed services.
 # After=postgresql.service redis-server.service
 
 [Service]
 Type=simple
 User=firecortex
 Group=firecortex
+# Uncomment to allow FireCortex to manage PostgreSQL/Redis and optional services via Docker.
+# SupplementaryGroups=docker
 WorkingDirectory=/opt/firecortex
 ExecStart=/opt/firecortex/firecortex
 # There is no automatic rollback; restarting at least recovers from a crash.
@@ -32,13 +38,13 @@ RestartSec=5
 LimitNOFILE=65535
 
 # Hardening. The filesystem is read-only except for /opt/firecortex, which holds
-# the binary, config.json, data/ (updates) and storage/. Add any other
-# writable paths configured in config.json to ReadWritePaths.
+# the binary, config.json, data/ (updates, managed Docker data) and storage/.
+# Add any custom managed data_dir and /var/run/docker.sock (when using Docker
+# managed services) to ReadWritePaths.
 ProtectSystem=strict
 ReadWritePaths=/opt/firecortex
 ProtectHome=true
 PrivateTmp=true
-PrivateDevices=true
 NoNewPrivileges=true
 ProtectKernelTunables=true
 ProtectKernelModules=true

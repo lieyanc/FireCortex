@@ -26,6 +26,7 @@ const FEATURE_DOMAINS = {
   library: "library",
   recent: "recent",
   settings: "settings",
+  setup: "setup",
   share: "share",
   shell: "shell",
 };

@@ -1,12 +1,14 @@
 "use client";
 
-import { Save } from "lucide-react";
+import { Container, Save } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { useAdminFilesEmbeddingStatus } from "@/features/admin/hooks/use-admin-files-embedding-status";
 import { useAdminFilesSettings } from "@/features/admin/hooks/use-admin-files-settings";
+import { useAuthSession } from "@/shared/auth/auth-session-context";
 import {
   EMBEDDING_MODES,
   EXTRACT_ENGINE_POLICIES,
@@ -69,7 +71,9 @@ function toEditorField(field: SettingsField, translate: (key: string) => string,
 
 export function AdminFilesPage() {
   const t = useTranslations("adminFiles");
+  const tInfra = useTranslations("adminInfrastructure");
   const tActions = useTranslations("common.actions");
+  const { user } = useAuthSession();
   const {
     embeddingStatus,
     embeddingStatusLoading,
@@ -160,12 +164,22 @@ export function AdminFilesPage() {
               <SettingsSection
                 title={t(`groups.${group.key}.title`)}
                 actions={
-                  visibleFields.some((field) => dirtyFieldIDs.has(resolveFieldID(field))) ? (
-                    <Button type="button" size="sm" disabled={loading || saving} onClick={() => requestSaveGroup(group)}>
-                      <Save className="size-3.5" />
-                      {tActions("save")}
-                    </Button>
-                  ) : null
+                  <div className="flex items-center gap-2">
+                    {group.key === "extraction" && user?.role === "superadmin" ? (
+                      <Button asChild type="button" size="sm" variant="outline">
+                        <Link href="/admin/infrastructure" prefetch={false}>
+                          <Container className="mr-1.5 size-3.5" />
+                          {tInfra("title")}
+                        </Link>
+                      </Button>
+                    ) : null}
+                    {visibleFields.some((field) => dirtyFieldIDs.has(resolveFieldID(field))) ? (
+                      <Button type="button" size="sm" disabled={loading || saving} onClick={() => requestSaveGroup(group)}>
+                        <Save className="size-3.5" />
+                        {tActions("save")}
+                      </Button>
+                    ) : null}
+                  </div>
                 }
               >
 

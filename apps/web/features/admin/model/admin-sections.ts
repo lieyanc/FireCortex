@@ -22,6 +22,7 @@ export const ADMIN_SECTIONS = [
   { id: "knowledge-bases", label: "Knowledge bases", href: "/knowledge-bases" },
   // Users' own API keys: there is no other account to own one in single-user (local) mode.
   { id: "user-keys", label: "User model providers", href: "/user-keys", feature: "multiUser" },
+  { id: "infrastructure", label: "Infrastructure", href: "/infrastructure" },
   { id: "about", label: "About", href: "/about" },
 ] as const satisfies readonly { id: string; label: string; href: string; feature?: Feature }[];
 

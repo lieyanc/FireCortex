@@ -30,6 +30,7 @@ const ADMIN_SECTION_LABEL_KEYS: Record<AdminSection, string> = {
   files: "sections.chatFiles",
   "knowledge-bases": "sections.knowledgeBases",
   "user-keys": "sections.userKeys",
+  infrastructure: "sections.infrastructure",
   about: "sections.about",
 };
 
@@ -49,7 +50,9 @@ export function AdminSidebar({
   const updatePending = hasPendingSystemUpdate(updateStatus);
   const visibleSections = React.useMemo(() => {
     const sections = ADMIN_SECTIONS.filter((item) => isSectionAvailable(item, flags));
-    return user?.role === "superadmin" ? sections : sections.filter((item) => item.id !== "content-moderation");
+    return user?.role === "superadmin"
+      ? sections
+      : sections.filter((item) => item.id !== "content-moderation" && item.id !== "infrastructure");
   }, [flags, user?.role]);
   const sectionLabel = React.useCallback(
     (id: AdminSection, fallback: string) => {

@@ -11,6 +11,7 @@ export { AdminContentModerationPage } from "@/features/admin/components/sections
 export { AdminConversationPage } from "@/features/admin/components/sections/conversation/admin-conversation";
 export { AdminFilesPage } from "@/features/admin/components/sections/files/admin-files";
 export { AdminGroupsPage } from "@/features/admin/components/sections/groups/admin-groups";
+export { AdminInfrastructurePage } from "@/features/admin/components/sections/infrastructure/admin-infrastructure";
 export { AdminKnowledgeBasesPage } from "@/features/admin/components/sections/knowledge-bases/admin-knowledge-bases";
 export { AdminLoginPage } from "@/features/admin/components/sections/login/admin-login";
 export { AdminLogsPage } from "@/features/admin/components/sections/logs/admin-logs";
