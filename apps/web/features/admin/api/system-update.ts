@@ -1,5 +1,5 @@
 import { authedRequest } from "@/shared/api/authed-client";
-import type { AdminSystemUpdateStatus } from "@/features/admin/api/system-update.types";
+import type { AdminSystemUpdateStatus } from "@/features/admin/api/system-update-types";
 
 export async function getAdminSystemUpdateStatus(
   accessToken: string,

@@ -26,7 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SpinnerLabel } from "@/components/ui/spinner";
-import type { AdminSystemUpdateStatus } from "@/features/admin/api/system-update.types";
+import type { AdminSystemUpdateStatus } from "@/features/admin/api/system-update-types";
 import { AdminUpdateTooltipContent } from "@/features/admin/components/shared/update-tooltip-content";
 import { formatDateTime } from "@/features/admin/model/log-display";
 import {

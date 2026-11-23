@@ -11,7 +11,7 @@ import {
 import type {
   AdminSystemUpdateState,
   AdminSystemUpdateStatus,
-} from "@/features/admin/api/system-update.types";
+} from "@/features/admin/api/system-update-types";
 import { useAuthSession } from "@/shared/auth/auth-session-context";
 
 // 管理端 OTA 更新状态：侧边栏与关于页共享同一份后端状态，忙碌时轮询，安装后等待新版本上线并刷新页面。

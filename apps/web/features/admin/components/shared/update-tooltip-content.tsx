@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-import type { AdminSystemUpdateStatus } from "@/features/admin/api/system-update.types";
+import type { AdminSystemUpdateStatus } from "@/features/admin/api/system-update-types";
 import { formatSystemVersion, hasPendingSystemUpdate } from "@/features/admin/model/system-update-store";
 
 export function AdminUpdateTooltipContent({ status }: { status: AdminSystemUpdateStatus | null }) {
