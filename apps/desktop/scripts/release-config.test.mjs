@@ -38,7 +38,7 @@ test("stable builds keep the configured updater endpoint", () => {
 });
 
 test("beta builds poll the rolling desktop-beta manifest", () => {
-  const config = releaseConfig({ version: "0.5.0-beta.3", channel: "beta", repository: "FireCortex-AI/FireCortex" });
+  const config = releaseConfig({ version: "0.5.0-beta.3", channel: "beta", repository: "lieyanc/FireCortex" });
   assert.deepEqual(config.plugins.updater.endpoints, [
     "https://github.com/lieyanc/FireCortex/releases/download/desktop-beta/latest.json",
   ]);

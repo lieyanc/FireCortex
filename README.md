@@ -358,7 +358,7 @@ Default local endpoints:
 `deploy/services/rapidocr` provides a Dockerfile and app entrypoint, but no compose file. Build and run it from the repository root:
 
 ```bash
-docker build -t firecortex-rapidocr:latest -f deploy/services/rapidocr/Dockerfile .
+docker build -t firecortex-rapidocr:latest deploy/services/rapidocr
 docker run -d --name firecortex-rapidocr --network firecortex-network \
   -p 127.0.0.1:8002:8002 --restart unless-stopped firecortex-rapidocr:latest
 ```

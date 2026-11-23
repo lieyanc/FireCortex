@@ -358,7 +358,7 @@ docker compose -f deploy/services/docling/docker-compose.yml up -d --build
 `deploy/services/rapidocr` 提供 Dockerfile 和服务入口，但没有 compose 文件。请在仓库根目录构建并运行：
 
 ```bash
-docker build -t firecortex-rapidocr:latest -f deploy/services/rapidocr/Dockerfile .
+docker build -t firecortex-rapidocr:latest deploy/services/rapidocr
 docker run -d --name firecortex-rapidocr --network firecortex-network \
   -p 127.0.0.1:8002:8002 --restart unless-stopped firecortex-rapidocr:latest
 ```

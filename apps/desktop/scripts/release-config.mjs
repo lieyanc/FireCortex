@@ -13,10 +13,7 @@
 //     when comparing versions and Tauri's MSI allows downgrades, so every MSI
 //     replaces whatever is installed; the field only makes builds tell apart.
 //
-// bundle.windows.wix.upgradeCode in tauri.conf.json is the MSI product family.
-// It equals Tauri's default for "FireCortex" (the one 0.4.4-beta.1 shipped
-// with) and must NEVER change: a different code installs side by side instead
-// of upgrading, and breaks every GPO/Intune/SCCM assignment keyed on it.
+// Keep the FireCortex MSI product family's upgradeCode stable across releases.
 //
 // Usage: release-config.mjs --channel stable|beta [--repository owner/name]
 //                           [--version x.y.z] [--thumbprint <sha1 hex>]
@@ -98,6 +95,13 @@ function main() {
     prebuiltFrontend: args.includes("--prebuilt-frontend"),
     deferUpdater: args.includes("--defer-updater"),
   });
+  const pubkey = process.env.TAURI_SIGNING_PUBLIC_KEY?.trim();
+  if (pubkey) {
+    config.plugins ??= {};
+    config.plugins.updater = { ...config.plugins.updater, pubkey };
+  } else if (process.env.GITHUB_ACTIONS && args.includes("--prebuilt-frontend") && process.env.CHANNEL) {
+    throw new Error("Set TAURI_SIGNING_PUBLIC_KEY to the public key matching the desktop signing key");
+  }
   const output = value("--output");
   if (output) {
     writeFileSync(output, `${JSON.stringify(config)}\n`);

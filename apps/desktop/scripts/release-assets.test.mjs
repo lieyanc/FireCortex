@@ -13,7 +13,7 @@ import { assembleRelease, existingDraft, releaseManifest } from "./publish-deskt
 const script = join(dirname(fileURLToPath(import.meta.url)), "publish-desktop-release.mjs");
 const version = "1.2.3-beta.4";
 const tag = `v${version}`;
-const repository = "FireCortex-AI/FireCortex";
+const repository = "lieyanc/FireCortex";
 const sha = "a".repeat(40);
 const prefix = `FireCortex-${version}`;
 

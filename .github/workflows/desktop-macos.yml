@@ -26,6 +26,7 @@ jobs:
       ARCH: ${{ inputs.arch }}
       TARGET: ${{ inputs.arch == 'arm64' && 'aarch64-apple-darwin' || 'x86_64-apple-darwin' }}
       CHANNEL: ${{ inputs.channel }}
+      TAURI_SIGNING_PUBLIC_KEY: ${{ vars.TAURI_SIGNING_PUBLIC_KEY }}
     defaults:
       run:
         shell: bash

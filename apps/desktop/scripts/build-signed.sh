@@ -49,7 +49,10 @@ if [[ "$(uname)" == "Darwin" ]]; then
   rm -rf "$bundle/dmg" "$bundle/macos"
 fi
 
-pnpm --filter @firecortex/desktop build
+export TAURI_SIGNING_PUBLIC_KEY="${TAURI_SIGNING_PUBLIC_KEY:-$(cat "$root/deploy/secrets/firecortex-updater.key.pub")}"
+config_arg="$(node apps/desktop/scripts/release-config.mjs --channel stable)"
+pnpm --filter @firecortex/desktop build:sidecar
+pnpm --filter @firecortex/desktop exec tauri build --config "${config_arg#--config }"
 
 if [[ "$(uname)" == "Darwin" ]]; then
   shopt -s nullglob

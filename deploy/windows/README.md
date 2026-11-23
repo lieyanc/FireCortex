@@ -30,7 +30,7 @@ Each release publishes `SHA256SUMS` and a GitHub build provenance attestation:
 Get-AuthenticodeSignature .\FireCortex-<v>-windows-x64.msi
 
 # Build provenance (GitHub CLI)
-gh attestation verify .\FireCortex-<v>-windows-x64.msi --repo FireCortex-AI/FireCortex
+gh attestation verify .\FireCortex-<v>-windows-x64.msi --repo lieyanc/FireCortex
 ```
 
 AppLocker / WDAC: allow by **publisher** (the certificate on the signed binaries) rather than by path; the portable edition runs from wherever it is unzipped.

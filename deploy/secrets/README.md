@@ -5,7 +5,7 @@ Local-only credentials. Everything here except this file is git-ignored.
 | File | What | Where else it lives |
 | --- | --- | --- |
 | `firecortex-updater.key` | Tauri updater minisign **private** key, password-protected. Signs `latest.json` and every desktop package; an installed app only accepts updates signed with it. | GitHub Actions secrets `TAURI_SIGNING_PRIVATE_KEY` + `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` |
-| `firecortex-updater.key.pub` | Matching public key. | Embedded in `apps/desktop/src-tauri/tauri.conf.json` (`plugins.updater.pubkey`) |
+| `firecortex-updater.key.pub` | Matching public key. | GitHub Actions repository variable `TAURI_SIGNING_PUBLIC_KEY`; embedded at build time |
 
 Losing the private key means no installed desktop client can ever receive an
 update again (they would have to reinstall), so keep a copy somewhere durable

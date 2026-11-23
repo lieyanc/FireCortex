@@ -3,10 +3,6 @@ name: Desktop Release
 # Coordinate shared inputs, native builds and publication in the source ref's
 # context. Tag code must never write caches in the default branch's scope.
 on:
-  push:
-    tags:
-      - "v*.*.*"
-      - "v*.*.*-*"
   workflow_dispatch:
     inputs:
       release_tag:
@@ -88,7 +84,7 @@ jobs:
     secrets: inherit
 
   publish:
-    name: Assemble draft release
+    name: Attach desktop assets to the release
     needs: [prepare, macos-arm64, macos-x64, linux-x64, windows-x64]
     if: needs.prepare.outputs.release-tag != ''
     runs-on: ubuntu-24.04
@@ -113,15 +109,24 @@ jobs:
           pattern: desktop-release-*
           path: release-assets
           merge-multiple: true
-      # One writer creates the draft, latest.json and SHA256SUMS only after all
-      # four targets pass verification. Publishing the draft remains a human step.
       - name: Upload assets and updater manifest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ needs.prepare.outputs.release-tag }}
           SOURCE_SHA: ${{ needs.prepare.outputs.source-sha }}
-        run: node apps/desktop/scripts/publish-desktop-release.mjs --tag "$RELEASE_TAG" --sha "$SOURCE_SHA" --dir release-assets
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GH_REPO/commits/refs%2Ftags%2F$RELEASE_TAG" --jq .sha)" = "$SOURCE_SHA"
+          node apps/desktop/scripts/publish-desktop-release.mjs --tag "$RELEASE_TAG" --sha "$SOURCE_SHA" --dir release-assets --dry-run
+          cd release-assets
+          mv SHA256SUMS desktop-SHA256SUMS
+          # Upload signed packages before making the new updater manifest visible.
+          for asset in *; do
+            if [[ "$asset" != latest.json ]]; then packages+=("$asset"); fi
+          done
+          gh release upload "$RELEASE_TAG" "${packages[@]}" --clobber
+          gh release upload "$RELEASE_TAG" latest.json --clobber
       - name: Refresh beta manifest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

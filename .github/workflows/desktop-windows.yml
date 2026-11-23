@@ -23,6 +23,7 @@ jobs:
       CARGO_INCREMENTAL: 0
       TARGET: x86_64-pc-windows-msvc
       CHANNEL: ${{ inputs.channel }}
+      TAURI_SIGNING_PUBLIC_KEY: ${{ vars.TAURI_SIGNING_PUBLIC_KEY }}
     defaults:
       run:
         shell: bash

@@ -56,6 +56,7 @@ next LINE if /support\@deeix\.com/;
 # Repository, image registry and website.
 s{github\.com/DEEIX-AI/DEEIX-Chat}{github.com/lieyanc/FireCortex}g;
 s{github\.com/DEEIX-AI}{github.com/lieyanc}g;
+s{DEEIX-AI/DEEIX-Chat}{lieyanc/FireCortex}g;
 s{ghcr\.io/deeix-ai/deeix-chat}{ghcr.io/lieyanc/firecortex}g;
 s{https?://deeix\.com(?:/[^\s"'`)<>\]]*)?}{https://github.com/lieyanc/FireCortex}g;
 s{\bdeeix\.com\b}{github.com/lieyanc/FireCortex}g;

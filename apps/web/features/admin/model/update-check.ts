@@ -7,7 +7,7 @@ export type ReleaseInfo = {
 
 export type VersionCompareResult = "available" | "current" | "unknown";
 
-export const LATEST_RELEASE_ENDPOINT = "https://api.github.com/repos/FireCortex-AI/FireCortex/releases/latest";
+export const LATEST_RELEASE_ENDPOINT = "https://api.github.com/repos/lieyanc/FireCortex/releases/latest";
 export const RELEASE_PAGE_PREFIX = "https://github.com/lieyanc/FireCortex/releases/tag/";
 
 const LATEST_RELEASE_CACHE_KEY = "firecortex:latest-release";

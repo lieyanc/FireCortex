@@ -243,6 +243,9 @@ jobs:
 
   release-prod:
     name: Publish release
+    permissions:
+      contents: write
+      actions: write
     needs:
       - meta
       - build
@@ -291,6 +294,14 @@ jobs:
           make_latest: true
           generate_release_notes: true
           files: release/*
+
+      - name: Start desktop builds for the tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh workflow run desktop-release.yml --ref "refs/tags/$RELEASE_TAG"
 
   cleanup-artifacts:
     name: Clean up old artifacts
