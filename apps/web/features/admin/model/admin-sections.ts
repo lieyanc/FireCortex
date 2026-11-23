@@ -10,6 +10,7 @@ export const ADMIN_SECTIONS = [
   { id: "groups", label: "Permission Groups", href: "/groups", feature: "multiUser" },
   { id: "upstreams", label: "Upstreams", href: "/upstreams" },
   { id: "models", label: "Models", href: "/models" },
+  { id: "model-router", label: "Model router", href: "/model-router" },
   { id: "tools", label: "Tools", href: "/tools" },
   { id: "billing", label: "Billing", href: "/billing" },
   { id: "announcements", label: "Announcements", href: "/announcements", feature: "announcements" },

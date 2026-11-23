@@ -400,6 +400,8 @@
     "createConversationFailed": "创建新会话失败",
     "processingAttachments": "正在处理附件…",
     "retrievingContent": "正在检索相关内容…",
+    "routingModel": "正在智能匹配模型…",
+    "routedToModel": "已路由至 {model}",
     "retryLater": "请稍后重试。",
     "concurrentGenerationLimit": "最多同时进行 {count} 个生成任务，请等待当前生成完成。",
     "imagePreviewAlt": "生成图片预览",
@@ -454,6 +456,23 @@
   "meta": {
     "inputTokens": "输入 tokens",
     "autoRoutedModel": "Auto → {model}",
+    "autoRoute": {
+      "title": "自动模型路由",
+      "category": "类别",
+      "difficulty": "难度",
+      "fallbackSummary": "由自动模型路由根据当前对话上下文选择此模型。",
+      "sources": {
+        "rule": "规则命中",
+        "sticky": "会话粘性",
+        "default": "默认兜底",
+        "fallback": "降级回退"
+      },
+      "difficulties": {
+        "easy": "简单",
+        "medium": "中等",
+        "hard": "困难"
+      }
+    },
     "cacheReadTokens": "缓存(读) tokens",
     "reasoningTokens": "思考 tokens",
     "outputTokens": "输出 tokens",

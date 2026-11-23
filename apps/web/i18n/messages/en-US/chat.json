@@ -400,6 +400,8 @@
     "createConversationFailed": "Failed to create a new conversation",
     "processingAttachments": "Processing attachments...",
     "retrievingContent": "Retrieving relevant content...",
+    "routingModel": "Selecting the best model...",
+    "routedToModel": "Routed to {model}",
     "retryLater": "Please try again later.",
     "concurrentGenerationLimit": "Up to {count} generations can run at once. Wait for an active generation to finish.",
     "imagePreviewAlt": "Generated image preview",
@@ -454,6 +456,23 @@
   "meta": {
     "inputTokens": "Input tokens",
     "autoRoutedModel": "Auto → {model}",
+    "autoRoute": {
+      "title": "Auto model routing",
+      "category": "Category",
+      "difficulty": "Difficulty",
+      "fallbackSummary": "Selected automatically by the model router for this turn.",
+      "sources": {
+        "rule": "Rule match",
+        "sticky": "Session sticky",
+        "default": "Default fallback",
+        "fallback": "Safe fallback"
+      },
+      "difficulties": {
+        "easy": "Easy",
+        "medium": "Medium",
+        "hard": "Hard"
+      }
+    },
     "cacheReadTokens": "Cache read tokens",
     "reasoningTokens": "Reasoning tokens",
     "outputTokens": "Output tokens",

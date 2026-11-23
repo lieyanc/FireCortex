@@ -1,4 +1,5 @@
 import type {
+  ChatAutoRouteInfo,
   ChatInlineAlert,
   ChatMessageProcessTrace,
   ImageLoadingAspectRatio,
@@ -112,6 +113,7 @@ export type PendingExchange = {
   runID?: string;
   platformModelName?: string;
   autoRouted?: boolean;
+  autoRoute?: ChatAutoRouteInfo;
   parentPublicID: string | null;
   sourcePublicID: string | null;
   branchReason: "default" | "retry" | "edit";

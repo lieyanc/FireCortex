@@ -1,6 +1,7 @@
 "use client";
 
 import { UI_BLOCK_FORMAT_VERSION } from "@firecortex/core";
+import { resolveModelOptionLabel } from "@/entities/model";
 import { splitControlSelections } from "@/features/chat/model/chat-model-controls";
 import { useTranslations } from "next-intl";
 import * as React from "react";
@@ -127,6 +128,17 @@ export function useChatRunStream({
             ...current,
             platformModelName: event.model,
             autoRouted: true,
+            autoRoute: {
+              model: event.model,
+              source: event.source,
+              category: event.category,
+              difficulty: event.difficulty,
+              reason: event.reason,
+            },
+            assistantFileProc: !current.assistantText,
+            assistantActivityLabel: !current.assistantText
+              ? t("routedToModel", { model: resolveModelOptionLabel(event.model) })
+              : current.assistantActivityLabel,
           }));
         },
         onRagSearch: (message) => {

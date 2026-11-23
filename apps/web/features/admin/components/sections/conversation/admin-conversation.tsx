@@ -1,6 +1,7 @@
 "use client";
 
-import { CircleHelp, Download, Save, Upload } from "lucide-react";
+import { ArrowUpRight, CircleHelp, Download, Save, Upload } from "lucide-react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
@@ -398,10 +399,6 @@ export function AdminConversationPage() {
     () => visibleConversationSettingsFields.filter((field) => field.section === "contextManagement"),
     [visibleConversationSettingsFields],
   );
-  const modelRouterFields = React.useMemo(
-    () => visibleConversationSettingsFields.filter((field) => field.section === "modelRouter"),
-    [visibleConversationSettingsFields],
-  );
   const modelOptionFields = React.useMemo(
     () => visibleConversationSettingsFields.filter(isModelOptionPolicyField),
     [visibleConversationSettingsFields],
@@ -441,10 +438,6 @@ export function AdminConversationPage() {
   const modelOptionActions = renderSaveAction(modelOptionFields);
   const contextManagementActions = renderSaveAction(contextManagementFields);
   const conversationActions = renderSaveAction(conversationFields);
-  // 关闭开关时策略字段被隐藏，但仍需随开关一起保存其未提交的修改。
-  const modelRouterActions = renderSaveAction(
-    conversationSettingsFields.filter((field) => field.section === "modelRouter"),
-  );
 
   function renderField(
     field: ConversationSettingsField,
@@ -530,9 +523,21 @@ export function AdminConversationPage() {
 
       <SettingsSectionSeparator />
 
-      <SettingsSection title={t("sections.modelRouter")} actions={modelRouterActions}>
+      <SettingsSection title={t("sections.modelRouter")}>
         <SettingsFieldList>
-          {modelRouterFields.map((field, index) => renderField(field, index, { animateLayout: false }))}
+          <SettingsFieldItem index={0}>
+            <SettingsFieldRow
+              title={t("fields.modelRouterEnabled.label")}
+              description={t("fields.modelRouterEnabled.description")}
+            >
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/admin/model-router">
+                  {t("modelRouterLink.openStudio")}
+                  <ArrowUpRight className="size-3.5" />
+                </Link>
+              </Button>
+            </SettingsFieldRow>
+          </SettingsFieldItem>
         </SettingsFieldList>
       </SettingsSection>
 

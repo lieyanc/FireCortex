@@ -463,6 +463,8 @@
     "invalidNamespace": "设置命名空间无效。",
     "invalidValue": "设置值无效。",
     "modelOptionPolicyInvalid": "模型参数策略设置无效。",
+    "modelRouterPolicyInvalid": "自动模型路由策略设置无效。",
+    "modelRouterUnavailable": "自动模型路由测试服务暂不可用。",
     "notFound": "设置项不存在。",
     "serviceUnavailable": "设置服务不可用。",
     "smtpInvalid": "SMTP 设置无效。"

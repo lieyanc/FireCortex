@@ -14,6 +14,7 @@ export { AdminGroupsPage } from "@/features/admin/components/sections/groups/adm
 export { AdminKnowledgeBasesPage } from "@/features/admin/components/sections/knowledge-bases/admin-knowledge-bases";
 export { AdminLoginPage } from "@/features/admin/components/sections/login/admin-login";
 export { AdminLogsPage } from "@/features/admin/components/sections/logs/admin-logs";
+export { AdminModelRouterPage } from "@/features/admin/components/sections/model-router/admin-model-router";
 export { AdminModelsPage } from "@/features/admin/components/sections/models/admin-models";
 export { AdminStatisticsPage } from "@/features/admin/components/sections/statistics/admin-statistics";
 export { AdminToolsPage } from "@/features/admin/components/sections/tools/admin-tools";

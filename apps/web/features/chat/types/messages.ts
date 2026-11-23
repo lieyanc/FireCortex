@@ -141,6 +141,14 @@ export type ImageLoadingAspectRatio = "wide" | "portrait" | "square";
  */
 export type UserMessageEditMode = "regenerate" | "save";
 
+export type ChatAutoRouteInfo = {
+  model: string;
+  source: string;
+  category?: string;
+  difficulty?: string;
+  reason?: string;
+};
+
 export type ChatAreaMessage = {
   key: string;
   publicID: string;
@@ -154,6 +162,7 @@ export type ChatAreaMessage = {
   runID?: string;
   platformModelName?: string;
   autoRouted?: boolean;
+  autoRoute?: ChatAutoRouteInfo;
   serverMessageID?: number;
   createdAt?: string;
   updatedAt?: string;

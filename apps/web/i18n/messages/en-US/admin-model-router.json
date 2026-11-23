@@ -1,0 +1,276 @@
+{
+  "title": "Auto model routing",
+  "subtitle": "Visually configure the classifier, task categories, and category × difficulty routing matrix, then test the full pipeline before saving.",
+  "enableToggleLabel": "Enable Auto option",
+  "status": {
+    "enabled": "Enabled",
+    "disabled": "Disabled"
+  },
+  "tabs": {
+    "studio": "Policy studio",
+    "simulator": "Sandbox & tester",
+    "json": "JSON source"
+  },
+  "actions": {
+    "save": "Save changes",
+    "discard": "Discard",
+    "cancel": "Cancel",
+    "apply": "Apply",
+    "done": "Done",
+    "openSimulator": "Open sandbox tester"
+  },
+  "presets": {
+    "trigger": "Smart presets",
+    "menuTitle": "Auto-fill policy from active chat models",
+    "balanced": {
+      "title": "Balanced tiers (Recommended)",
+      "description": "Fast models handle casual turns; flagship models handle hard coding, math, and analysis."
+    },
+    "costSaver": {
+      "title": "Cost optimized",
+      "description": "Prefer lightweight models by default and escalate only on hard reasoning tasks."
+    },
+    "codingPro": {
+      "title": "Coding & reasoning first",
+      "description": "Prioritize strongest models for coding and math with a wider history window."
+    },
+    "resetDefault": "Reset to built-in default"
+  },
+  "metrics": {
+    "categories": "Categories",
+    "coveredCategories": "{covered} covered by rules",
+    "rules": "Routing rules",
+    "classifierActive": "Classifier active",
+    "classifierSkipped": "No rules · classifier skipped",
+    "activeChatModels": "Active chat models",
+    "referencedModels": "{count} referenced",
+    "classifierTimeout": "Classifier timeout",
+    "historyCount": "{count} history msgs"
+  },
+  "alerts": {
+    "invalidJsonTitle": "Invalid policy JSON",
+    "unavailableModelsTitle": "Policy references unavailable models",
+    "unavailableModelsDescription": "These models are disabled or not active chat models and will be skipped at runtime: {models}",
+    "pruneUnavailableButton": "Clean up references",
+    "noRulesTitle": "No routing rules configured",
+    "noRulesDescription": "With zero rules, the LLM classifier is skipped automatically to save latency and cost, falling back through sticky → defaultModels → first active model."
+  },
+  "classifier": {
+    "title": "Classifier & runtime",
+    "description": "Configure the fast model used for request classification, timeout fallback, and conversation history window.",
+    "modelLabel": "Classifier model",
+    "followTaskModel": "Follow conversation task model",
+    "modelSelectedHint": "Uses {model} to classify each turn; usage is billed as the model_router basic service.",
+    "followingTaskModelHint": "Currently following the Conversation Task Model setting: {model}.",
+    "modelFallbackHint": "When unset, automatically reuses the previous turn model or the default chat route.",
+    "timeoutLabel": "Classifier timeout",
+    "timeoutHint": "Aborts classification after this limit and falls back smoothly to the sticky or default model.",
+    "historyLabel": "Recent history messages",
+    "historyValue": "{count} msgs",
+    "historyHint": "Passed to the classifier to judge topic shifts (switch); set to 0 to inspect only the latest turn."
+  },
+  "defaultModels": {
+    "title": "Default fallback chain",
+    "description": "Tried in order from top to bottom whenever no rule matches or rule models fail hard constraints.",
+    "empty": "When empty, automatically falls back to the first active chat model in catalog order.",
+    "addModel": "Add fallback model",
+    "orderTitle": "Decision priority:",
+    "orderDescription": "Hard constraints → sticky model (when switch=false) → exact difficulty rule → any-difficulty rule → default fallback chain → first active model."
+  },
+  "chain": {
+    "dragToReorder": "Drag to reorder priority",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "remove": "Remove model",
+    "addModel": "Add model",
+    "searchPlaceholder": "Search chat models or vendors...",
+    "noModelsFound": "No matching chat models",
+    "noActiveChatModels": "No active chat models available",
+    "unavailable": "Unavailable",
+    "unavailableHint": "This model is disabled, lacks an active source, or is not a chat model and will be skipped."
+  },
+  "capabilities": {
+    "vision": "Vision",
+    "visionShort": "Vision",
+    "tools": "Tools",
+    "toolsShort": "Tools",
+    "supported": "Supported",
+    "unsupported": "Unsupported",
+    "undeclared": "Undeclared (allowed)"
+  },
+  "difficulty": {
+    "any": "Any difficulty",
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard"
+  },
+  "sources": {
+    "rule": "Rule match",
+    "sticky": "Session sticky",
+    "default": "Default fallback",
+    "fallback": "Safe fallback"
+  },
+  "matrix": {
+    "title": "Routing rules matrix",
+    "description": "Click any category × difficulty cell to edit its prioritized model chain. Unset cells inherit the category's any-difficulty rule or fall back to defaults.",
+    "viewMatrix": "Matrix view",
+    "viewList": "List view ({count})",
+    "addRule": "Add rule",
+    "deleteRule": "Delete rule",
+    "categoryColumn": "Category",
+    "anyColumnSub": "category default",
+    "directRule": "Configured",
+    "moreModels": "+{count} more backups",
+    "clickToEdit": "Edit",
+    "inheritAny": "Inherits any-difficulty",
+    "fallbackDefault": "Default chain",
+    "fallbackCatalog": "First active model",
+    "unassigned": "Unassigned",
+    "popoverAnyHint": "Used when no exact difficulty rule matches for this category.",
+    "popoverExactHint": "Matched first for this exact difficulty. Clear to inherit the any-difficulty rule.",
+    "clearCell": "Clear",
+    "cellEmpty": "No explicit models configured for this cell. Add candidates below.",
+    "addCandidate": "Add candidate model",
+    "copyToAllDifficulties": "Copy to other difficulties",
+    "priorityOrderHint": "Selects the first available model that satisfies hard constraints",
+    "emptyRulesTitle": "No explicit routing rules yet",
+    "emptyRulesDescription": "Switch to matrix view and click any cell, or add your first category-to-model rule below.",
+    "legendDirect": "Solid: explicit rule",
+    "legendInherited": "Dashed: inherited or fallback",
+    "priorityNote": "Exact difficulty rules always take precedence over any-difficulty rules"
+  },
+  "categories": {
+    "title": "Task categories",
+    "description": "The classifier assigns each incoming user message to one of these categories. Clear descriptions improve routing accuracy.",
+    "addButton": "New category",
+    "editButton": "Edit category",
+    "deleteButton": "Delete category",
+    "ruleCount": "{count} rules",
+    "noRulesBadge": "Default fallback",
+    "emptyDescription": "No description set; classifier relies on the key name only.",
+    "quickAddLabel": "Quick-add common categories:",
+    "createTitle": "Create task category",
+    "editTitle": "Edit task category",
+    "dialogDescription": "Renaming a category key automatically updates all routing rules referencing it.",
+    "keyLabel": "Category key",
+    "keyHint": "1–32 chars of a-z, 0-9, _ or -, e.g. coding, sql, agent.",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Describe what kind of user requests belong to this category...",
+    "descriptionHint": "Up to 300 characters, injected into the classifier system prompt.",
+    "createConfirm": "Add category",
+    "deleteConfirmTitle": "Delete category \"{key}\"?",
+    "deleteConfirmDescription": "The classifier will no longer output this category.",
+    "deleteConfirmWithRules": "{count} routing rule(s) reference this category and will also be removed.",
+    "validation": {
+      "keyRequired": "Category key is required",
+      "keyPattern": "Use 1–32 chars of lowercase a-z, 0-9, _ or -",
+      "keyDuplicate": "A category with this key already exists",
+      "descriptionTooLong": "Description cannot exceed 300 characters"
+    }
+  },
+  "candidatesPanel": {
+    "title": "Candidate model capabilities",
+    "description": "Reference of active chat models and their routing capabilities (undeclared vision/tools are allowed through).",
+    "colModel": "Platform model",
+    "colContext": "Context window",
+    "colNativeTools": "Native tool families",
+    "inPolicy": "In policy"
+  },
+  "simulator": {
+    "controlsTitle": "Test scenario",
+    "modeLive": "Live classify",
+    "modeDryRun": "Instant dry-run",
+    "modeLiveDescription": "Calls the real classifier with your draft policy (without conversation billing) to inspect latency and output.",
+    "modeDryRunDescription": "Instant client-side simulation: toggle hard constraints and assumed classifications with zero latency.",
+    "quickSamples": "Quick sample prompts",
+    "samples": {
+      "greeting": {
+        "label": "Simple chat",
+        "prompt": "Hi, explain what HTTPS is in one short sentence."
+      },
+      "algorithm": {
+        "label": "Hard coding",
+        "prompt": "Implement a lock-free ring buffer in Go and explain memory ordering and ABA mitigation."
+      },
+      "visionChart": {
+        "label": "Image analysis",
+        "prompt": "Analyze the bottlenecks shown in this architecture diagram and propose a split plan."
+      },
+      "webTool": {
+        "label": "Web + tools",
+        "prompt": "Search today's latest tech headlines and call tools to produce a 3-bullet briefing."
+      },
+      "longContext": {
+        "label": "Long context",
+        "prompt": "Based on the 100k-word earnings filing above, summarize core risk factors chapter by chapter."
+      }
+    },
+    "messageLabel": "Sample user message",
+    "messagePlaceholder": "Enter a sample user prompt to see how the classifier routes it...",
+    "simulatedClassification": "Simulated classification",
+    "simulateTimeout": "Simulate timeout/failure",
+    "categoryLabel": "Category",
+    "difficultyLabel": "Difficulty",
+    "switchSignalLabel": "Classifier requests model switch (switch)",
+    "switchSignalShort": "Switch signal",
+    "switchYes": "Switch (re-select)",
+    "switchNo": "Keep sticky",
+    "constraintsTitle": "Hard constraints",
+    "nativeToolsLabel": "Enabled native tools",
+    "estimatedTokensLabel": "Simulated context tokens",
+    "autoEstimated": "Auto from prompt",
+    "autoShort": "Auto",
+    "previousModelLabel": "Previous routed model (stickiness)",
+    "noPreviousModel": "None (first turn)",
+    "previousModelHint": "Set to test multi-turn stickiness when switch=false or fallback when classification fails.",
+    "runLiveButton": "Run live classification test",
+    "runningButton": "Calling classifier...",
+    "liveErrorTitle": "Live test failed",
+    "emptyTitle": "Ready to test",
+    "emptyDescription": "Click \"Run live classification test\" to invoke the real classifier, or switch to \"Instant dry-run\" to preview rules immediately.",
+    "finalModelLabel": "Selected target model",
+    "stage1Title": "Hard constraint filtering",
+    "passedSummary": "{passed} / {total} passed",
+    "relaxedTitle": "All candidates excluded; constraints relaxed",
+    "relaxedDescription": "To avoid hard-failing Auto mode, all candidates are retained so downstream can surface a clear capability error.",
+    "stage2Title": "Fast model classification",
+    "classifierFailedTitle": "Classification failed; using fallback path",
+    "rawOutputLabel": "Inspect raw classifier output",
+    "stage3Title": "Stickiness & rule matching",
+    "stickyExplanation": "Previous model {model} passed constraints and no switch was requested, keeping session stickiness.",
+    "noMatchedRuleExplanation": "No explicit rule matched (or classification was skipped/failed); selecting from defaults or catalog.",
+    "dryRunReason": "Simulated classification in dry-run mode",
+    "skipped": {
+      "dry_run": "Running in instant dry-run mode without invoking a live LLM.",
+      "single_candidate": "Only 1 candidate survived filtering; classification short-circuited.",
+      "no_rules": "Policy has no routing rules; classifier call skipped to save latency and cost."
+    },
+    "reasons": {
+      "missingVision": "No vision",
+      "missingTools": "No tools",
+      "contextExceeded": "Context too small",
+      "missingNativeTool": "Missing tool: {tool}"
+    }
+  },
+  "json": {
+    "title": "Policy JSON source",
+    "description": "Synced bidirectionally with the visual studio for quick copy, paste, or bulk editing.",
+    "format": "Format",
+    "copy": "Copy JSON",
+    "copied": "Copied"
+  },
+  "toast": {
+    "sessionExpired": "Session expired",
+    "signInAgain": "Please sign in again to continue.",
+    "loadFailed": "Failed to load model router settings",
+    "saveFailed": "Failed to save model router settings",
+    "saved": "Model router settings saved",
+    "invalidPolicy": "Invalid router policy",
+    "testFailed": "Model router test failed",
+    "presetApplied": "Smart preset applied (unsaved)",
+    "resetToDefault": "Reset to built-in default policy (unsaved)",
+    "prunedUnavailable": "Removed unavailable model references (unsaved)",
+    "copiedJSON": "Policy JSON copied",
+    "copyFailed": "Failed to copy JSON"
+  }
+}

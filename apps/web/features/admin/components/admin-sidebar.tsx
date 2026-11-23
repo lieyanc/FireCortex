@@ -18,6 +18,7 @@ const ADMIN_SECTION_LABEL_KEYS: Record<AdminSection, string> = {
   users: "sections.accounts",
   upstreams: "sections.upstreams",
   models: "sections.models",
+  "model-router": "sections.modelRouter",
   groups: "sections.groups",
   tools: "sections.toolSettings",
   billing: "sections.billing",

@@ -6,7 +6,7 @@ export type ConversationVisibilityRule =
   | { field: string; equals: string }
   | { all: ConversationVisibilityRule[] };
 
-export type ConversationSettingsSection = "conversation" | "contextManagement" | "optionPassthrough" | "modelRouter";
+export type ConversationSettingsSection = "conversation" | "contextManagement" | "optionPassthrough";
 
 export type ConversationSettingsField = {
   section: ConversationSettingsSection;
@@ -36,9 +36,7 @@ export type ConversationSettingsField = {
     | "compact_light_prompt"
     | "model_option_policy_mode"
     | "model_option_allowed_paths"
-    | "model_option_denied_paths"
-    | "model_router_enabled"
-    | "model_router_policy";
+    | "model_option_denied_paths";
   label: string;
   description: string;
   type: ConversationFieldType;
@@ -63,27 +61,6 @@ export const COMPACT_LLM_ENABLED_RULE: ConversationVisibilityRule = {
     { field: "chat.compact_llm_enabled", equals: "true" },
   ],
 };
-
-export const MODEL_ROUTER_ENABLED_RULE: ConversationVisibilityRule = {
-  field: "chat.model_router_enabled",
-  equals: "true",
-};
-
-// 与后端 modelrouter.DefaultPolicyJSON 保持一致。
-export const DEFAULT_MODEL_ROUTER_POLICY = `{
-  "routerModel": "",
-  "timeoutMs": 800,
-  "historyMessages": 4,
-  "defaultModels": [],
-  "categories": [
-    {"key": "chat", "description": "Casual conversation, greetings and simple factual questions"},
-    {"key": "coding", "description": "Writing, reviewing, explaining or debugging code"},
-    {"key": "math", "description": "Math, logic puzzles and quantitative reasoning"},
-    {"key": "writing", "description": "Long-form writing, editing, rewriting and translation"},
-    {"key": "analysis", "description": "Research, planning, and analysis of documents, data or images"}
-  ],
-  "rules": []
-}`;
 
 export const DEFAULT_MODEL_OPTION_ALLOWED_PATHS = `{
   "default": [
@@ -297,24 +274,6 @@ export function buildConversationSettingsFields(t: ConversationSettingsTranslato
       description: t("fields.deniedPaths.description"),
       type: "json",
       placeholder: DEFAULT_MODEL_OPTION_DENIED_PATHS,
-    },
-    {
-      section: "modelRouter",
-      namespace: "chat",
-      key: "model_router_enabled",
-      label: t("fields.modelRouterEnabled.label"),
-      description: t("fields.modelRouterEnabled.description"),
-      type: "bool",
-    },
-    {
-      section: "modelRouter",
-      namespace: "chat",
-      key: "model_router_policy",
-      label: t("fields.modelRouterPolicy.label"),
-      description: t("fields.modelRouterPolicy.description"),
-      type: "json",
-      placeholder: DEFAULT_MODEL_ROUTER_POLICY,
-      visibleWhen: MODEL_ROUTER_ENABLED_RULE,
     },
     {
       section: "conversation",
@@ -543,12 +502,6 @@ export function applyConversationDefaults(settings: Record<string, string>): Rec
   }
   if (!(result["chat.model_option_denied_paths"] ?? "").trim()) {
     result["chat.model_option_denied_paths"] = DEFAULT_MODEL_OPTION_DENIED_PATHS;
-  }
-  if (!(result["chat.model_router_enabled"] ?? "").trim()) {
-    result["chat.model_router_enabled"] = "false";
-  }
-  if (!(result["chat.model_router_policy"] ?? "").trim()) {
-    result["chat.model_router_policy"] = DEFAULT_MODEL_ROUTER_POLICY;
   }
   if (!(result["chat.compact_task_model"] ?? "").trim()) {
     result["chat.compact_task_model"] = CONVERSATION_TASK_MODEL_FOLLOW;

@@ -1,0 +1,276 @@
+{
+  "title": "自动模型路由",
+  "subtitle": "以可视化方式编排分类器、任务类别与难度路由矩阵，并在保存前直接试跑完整决策链路。",
+  "enableToggleLabel": "启用 Auto 选项",
+  "status": {
+    "enabled": "已启用",
+    "disabled": "未启用"
+  },
+  "tabs": {
+    "studio": "策略编排",
+    "simulator": "沙盒与试跑",
+    "json": "JSON 源码"
+  },
+  "actions": {
+    "save": "保存配置",
+    "discard": "放弃更改",
+    "cancel": "取消",
+    "apply": "应用",
+    "done": "完成",
+    "openSimulator": "前往沙盒试跑"
+  },
+  "presets": {
+    "trigger": "智能预设",
+    "menuTitle": "按当前可用模型一键生成策略",
+    "balanced": {
+      "title": "均衡分层（推荐）",
+      "description": "简单闲聊走快速模型，复杂代码、数学与分析走高能力模型。"
+    },
+    "costSaver": {
+      "title": "成本优先",
+      "description": "常规请求优先轻量模型，仅在高难度任务升级至旗舰模型。"
+    },
+    "codingPro": {
+      "title": "编程与推理增强",
+      "description": "代码与数学任务直接优先强模型，适当加大历史上下文窗口。"
+    },
+    "resetDefault": "重置为内置默认策略"
+  },
+  "metrics": {
+    "categories": "任务类别",
+    "coveredCategories": "已覆盖 {covered} 类",
+    "rules": "路由规则",
+    "classifierActive": "启用快速分类",
+    "classifierSkipped": "无规则 · 跳过分类",
+    "activeChatModels": "可用聊天模型",
+    "referencedModels": "策略引用 {count} 个",
+    "classifierTimeout": "分类超时上限",
+    "historyCount": "附带 {count} 条历史"
+  },
+  "alerts": {
+    "invalidJsonTitle": "策略 JSON 校验未通过",
+    "unavailableModelsTitle": "策略引用了当前不可用的模型",
+    "unavailableModelsDescription": "以下模型未启用或不在当前活跃聊天模型列表中，运行时会被自动跳过：{models}",
+    "pruneUnavailableButton": "一键清理无效引用",
+    "noRulesTitle": "尚未配置路由规则",
+    "noRulesDescription": "当前规则为空，运行时将自动跳过 LLM 分类以节省延迟与费用，并直接按“粘性 → 默认模型链 → 目录首个模型”选择。"
+  },
+  "classifier": {
+    "title": "分类器与运行参数",
+    "description": "控制执行请求分类的快速模型、超时回退门槛及送入分类器的上下文窗口。",
+    "modelLabel": "分类器模型",
+    "followTaskModel": "跟随会话任务模型",
+    "modelSelectedHint": "使用 {model} 执行每轮分类，消耗按基础服务 model_router 计费。",
+    "followingTaskModelHint": "当前跟随「对话设置」中的任务执行模型：{model}。",
+    "modelFallbackHint": "未指定固定分类模型时，将自动复用上一轮模型或系统默认聊天路由。",
+    "timeoutLabel": "分类超时时间",
+    "timeoutHint": "超过该时长未返回结果时自动中止分类，平滑回退到上一轮粘性模型或默认模型链。",
+    "historyLabel": "附带最近历史消息",
+    "historyValue": "{count} 条",
+    "historyHint": "提供给分类器判断话题是否切换（switch）与上下文延续性，设为 0 仅看本轮提问。"
+  },
+  "defaultModels": {
+    "title": "默认兜底模型链",
+    "description": "无规则命中、或命中规则内模型均不满足硬约束时，按从上到下顺序选择第一个可用模型。",
+    "empty": "未指定默认模型链时，将自动回退到模型目录中的首个可用聊天模型。",
+    "addModel": "添加兜底模型",
+    "orderTitle": "决策优先级：",
+    "orderDescription": "硬约束过滤 →（若未切换话题）会话粘性 → 精确难度规则 → 不限难度规则 → 默认兜底链 → 目录首个可用模型。"
+  },
+  "chain": {
+    "dragToReorder": "拖动调整优先级",
+    "moveUp": "上移优先级",
+    "moveDown": "下移优先级",
+    "remove": "移除模型",
+    "addModel": "添加模型",
+    "searchPlaceholder": "搜索聊天模型名称或厂商…",
+    "noModelsFound": "没有匹配的聊天模型",
+    "noActiveChatModels": "暂无可用的活跃聊天模型",
+    "unavailable": "不可用",
+    "unavailableHint": "该模型目前未启用、无可用上游或不是聊天模型，运行时将被跳过。"
+  },
+  "capabilities": {
+    "vision": "视觉",
+    "visionShort": "视觉",
+    "tools": "工具调用",
+    "toolsShort": "工具",
+    "supported": "支持",
+    "unsupported": "不支持",
+    "undeclared": "未声明（放行）"
+  },
+  "difficulty": {
+    "any": "不限难度",
+    "easy": "简单",
+    "medium": "中等",
+    "hard": "困难"
+  },
+  "sources": {
+    "rule": "规则命中",
+    "sticky": "会话粘性",
+    "default": "默认兜底",
+    "fallback": "降级回退"
+  },
+  "matrix": {
+    "title": "路由规则矩阵",
+    "description": "点击任意「类别 × 难度」格子即可配置模型优先级链；未配置格子会自动继承对应类别的不限难度规则或回退默认链。",
+    "viewMatrix": "矩阵视图",
+    "viewList": "列表视图 ({count})",
+    "addRule": "新增规则",
+    "deleteRule": "删除规则",
+    "categoryColumn": "任务类别",
+    "anyColumnSub": "类内默认",
+    "directRule": "已配置",
+    "moreModels": "另有 +{count} 个备选",
+    "clickToEdit": "编辑",
+    "inheritAny": "继承不限难度",
+    "fallbackDefault": "回退默认链",
+    "fallbackCatalog": "目录首个兜底",
+    "unassigned": "未分配",
+    "popoverAnyHint": "当该类别没有命中更精确的难度规则时，按以下顺序选择模型。",
+    "popoverExactHint": "精确匹配此难度时优先按以下顺序选择模型；清空后将继承「不限难度」。",
+    "clearCell": "清空",
+    "cellEmpty": "当前格子未单独指定模型，点击下方按钮添加优先级模型链。",
+    "addCandidate": "添加候选模型",
+    "copyToAllDifficulties": "复制到该类其它难度",
+    "priorityOrderHint": "按顺序优先匹配首个满足硬约束的可用模型",
+    "emptyRulesTitle": "还没有任何显式路由规则",
+    "emptyRulesDescription": "切换至矩阵视图点击格子，或点击下方按钮新增第一条分类到模型的映射规则。",
+    "legendDirect": "实线：直接配置的显式规则",
+    "legendInherited": "虚线：自动继承或回退路径",
+    "priorityNote": "精确难度规则始终优先于不限难度规则"
+  },
+  "categories": {
+    "title": "任务类别定义",
+    "description": "分类器会将用户的最新提问归类到以下类别之一；清晰简洁的英文/中文描述有助于提升分类准确率。",
+    "addButton": "新建类别",
+    "editButton": "编辑类别",
+    "deleteButton": "删除类别",
+    "ruleCount": "{count} 条规则",
+    "noRulesBadge": "走默认兜底",
+    "emptyDescription": "未填写描述，分类器仅根据类别标识判断。",
+    "quickAddLabel": "一键添加常见类别：",
+    "createTitle": "新建任务类别",
+    "editTitle": "编辑任务类别",
+    "dialogDescription": "修改类别标识会自动同步更新引用了它的所有路由规则。",
+    "keyLabel": "类别标识（Key）",
+    "keyHint": "1–32 位小写字母、数字、下划线或短横线，例如 coding、sql、agent。",
+    "descriptionLabel": "分类说明",
+    "descriptionPlaceholder": "描述什么类型的用户消息应该归入此类别…",
+    "descriptionHint": "最多 300 字，会直接写入分类器系统提示词。",
+    "createConfirm": "添加类别",
+    "deleteConfirmTitle": "确认删除类别「{key}」？",
+    "deleteConfirmDescription": "删除后分类器将不再输出该类别。",
+    "deleteConfirmWithRules": "该类别当前关联了 {count} 条路由规则，删除类别会一并移除这些规则。",
+    "validation": {
+      "keyRequired": "请输入类别标识",
+      "keyPattern": "仅允许 1–32 位小写字母、数字、_ 或 -",
+      "keyDuplicate": "已存在同名类别",
+      "descriptionTooLong": "描述不能超过 300 个字符"
+    }
+  },
+  "candidatesPanel": {
+    "title": "候选模型能力参考",
+    "description": "展示当前平台所有活跃聊天模型及其硬约束能力（未声明视觉/工具的模型按放行处理）。",
+    "colModel": "平台模型",
+    "colContext": "上下文窗口",
+    "colNativeTools": "原生工具族",
+    "inPolicy": "策略已引用"
+  },
+  "simulator": {
+    "controlsTitle": "测试场景配置",
+    "modeLive": "实时分类",
+    "modeDryRun": "快速推演",
+    "modeLiveDescription": "使用当前编辑中的草稿策略真实调用分类器（不产生会话账单），完整观测延迟与命中路径。",
+    "modeDryRunDescription": "零延迟本地推演：直接设定假设分类与硬约束，实时验证过滤和规则优先级逻辑。",
+    "quickSamples": "一键场景示例",
+    "samples": {
+      "greeting": {
+        "label": "简单问候",
+        "prompt": "你好，帮我用一句话解释什么是 HTTPS？"
+      },
+      "algorithm": {
+        "label": "复杂代码",
+        "prompt": "请用 Go 实现一个无锁环形队列，并分析内存屏障与 ABA 问题的规避策略。"
+      },
+      "visionChart": {
+        "label": "看图分析",
+        "prompt": "帮我分析这张架构图里的性能瓶颈，并给出拆分方案。"
+      },
+      "webTool": {
+        "label": "联网 + 工具",
+        "prompt": "搜索今天最新的科技新闻，并调用工具整理成三点摘要。"
+      },
+      "longContext": {
+        "label": "超长上下文",
+        "prompt": "请基于前文长达十万字的财报原文，逐章汇总核心风险指标与同比变化。"
+      }
+    },
+    "messageLabel": "模拟用户消息",
+    "messagePlaceholder": "输入一段用户提问，测试分类器会把它归入哪个类别与难度…",
+    "simulatedClassification": "模拟分类结果",
+    "simulateTimeout": "模拟超时/失败",
+    "categoryLabel": "任务类别",
+    "difficultyLabel": "难度等级",
+    "switchSignalLabel": "分类器判定需要切换模型（switch）",
+    "switchSignalShort": "切换信号",
+    "switchYes": "切换（重选）",
+    "switchNo": "保持粘性",
+    "constraintsTitle": "本轮硬约束条件",
+    "nativeToolsLabel": "开启的原生工具",
+    "estimatedTokensLabel": "模拟上下文 Token 数",
+    "autoEstimated": "按文本自动估算",
+    "autoShort": "自动",
+    "previousModelLabel": "上一轮已路由模型（粘性测试）",
+    "noPreviousModel": "无（模拟首轮对话）",
+    "previousModelHint": "设置后可测试多轮对话下 switch=false 时的会话粘性保持或回退行为。",
+    "runLiveButton": "运行实时分类试跑",
+    "runningButton": "正在调用分类器…",
+    "liveErrorTitle": "实时试跑失败",
+    "emptyTitle": "准备就绪，等待试跑",
+    "emptyDescription": "点击左侧「运行实时分类试跑」调用真实分类器，或切换至「快速推演」即时预览路由管道。",
+    "finalModelLabel": "最终命中模型",
+    "stage1Title": "硬约束过滤",
+    "passedSummary": "通过 {passed} / {total}",
+    "relaxedTitle": "全部候选均被硬约束排除，已自动放宽",
+    "relaxedDescription": "为避免 Auto 路由直接中断请求，运行时会放宽约束保留全部候选，交由下游报告具体能力提示。",
+    "stage2Title": "快速模型分类",
+    "classifierFailedTitle": "分类调用未成功，已自动进入回退路径",
+    "rawOutputLabel": "查看分类器原始输出",
+    "stage3Title": "粘性与规则匹配",
+    "stickyExplanation": "上一轮模型 {model} 满足本轮硬约束且未触发切换，直接保持会话粘性。",
+    "noMatchedRuleExplanation": "未命中显式规则（或分类跳过/失败），按策略默认兜底链或目录顺序选择。",
+    "dryRunReason": "本地推演模式模拟的分类结果",
+    "skipped": {
+      "dry_run": "当前为本地快速推演模式，未发起真实 LLM 调用。",
+      "single_candidate": "硬约束过滤后仅剩 1 个候选模型，自动短路跳过分类调用。",
+      "no_rules": "当前策略未配置任何映射规则，自动跳过分类调用以节省延迟与费用。"
+    },
+    "reasons": {
+      "missingVision": "不支持图片",
+      "missingTools": "不支持工具",
+      "contextExceeded": "上下文窗口不足",
+      "missingNativeTool": "缺少原生工具：{tool}"
+    }
+  },
+  "json": {
+    "title": "策略 JSON 源码",
+    "description": "与可视化编排视图实时双向同步，支持直接复制、粘贴或批量修改配置。",
+    "format": "格式化",
+    "copy": "复制 JSON",
+    "copied": "已复制"
+  },
+  "toast": {
+    "sessionExpired": "登录状态已失效",
+    "signInAgain": "请重新登录后再继续操作。",
+    "loadFailed": "加载模型路由配置失败",
+    "saveFailed": "保存模型路由配置失败",
+    "saved": "模型路由配置已保存",
+    "invalidPolicy": "策略校验失败",
+    "testFailed": "路由试跑失败",
+    "presetApplied": "已套用智能预设模板（尚未保存）",
+    "resetToDefault": "已重置为内置默认策略（尚未保存）",
+    "prunedUnavailable": "已清理不可用模型引用（尚未保存）",
+    "copiedJSON": "已复制策略 JSON",
+    "copyFailed": "复制失败，请手动复制"
+  }
+}

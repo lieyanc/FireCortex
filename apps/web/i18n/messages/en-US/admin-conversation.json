@@ -6,6 +6,9 @@
     "modelRouter": "Auto model routing",
     "dataExport": "Data import & export"
   },
+  "modelRouterLink": {
+    "openStudio": "Open router studio"
+  },
   "defaultModel": {
     "systemRecommended": "System recommended"
   },

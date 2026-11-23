@@ -12,6 +12,7 @@ import {
   DatabaseZap,
   FilePenLine,
   Forward,
+  Sparkles,
   TicketSlash,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -28,7 +29,9 @@ import { RotateCcw } from "@/components/animate-ui/icons/rotate-ccw";
 import { ThumbsDown } from "@/components/animate-ui/icons/thumbs-down";
 import { ThumbsUp } from "@/components/animate-ui/icons/thumbs-up";
 import { Trash2 } from "@/components/animate-ui/icons/trash-2";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -42,7 +45,7 @@ import { useChatElapsedDurationMS } from "@/features/chat/hooks/use-chat-elapsed
 import { useChatMemoryPin } from "@/features/chat/hooks/use-chat-memory-pin";
 import { type BillingSnapshot, parseBillingSnapshot } from "@/features/chat/model/billing-snapshot";
 import { resolvePersistedPublicID } from "@/features/chat/model/message-submit";
-import type { ChatBillingCost, ChatMessageBranchNavigator } from "@/features/chat/types/messages";
+import type { ChatAutoRouteInfo, ChatBillingCost, ChatMessageBranchNavigator } from "@/features/chat/types/messages";
 import { cn } from "@/lib/utils";
 import { usePointerInteraction } from "@/shared/hooks/use-pointer-interaction";
 import {
@@ -57,7 +60,11 @@ import {
   formatBillingDisplayPreciseAmountFromUSD,
   formatBillingDisplayUnitPriceFromUSD,
 } from "@/entities/billing";
-import { resolveModelOptionLabel } from "@/entities/model";
+import {
+  ModelOptionIcon,
+  resolveModelOptionIconUrl,
+  resolveModelOptionLabel,
+} from "@/entities/model";
 
 const META_ACTION_BUTTON_CLASSNAME =
   "text-muted-foreground [&_svg:not([class*='size-'])]:size-3.5";
@@ -65,6 +72,7 @@ const META_ACTION_BUTTON_CLASSNAME =
 type ChatMetaMessage = {
   publicID: string;
   autoRouted?: boolean;
+  autoRoute?: ChatAutoRouteInfo;
   parentPublicID?: string | null;
   status?: string;
   createdAt?: string;
@@ -555,7 +563,30 @@ function EditedBadge({ messageRole = "assistant" }: { messageRole?: "user" | "as
   );
 }
 
-function ModelBadge({ label, autoRouted = false }: { label: string; autoRouted?: boolean }) {
+function autoRouteSourceTone(source: string): string {
+  switch (source) {
+    case "rule":
+      return "border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+    case "sticky":
+      return "border-sky-500/35 bg-sky-500/10 text-sky-700 dark:text-sky-300";
+    case "default":
+      return "border-violet-500/35 bg-violet-500/10 text-violet-700 dark:text-violet-300";
+    default:
+      return "border-amber-500/35 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+  }
+}
+
+function ModelBadge({
+  label,
+  rawModelName,
+  autoRouted = false,
+  autoRoute,
+}: {
+  label: string;
+  rawModelName?: string;
+  autoRouted?: boolean;
+  autoRoute?: ChatAutoRouteInfo;
+}) {
   const t = useTranslations("chat.meta");
   const modelName = label.trim();
   if (!modelName) {
@@ -563,19 +594,110 @@ function ModelBadge({ label, autoRouted = false }: { label: string; autoRouted?:
   }
   const normalized = autoRouted ? t("autoRoutedModel", { model: modelName }) : modelName;
 
+  if (!autoRouted) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            className="ml-0.5 inline-flex max-w-48 items-center gap-1 rounded bg-muted/30 px-1.5 py-0.5 font-mono text-[10px] leading-3.5 text-muted-foreground/70 select-none whitespace-nowrap"
+          >
+            <span className="sr-only">{t("model")}</span>
+            <Cpu className="size-3 shrink-0" strokeWidth={1.4} />
+            <span className="truncate">{normalized}</span>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{normalized}</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  const targetModel = autoRoute?.model?.trim() || rawModelName?.trim() || modelName;
+  const targetIconUrl = resolveModelOptionIconUrl({
+    platformModelName: targetModel,
+    vendor: "",
+    icon: "",
+  });
+  const sourceKey = autoRoute?.source?.trim() || "";
+  const sourceLabel =
+    sourceKey === "rule" || sourceKey === "sticky" || sourceKey === "default" || sourceKey === "fallback"
+      ? t(`autoRoute.sources.${sourceKey}`)
+      : sourceKey;
+  const difficultyKey = autoRoute?.difficulty?.trim() || "";
+  const difficultyLabel =
+    difficultyKey === "easy" || difficultyKey === "medium" || difficultyKey === "hard"
+      ? t(`autoRoute.difficulties.${difficultyKey}`)
+      : difficultyKey;
+  const category = autoRoute?.category?.trim() || "";
+  const reason = autoRoute?.reason?.trim() || "";
+
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span
-          className="ml-0.5 inline-flex max-w-48 items-center gap-1 rounded bg-muted/30 px-1.5 py-0.5 font-mono text-[10px] leading-3.5 text-muted-foreground/70 select-none whitespace-nowrap"
+    <HoverCard openDelay={160} closeDelay={120}>
+      <HoverCardTrigger asChild>
+        <button
+          type="button"
+          className="ml-0.5 inline-flex max-w-52 items-center gap-1 rounded border border-border/50 bg-muted/35 px-1.5 py-0.5 font-mono text-[10px] leading-3.5 text-muted-foreground transition-colors hover:border-border hover:bg-muted/60 hover:text-foreground whitespace-nowrap"
         >
           <span className="sr-only">{t("model")}</span>
-          <Cpu className="size-3 shrink-0" strokeWidth={1.4} />
+          <Sparkles className="size-3 shrink-0 text-primary/75" strokeWidth={1.5} />
           <span className="truncate">{normalized}</span>
-        </span>
-      </TooltipTrigger>
-      <TooltipContent>{normalized}</TooltipContent>
-    </Tooltip>
+        </button>
+      </HoverCardTrigger>
+      <HoverCardContent align="start" className="w-72 p-3">
+        <div className="flex flex-col gap-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground">
+              <Sparkles className="size-3.5 text-primary" />
+              {t("autoRoute.title")}
+            </span>
+            {sourceLabel ? (
+              <Badge
+                variant="outline"
+                className={cn("h-5 px-1.5 text-[10px] font-medium", autoRouteSourceTone(sourceKey))}
+              >
+                {sourceLabel}
+              </Badge>
+            ) : null}
+          </div>
+
+          <div className="flex items-center gap-2 rounded-md bg-muted/45 px-2.5 py-2">
+            <ModelOptionIcon iconUrl={targetIconUrl} label={modelName} size={16} />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-xs font-medium text-foreground">{modelName}</div>
+              {targetModel !== modelName ? (
+                <code className="block truncate text-[10px] text-muted-foreground">{targetModel}</code>
+              ) : null}
+            </div>
+          </div>
+
+          {category || difficultyLabel ? (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {category ? (
+                <Badge variant="secondary" className="h-5 gap-1 px-1.5 font-mono text-[10px]">
+                  <span className="font-sans text-muted-foreground">{t("autoRoute.category")}</span>
+                  {category}
+                </Badge>
+              ) : null}
+              {difficultyLabel ? (
+                <Badge variant="outline" className="h-5 gap-1 px-1.5 text-[10px]">
+                  <span className="text-muted-foreground">{t("autoRoute.difficulty")}</span>
+                  {difficultyLabel}
+                </Badge>
+              ) : null}
+            </div>
+          ) : null}
+
+          {reason ? (
+            <p className="rounded bg-muted/35 px-2 py-1.5 text-[11px] leading-relaxed text-muted-foreground">
+              “{reason}”
+            </p>
+          ) : !autoRoute ? (
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              {t("autoRoute.fallbackSummary")}
+            </p>
+          ) : null}
+        </div>
+      </HoverCardContent>
+    </HoverCard>
   );
 }
 
@@ -1108,7 +1230,14 @@ export function AssistantMessageMeta({
       <div className="flex min-w-0 max-w-full flex-col items-start gap-1.5 pt-0.5">
         {hasDetailBadges ? (
           <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1">
-            {showModelInfo ? <ModelBadge label={resolveModelOptionLabel(item.platformModelName ?? "")} autoRouted={item.autoRouted} /> : null}
+            {showModelInfo ? (
+              <ModelBadge
+                label={resolveModelOptionLabel(item.platformModelName ?? "")}
+                rawModelName={item.platformModelName}
+                autoRouted={item.autoRouted}
+                autoRoute={item.autoRoute}
+              />
+            ) : null}
             {showTokenUsage ? (
               <TokenBadge
                 inputTokens={item.inputTokens}

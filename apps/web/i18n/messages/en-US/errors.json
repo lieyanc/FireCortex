@@ -463,6 +463,8 @@
     "invalidNamespace": "Invalid setting namespace.",
     "invalidValue": "Invalid setting value.",
     "modelOptionPolicyInvalid": "Invalid model option policy settings.",
+    "modelRouterPolicyInvalid": "Invalid model router policy settings.",
+    "modelRouterUnavailable": "Model router test service is currently unavailable.",
     "notFound": "Setting not found.",
     "serviceUnavailable": "Settings service is unavailable.",
     "smtpInvalid": "Invalid SMTP settings."

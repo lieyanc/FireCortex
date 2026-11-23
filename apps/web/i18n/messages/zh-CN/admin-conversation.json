@@ -6,6 +6,9 @@
     "modelRouter": "自动模型路由",
     "dataExport": "数据导入与导出"
   },
+  "modelRouterLink": {
+    "openStudio": "打开路由工作台"
+  },
   "defaultModel": {
     "systemRecommended": "系统推荐"
   },

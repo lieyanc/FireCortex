@@ -1,4 +1,5 @@
 import type { useTranslations } from "next-intl";
+import { isAutoModelName } from "@/features/chat/model/auto-model";
 import { normalizeMessageReasoningEffort } from "@/features/chat/model/chat-reasoning-effort";
 import { parseAttachments } from "@/features/chat/model/chat-thread";
 import {
@@ -26,7 +27,9 @@ export function createInitialPendingExchange(
   plan: ChatSubmissionPlan,
   conversationPublicID: string | null,
   createdAt: string,
+  autoRoutingLabel?: string,
 ): PendingExchange {
+  const autoMode = isAutoModelName(plan.platformModelName);
   return {
     key: plan.exchangeKey,
     ...plan.targetBranchScope,
@@ -35,7 +38,8 @@ export function createInitialPendingExchange(
     tempUserPublicID: plan.tempUserPublicID,
     tempAssistantPublicID: plan.tempAssistantPublicID,
     runID: plan.clientRunID,
-    platformModelName: plan.platformModelName,
+    platformModelName: autoMode ? undefined : plan.platformModelName,
+    autoRouted: autoMode || undefined,
     parentPublicID: plan.pendingParentPublicID,
     sourcePublicID: plan.resolvedSourcePublicID,
     branchReason: plan.branchReason,
@@ -46,6 +50,8 @@ export function createInitialPendingExchange(
     assistantText: "",
     assistantPending: true,
     assistantStreaming: true,
+    assistantFileProc: autoMode && Boolean(autoRoutingLabel),
+    assistantActivityLabel: autoMode && autoRoutingLabel ? autoRoutingLabel : undefined,
     assistantContentType: plan.assistantContentType,
     assistantImageAspectRatio: plan.assistantImageAspectRatio,
     assistantInlineAlert: undefined,
@@ -96,7 +102,16 @@ export function settleCompletedExchange(
     userPublicID: completed.userMessage.publicID,
     assistantPublicID: completed.assistantMessage.publicID,
     platformModelName: completed.assistantMessage.platformModelName?.trim() || current.platformModelName,
-    autoRouted: completed.assistantMessage.autoRouted || current.autoRouted,
+    autoRouted: completed.assistantMessage.autoRouted || Boolean(completed.assistantMessage.autoRoute) || current.autoRouted,
+    autoRoute: completed.assistantMessage.autoRoute
+      ? {
+          model: completed.assistantMessage.autoRoute.model,
+          source: completed.assistantMessage.autoRoute.source,
+          category: completed.assistantMessage.autoRoute.category,
+          difficulty: completed.assistantMessage.autoRoute.difficulty,
+          reason: completed.assistantMessage.autoRoute.reason,
+        }
+      : current.autoRoute,
     userContent: completed.userMessage.content,
     userServerMessageID: completed.userMessage.id,
     userCreatedAt: completed.userMessage.createdAt,

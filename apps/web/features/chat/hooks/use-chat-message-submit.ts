@@ -399,7 +399,12 @@ export function useChatMessageSubmit({
       startStream(exchangeKey, clientRunID);
       setPendingExchanges((current) => ({
         ...current,
-        [exchangeKey]: createInitialPendingExchange(plan, targetConversationID?.trim() || null, createdAt),
+        [exchangeKey]: createInitialPendingExchange(
+          plan,
+          targetConversationID?.trim() || null,
+          createdAt,
+          t("routingModel"),
+        ),
       }));
       if (shouldFollowSubmittedBranch) {
         setBranchSelections((prev) => ({

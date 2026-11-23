@@ -102,6 +102,7 @@ function appendPendingExchangeMessages({
       runID: pendingExchange.runID,
       platformModelName: pendingExchange.platformModelName,
       autoRouted: pendingExchange.autoRouted,
+      autoRoute: pendingExchange.autoRoute,
       serverMessageID: pendingExchange.assistantServerMessageID,
       createdAt: pendingExchange.assistantCreatedAt,
       updatedAt: pendingExchange.assistantUpdatedAt,
@@ -197,6 +198,7 @@ function mergePendingAssistantState(messages: ChatAreaMessage[], pendingExchange
       compactDone: pendingExchange.compactDone ?? item.compactDone,
       platformModelName: pendingExchange.platformModelName ?? item.platformModelName,
       autoRouted: pendingExchange.autoRouted ?? item.autoRouted,
+      autoRoute: pendingExchange.autoRoute ?? item.autoRoute,
       attachments:
         pendingExchange.assistantAttachments && pendingExchange.assistantAttachments.length > 0
           ? pendingExchange.assistantAttachments

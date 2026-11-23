@@ -3,6 +3,8 @@ import type {
   EmbeddingReindexResponse,
   EmbeddingTaskResponse,
   EmbeddingTaskRetryResponse,
+  ModelRouterTestRequest,
+  ModelRouterTestResponse,
 } from "@firecortex/api-contract";
 import { authedRequest, authedFetch } from "@/shared/api/authed-client";
 import type { PagePayload } from "@/shared/api/common-types";
@@ -164,6 +166,26 @@ export async function triggerAdminEmbeddingReindex(
     ? "/api/v1/admin/settings/embedding/reindex?include_empty=true"
     : "/api/v1/admin/settings/embedding/reindex";
   return authedRequest<EmbeddingReindexResponse>(path, { method: "POST", accessToken }, true);
+}
+
+export type AdminModelRouterTestRequest = Partial<ModelRouterTestRequest>;
+export type AdminModelRouterTestResponse = ModelRouterTestResponse;
+
+export async function testAdminModelRouter(
+  accessToken: string,
+  payload: AdminModelRouterTestRequest,
+  signal?: AbortSignal,
+): Promise<AdminModelRouterTestResponse> {
+  return authedRequest<AdminModelRouterTestResponse>(
+    "/api/v1/admin/settings/model-router/test",
+    {
+      method: "POST",
+      accessToken,
+      body: payload,
+      signal,
+    },
+    true,
+  );
 }
 
 export type AdminConversationExportFile = {

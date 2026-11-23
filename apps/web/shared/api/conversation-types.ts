@@ -31,6 +31,7 @@ import type {
   ConversationSearchResultResponse,
   ConversationShareResponse,
   ConversationToolCallDetailResponse,
+  MessageAutoRouteResponse,
   MessageBillingCostResponse,
   MessageDeleteResponse,
   MessageFeedbackResponse,
@@ -119,6 +120,8 @@ export type ConversationExportDTO = Omit<
   runs: ConversationRunDTO[];
   compatibility: ConversationExportResponse["compatibility"];
 };
+
+export type MessageAutoRouteDTO = MessageAutoRouteResponse;
 
 export type MessageBillingCostDTO = MessageBillingCostResponse;
 

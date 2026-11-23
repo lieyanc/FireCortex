@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import * as React from "react";
 import { toast } from "sonner";
 
+import { isAutoModelName } from "@/features/chat/model/auto-model";
 import { mergeChatOptionsOverride, splitControlSelections } from "@/features/chat/model/chat-model-controls";
 import { mapServerMessage } from "@/features/chat/model/chat-thread";
 import { mergeProcessTraceSnapshot, toPendingProcessTrace } from "@/features/chat/model/message-submit";
@@ -13,7 +14,8 @@ import {
   upsertLiveUpstreamThinkTrace,
 } from "@/features/chat/model/upstream-think-store";
 import type { PendingAttachment } from "@/features/chat/types/chat-runtime";
-import type { ChatAreaMessage, MessageAttachment, UserMessageEditMode } from "@/features/chat/types/messages";
+import type { ChatAreaMessage, ChatAutoRouteInfo, MessageAttachment, UserMessageEditMode } from "@/features/chat/types/messages";
+import { resolveModelOptionLabel } from "@/entities/model";
 import {
   resolveErrorDetails,
   resolveGenerationErrorId,
@@ -42,6 +44,7 @@ type TemporaryMessage = TemporaryChatHistoryMessage & {
   parentID?: string;
   model?: string;
   autoRouted?: boolean;
+  autoRoute?: ChatAutoRouteInfo;
   runID?: string;
   streaming?: boolean;
   failed?: boolean;
@@ -123,6 +126,7 @@ function toAreaMessage(message: TemporaryMessage): ChatAreaMessage {
     isStreaming: message.streaming,
     platformModelName: message.model,
     autoRouted: message.autoRouted,
+    autoRoute: message.autoRoute,
     runID: message.runID,
     inputTokens: message.inputTokens,
     outputTokens: message.outputTokens,
@@ -434,6 +438,7 @@ export function useChatTemporaryRuntime({
     };
     const assistantID = createSecureUUID();
     const clientRunID = createSecureUUID();
+    const autoMode = isAutoModelName(selectedModel);
     const replacements: TemporaryMessage[] = [
       userMessage,
       {
@@ -442,7 +447,9 @@ export function useChatTemporaryRuntime({
         content: "",
         historyOffset,
         parentID: userMessage.id,
-        model: selectedModel,
+        model: autoMode ? undefined : selectedModel,
+        autoRouted: autoMode || undefined,
+        activityLabel: autoMode ? tSubmit("routingModel") : undefined,
         runID: clientRunID,
         streaming: true,
       },
@@ -505,7 +512,21 @@ export function useChatTemporaryRuntime({
             }));
           },
           onRouted: (event) => {
-            updateMessage(assistantID, (item) => ({ ...item, model: event.model, autoRouted: true }));
+            updateMessage(assistantID, (item) => ({
+              ...item,
+              model: event.model,
+              autoRouted: true,
+              autoRoute: {
+                model: event.model,
+                source: event.source,
+                category: event.category,
+                difficulty: event.difficulty,
+                reason: event.reason,
+              },
+              activityLabel: item.content
+                ? item.activityLabel
+                : tSubmit("routedToModel", { model: resolveModelOptionLabel(event.model) }),
+            }));
           },
           onRagSearch: (message) => {
             updateMessage(assistantID, (item) => ({ ...item, activityLabel: message }));
@@ -563,6 +584,16 @@ export function useChatTemporaryRuntime({
         outputTokens: completed.assistantMessage.outputTokens,
         latencyMS: completed.assistantMessage.latencyMS,
         reasoningEffort: mappedAssistant.reasoningEffort,
+        autoRouted: completed.assistantMessage.autoRouted || Boolean(completed.assistantMessage.autoRoute) || message.autoRouted,
+        autoRoute: completed.assistantMessage.autoRoute
+          ? {
+              model: completed.assistantMessage.autoRoute.model,
+              source: completed.assistantMessage.autoRoute.source,
+              category: completed.assistantMessage.autoRoute.category,
+              difficulty: completed.assistantMessage.autoRoute.difficulty,
+              reason: completed.assistantMessage.autoRoute.reason,
+            }
+          : message.autoRoute,
         activityLabel: undefined,
         processTrace: mappedAssistant.processTrace,
         knowledgeSources: mappedAssistant.knowledgeSources,
