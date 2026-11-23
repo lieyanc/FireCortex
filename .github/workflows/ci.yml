@@ -102,7 +102,7 @@ jobs:
     if: needs.changes.outputs.api == 'true'
     runs-on: ubuntu-24.04
     env:
-      SIDECAR_TAGS: nopostgres,noredis,nos3,noswagger,nomsgpack,nootlp
+      SIDECAR_TAGS: nopostgres,noredis,nos3,noswagger,nomsgpack,nootlp,sqlite
     defaults:
       run:
         working-directory: backend
@@ -118,7 +118,8 @@ jobs:
         run: make lint
       - name: Build (default and sidecar tag sets)
         run: |
-          go build ./...
+          CGO_ENABLED=0 go build ./...
+          go build -tags sqlite ./...
           go build -tags "$SIDECAR_TAGS" ./...
       - name: Test
         # Go's test cache (persisted by setup-go) skips packages whose inputs did not change.

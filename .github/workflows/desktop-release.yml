@@ -1,7 +1,10 @@
 name: Desktop Release
 
-# Coordinate shared inputs, native builds and publication in the source ref's
-# context. Tag code must never write caches in the default branch's scope.
+# Manual (workflow_dispatch-only) desktop build and release attachment.
+# The desktop client is unsupported by default in this server-first FireCortex
+# fork and is not built automatically by release.yml. When triggered manually
+# with a release_tag, it coordinates shared inputs, native builds, and
+# attaches assets to that existing release tag in its source ref's context.
 on:
   workflow_dispatch:
     inputs:

@@ -2,14 +2,15 @@
 # Build the single-binary FireCortex server with the web UI embedded.
 #
 # Steps: export the Next.js frontend, stage apps/web/out into
-# backend/internal/webui/dist (picked up by go:embed), then go build with CGO
-# (go-sqlite3 + sqlite-vec). The staging directory is reset afterwards so
-# plain backend builds stay API-only.
+# backend/internal/webui/dist (picked up by go:embed), then build a pure-Go
+# (CGO_ENABLED=0, PostgreSQL-only) server binary by default. Set
+# FIRECORTEX_SQLITE=1 to opt into an unsupported CGO build with -tags sqlite.
 #
 # Usage:
 #   scripts/build-binary.sh [--skip-frontend] [OUTPUT]
 #     OUTPUT           binary path (default: dist/firecortex)
 #     --skip-frontend  reuse an existing apps/web/out (CI builds it once)
+#   FIRECORTEX_SQLITE=1 scripts/build-binary.sh ...  # unsupported SQLite + CGO build
 #
 # Build metadata defaults to the VERSION file and git; CI overrides it with
 # the VERSION, COMMIT and BUILD_TIME environment variables. The updater
@@ -59,8 +60,12 @@ pkg="github.com/lieyanc/FireCortex/backend/internal/shared/buildinfo"
 mkdir -p "$(dirname "$output")"
 (
   cd "$root/backend"
-  CGO_ENABLED=1 go build -trimpath \
-    -ldflags "-s -w -X $pkg.Version=$version -X $pkg.Commit=$commit -X $pkg.BuildTime=$build_time" \
-    -o "$output" ./cmd/server
+  build_args=(-trimpath -ldflags "-s -w -X $pkg.Version=$version -X $pkg.Commit=$commit -X $pkg.BuildTime=$build_time" -o "$output" ./cmd/server)
+  if [[ "${FIRECORTEX_SQLITE:-0}" == "1" ]]; then
+    echo "WARNING: building with -tags sqlite and CGO_ENABLED=1 (SQLite deployment is unsupported by default)." >&2
+    CGO_ENABLED=1 go build -tags sqlite "${build_args[@]}"
+  else
+    CGO_ENABLED=0 go build "${build_args[@]}"
+  fi
 )
 echo "==> Done: $output"

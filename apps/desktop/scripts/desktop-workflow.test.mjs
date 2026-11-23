@@ -142,22 +142,24 @@ shellTest("native setup and publication reject a mismatched source before consum
   }
 });
 
-shellTest("both dispatchers target the tag without forwarding an input that could redispatch", (t) => {
+shellTest("manual dispatcher targets the tag without forwarding an input that could redispatch", (t) => {
   const f = fixture(t);
   f.write("bin/gh", `#!${process.execPath}\nimport('node:fs').then(fs => {\n  const args = process.argv.slice(2);\n  fs.appendFileSync(process.env.TEST_GH_CALLS, JSON.stringify(args) + '\\n');\n  if (process.env.TEST_MISSING_TAG === args[args.indexOf('--ref') + 1]) process.exit(1);\n});\n`, { mode: 0o755 });
   const calls = join(f.directory, "gh-calls");
   const env = { PATH: `${join(f.directory, "bin")}:${process.env.PATH}`, TEST_GH_CALLS: calls, RELEASE_TAG: "v1.2.3-beta.4" };
-  for (const [text, name] of [[release, "Dispatch"], [workflow("release"), "Start desktop builds for the tag"]]) {
-    f.write("gh-calls", "");
-    const result = f.run(shellStep(text, name), env);
-    assert.equal(result.status, 0, result.stderr);
-    const commands = readFileSync(calls, "utf8").trim().split("\n").map(JSON.parse);
-    assert.deepEqual(commands[0], ["workflow", "run", "desktop-release.yml", "--ref", `refs/tags/${env.RELEASE_TAG}`]);
-    assert.equal(commands.length, 1);
-  }
+  f.write("gh-calls", "");
+  const result = f.run(shellStep(release, "Dispatch"), env);
+  assert.equal(result.status, 0, result.stderr);
+  const commands = readFileSync(calls, "utf8").trim().split("\n").map(JSON.parse);
+  assert.deepEqual(commands[0], ["workflow", "run", "desktop-release.yml", "--ref", `refs/tags/${env.RELEASE_TAG}`]);
+  assert.equal(commands.length, 1);
   // A branch-only input must request a missing tag, never fall back to running
   // that branch. GitHub rejects the fully qualified tag ref when it is absent.
   f.write("gh-calls", "");
   assert.notEqual(f.run(shellStep(release, "Dispatch"), { ...env, RELEASE_TAG: "dev", TEST_MISSING_TAG: "refs/tags/dev" }).status, 0);
   assert.deepEqual(JSON.parse(readFileSync(calls, "utf8")), ["workflow", "run", "desktop-release.yml", "--ref", "refs/tags/dev"]);
+});
+
+nodeTest("server release workflow does not auto-dispatch desktop builds", () => {
+  assert.doesNotMatch(workflow("release"), /desktop-release\.yml/);
 });
