@@ -32,7 +32,7 @@ EXCLUDED_FILES=(
   LICENSE
   NOTICE
   docs/UPSTREAM.md
-  frontend/shared/config/upstream.ts
+  apps/web/shared/config/upstream.ts
   scripts/rebrand.sh
   scripts/sync-upstream.sh
 )

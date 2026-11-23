@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	models "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -59,6 +59,11 @@ func (r *Repo) DeleteMessageAndReparentChildren(ctx context.Context, userID uint
 		reparented = result.RowsAffected
 
 		if err := tx.Delete(&target).Error; err != nil {
+			return err
+		}
+		// 组件状态是挂在这条消息上的旁路数据，消息删除后不再可达，随删除一并清掉。
+		if err := tx.Where("message_id = ?", target.ID).
+			Delete(&models.ConversationMessageUIState{}).Error; err != nil {
 			return err
 		}
 

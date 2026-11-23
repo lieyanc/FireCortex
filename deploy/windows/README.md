@@ -1,0 +1,87 @@
+# Windows deployment
+
+For IT administrators deploying FireCortex Desktop to managed Windows machines. For how the app is built and how each distribution form behaves, see [`apps/desktop/README.md`](../../apps/desktop/README.md#windows-distribution).
+
+## Choose a package
+
+| Package | Use when | Scope | Updates |
+| --- | --- | --- | --- |
+| `FireCortex-<v>-windows-x64.msi` | Deploying through Intune, Configuration Manager (SCCM) or Group Policy | Per machine (`Program Files`) | None in-app; you deploy new versions |
+| `FireCortex-<v>-windows-x64-setup.exe` | Users install it themselves | Per user, no admin rights | Built-in updater |
+| `FireCortex-<v>-windows-x64-portable.zip` | Installers are blocked, or a USB / no-install setup is needed | Unzip and run | Notifies only; replace the folder to update |
+| `FireCortex-<v>-windows-x64-portable-offline.zip` | As above, on machines without WebView2 and without internet access (published only when built) | Unzip and run | Same as portable |
+
+## Prerequisites
+
+- Windows 10 or later (x64). Windows Server 2016+ works but needs the WebView2 runtime.
+- **Microsoft Edge WebView2 Runtime.** Built into Windows 10 21H1+ and Windows 11. The setup and MSI download it when it is missing, which fails offline — deploy the [Evergreen Standalone Installer](https://developer.microsoft.com/microsoft-edge/webview2/) first on offline machines, or use the offline portable zip.
+- A FireCortex server reachable from the client (unless users run the built-in local server).
+
+## Verify what you deploy
+
+Each release publishes `SHA256SUMS` and a GitHub build provenance attestation:
+
+```powershell
+# Checksum
+(Get-FileHash .\FireCortex-<v>-windows-x64.msi -Algorithm SHA256).Hash
+# Compare with the matching line in SHA256SUMS
+
+# Authenticode signature (msi, setup.exe, and the .exe files inside the portable zip)
+Get-AuthenticodeSignature .\FireCortex-<v>-windows-x64.msi
+
+# Build provenance (GitHub CLI)
+gh attestation verify .\FireCortex-<v>-windows-x64.msi --repo FireCortex-AI/FireCortex
+```
+
+AppLocker / WDAC: allow by **publisher** (the certificate on the signed binaries) rather than by path; the portable edition runs from wherever it is unzipped.
+
+## Install silently
+
+```powershell
+# Per machine (MSI)
+msiexec /i FireCortex-<v>-windows-x64.msi /qn /l*v "$env:TEMP\firecortex-install.log"
+
+# Uninstall (MSI)
+msiexec /x FireCortex-<v>-windows-x64.msi /qn
+
+# Per user (setup)
+.\FireCortex-<v>-windows-x64-setup.exe /S
+```
+
+Newer MSIs upgrade older ones in place (fixed upgrade code), so Intune / SCCM supersedence and Group Policy upgrades work across versions, including prereleases.
+
+## Configure with policy
+
+The app reads `HKLM\SOFTWARE\Policies\FireCortex\Chat` and `HKCU\SOFTWARE\Policies\FireCortex\Chat` at startup; a value under HKLM wins. Changes take effect the next time the app starts.
+
+| Policy | Registry value | Effect |
+| --- | --- | --- |
+| Default server address | `DefaultServerUrl` (REG_SZ) | Prefills the server address on the setup screen. Use an `http(s)` origin without a path, e.g. `https://chat.example.com`. |
+| Allow only the default server | `LockServerUrl` (REG_DWORD 1) | Users can only connect to `DefaultServerUrl` (ignored when that is not set). Also disables the built-in local server. Previously saved tabs for other servers are removed together with their stored sign-in. |
+| Disable the built-in local server | `DisableLocalMode` (REG_DWORD 1) | Users cannot run the bundled local server. |
+| Disable update checks | `DisableAutoUpdate` (REG_DWORD 1) | No update checks or notifications in any package. |
+| Configure the network proxy | `ProxyMode` (REG_SZ `system`, `direct` or `fixed_servers`), `ProxyServer` (REG_SZ), `ProxyBypassList` (REG_SZ) | Replaces the user's proxy choice for the local server's requests, the app's own requests and the app window. `fixed_servers` needs `ProxyServer` (`host:port`, `http://host:port` or `socks5://host:port`; no credentials). The bypass list takes host names, `*.example.com`, addresses and ranges (`192.168.*`, `10.0.0.0/8`); this computer is always reached directly. The hive that sets `ProxyMode` decides all three values. |
+
+The app enforces these itself; the UI only shows them (read-only address, hidden options, "managed by your organization").
+
+### Group Policy (ADMX)
+
+1. Copy `policies/FireCortexChat.admx` to `C:\Windows\PolicyDefinitions` — or to the central store `\\<domain>\SYSVOL\<domain>\Policies\PolicyDefinitions` — and the matching `policies/<language>/FireCortexChat.adml` (`en-US`, `zh-CN`) into the language subfolder next to it.
+2. Open the Group Policy Management Editor: **Computer Configuration** (or **User Configuration**) → **Administrative Templates** → **FireCortex**.
+
+### Intune
+
+Import the ADMX under **Devices → Configuration → Import ADMX**, then create an *Imported Administrative templates* profile. Alternatively, set the registry values with a remediation or configuration script.
+
+### Registry file
+
+[`policies/FireCortexChat.example.reg`](policies/FireCortexChat.example.reg) sets the four server and update values under HKLM, with the proxy values commented out. Edit it, then run `reg import FireCortexChat.example.reg` from an elevated prompt.
+
+## Where data lives
+
+| Package | App data | Stored sign-in |
+| --- | --- | --- |
+| MSI / setup | `%APPDATA%\com.firecortex.desktop`, `%LOCALAPPDATA%\com.firecortex.desktop` | Windows Credential Manager, service `com.firecortex.desktop` |
+| Portable | `data\` next to `FireCortex.exe` | Windows Credential Manager, service `com.firecortex.desktop.portable-<id>` (id in `data\instance-id`) |
+
+The user's proxy choice is in `network.json` in the app data folder; a proxy password, if any, is in Credential Manager under the same service (account `proxy-password`). Refresh tokens and proxy passwords are never written to disk in plain text. Removing a portable copy: sign out in the app, then delete the folder.

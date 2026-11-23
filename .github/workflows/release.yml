@@ -98,7 +98,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Install dependencies
@@ -114,7 +114,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-out
-          path: frontend/out
+          path: apps/web/out
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 3
@@ -157,7 +157,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: frontend-out
-          path: frontend/out
+          path: apps/web/out
 
       - name: Build binary
         env:

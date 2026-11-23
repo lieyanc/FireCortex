@@ -62,21 +62,27 @@ func (r *settingsSeedRepo) Delete(_ context.Context, namespace string, key strin
 	return nil
 }
 
-func TestSeedMigratesLegacyDefaultAllowedMIMETypes(t *testing.T) {
-	repo := newSettingsSeedRepo(domainsettings.SystemSetting{
-		Namespace: "file",
-		Key:       "allowed_mime_types",
-		Value:     legacyDefaultAllowedMIMETypes,
-		ValueType: "string",
-	})
-	service := NewService(repo, "")
+func (r *settingsSeedRepo) RemoveDuplicates(context.Context, []uint) error {
+	return nil
+}
 
-	if err := service.Seed(context.Background()); err != nil {
-		t.Fatalf("seed settings: %v", err)
-	}
-	got := repo.items["file:allowed_mime_types"].Value
-	if got != defaultAllowedMIMETypes {
-		t.Fatalf("expected legacy MIME defaults to migrate, got %q", got)
+func TestSeedMigratesLegacyDefaultAllowedMIMETypes(t *testing.T) {
+	for _, legacy := range legacyDefaultAllowedMIMETypes {
+		repo := newSettingsSeedRepo(domainsettings.SystemSetting{
+			Namespace: "file",
+			Key:       "allowed_mime_types",
+			Value:     legacy,
+			ValueType: "string",
+		})
+		service := NewService(repo, nil)
+
+		if err := service.Seed(context.Background()); err != nil {
+			t.Fatalf("seed settings: %v", err)
+		}
+		got := repo.items["file:allowed_mime_types"].Value
+		if got != defaultAllowedMIMETypes {
+			t.Fatalf("expected legacy MIME defaults to migrate, got %q", got)
+		}
 	}
 }
 
@@ -88,7 +94,7 @@ func TestSeedKeepsCustomAllowedMIMETypes(t *testing.T) {
 		Value:     custom,
 		ValueType: "string",
 	})
-	service := NewService(repo, "")
+	service := NewService(repo, nil)
 
 	if err := service.Seed(context.Background()); err != nil {
 		t.Fatalf("seed settings: %v", err)
@@ -101,7 +107,7 @@ func TestSeedKeepsCustomAllowedMIMETypes(t *testing.T) {
 
 func TestSeedUsesDefaultFullContextMaxBytesForMissingSetting(t *testing.T) {
 	repo := newSettingsSeedRepo()
-	service := NewService(repo, "")
+	service := NewService(repo, nil)
 
 	if err := service.Seed(context.Background()); err != nil {
 		t.Fatalf("seed settings: %v", err)
@@ -127,7 +133,7 @@ func TestSeedReplacesLegacyCompactTokenThresholdWithModelAwareDefaults(t *testin
 			ValueType: "int",
 		},
 	)
-	service := NewService(repo, "")
+	service := NewService(repo, nil)
 
 	if err := service.Seed(context.Background()); err != nil {
 		t.Fatalf("seed settings: %v", err)
@@ -148,7 +154,7 @@ func TestSeedReplacesLegacyCompactTokenThresholdWithModelAwareDefaults(t *testin
 
 func TestSeedAddsMistralOCRDefaults(t *testing.T) {
 	repo := newSettingsSeedRepo()
-	service := NewService(repo, "test-data-encryption-key")
+	service := NewService(repo, testKeyring())
 
 	if err := service.Seed(context.Background()); err != nil {
 		t.Fatalf("seed settings: %v", err)
@@ -176,7 +182,7 @@ func TestSeedKeepsExistingFullContextMaxBytes(t *testing.T) {
 		Value:     existingValue,
 		ValueType: "int",
 	})
-	service := NewService(repo, "")
+	service := NewService(repo, nil)
 
 	if err := service.Seed(context.Background()); err != nil {
 		t.Fatalf("seed settings: %v", err)
@@ -203,7 +209,7 @@ func TestSeedMigratesLegacyDefaultModelOptionAllowedPaths(t *testing.T) {
 		Value:     string(legacyJSON),
 		ValueType: "json",
 	})
-	service := NewService(repo, "")
+	service := NewService(repo, nil)
 
 	if err := service.Seed(context.Background()); err != nil {
 		t.Fatalf("seed settings: %v", err)
@@ -230,7 +236,7 @@ func TestSeedAddsXAIVideoToPreviousDefaultModelOptionAllowedPaths(t *testing.T) 
 		Value:     string(previousJSON),
 		ValueType: "json",
 	})
-	service := NewService(repo, "")
+	service := NewService(repo, nil)
 
 	if err := service.Seed(context.Background()); err != nil {
 		t.Fatalf("seed settings: %v", err)
@@ -256,7 +262,7 @@ func TestSeedAddsXAIVideoExtensionsToPreviousDefaultModelOptionAllowedPaths(t *t
 		Value:     string(previousJSON),
 		ValueType: "json",
 	})
-	service := NewService(repo, "")
+	service := NewService(repo, nil)
 
 	if err := service.Seed(context.Background()); err != nil {
 		t.Fatalf("seed settings: %v", err)
@@ -285,7 +291,7 @@ func TestSeedAddsGeminiThinkingSummariesToPreviousDefaultModelOptionAllowedPaths
 		Value:     string(previousJSON),
 		ValueType: "json",
 	})
-	service := NewService(repo, "")
+	service := NewService(repo, nil)
 
 	if err := service.Seed(context.Background()); err != nil {
 		t.Fatalf("seed settings: %v", err)
@@ -318,7 +324,7 @@ func TestSeedReplacesLegacyGeminiInteractionsOptionPaths(t *testing.T) {
 		Value:     string(previousJSON),
 		ValueType: "json",
 	})
-	service := NewService(repo, "")
+	service := NewService(repo, nil)
 
 	if err := service.Seed(context.Background()); err != nil {
 		t.Fatalf("seed settings: %v", err)
@@ -350,7 +356,7 @@ func TestSeedAddsGeminiGenerateContentThinkingPathsToPreviousDefaultModelOptionA
 		Value:     string(previousJSON),
 		ValueType: "json",
 	})
-	service := NewService(repo, "")
+	service := NewService(repo, nil)
 
 	if err := service.Seed(context.Background()); err != nil {
 		t.Fatalf("seed settings: %v", err)
@@ -368,7 +374,7 @@ func TestSeedKeepsCustomModelOptionAllowedPaths(t *testing.T) {
 		Value:     custom,
 		ValueType: "json",
 	})
-	service := NewService(repo, "")
+	service := NewService(repo, nil)
 
 	if err := service.Seed(context.Background()); err != nil {
 		t.Fatalf("seed settings: %v", err)

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	domainmemory "github.com/lieyanc/FireCortex/backend/internal/domain/memory"
-	model "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/sqlitevec"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -93,7 +93,7 @@ func openMemorySQLiteVectorTestDB(t *testing.T) *gorm.DB {
 			_ = sqlDB.Close()
 		}
 	})
-	if err := db.AutoMigrate(&model.UserMemory{}); err != nil {
+	if err := db.AutoMigrate(&models.UserMemory{}); err != nil {
 		t.Fatalf("migrate models: %v", err)
 	}
 	if err := sqlitevec.Migrate(db); err != nil {

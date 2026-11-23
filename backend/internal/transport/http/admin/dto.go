@@ -10,7 +10,7 @@ import (
 	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
 	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
 	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
-	domainsystemevent "github.com/lieyanc/FireCortex/backend/internal/domain/systemevent"
+	domainerrorlog "github.com/lieyanc/FireCortex/backend/internal/domain/errorlog"
 	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 )
 
@@ -69,11 +69,6 @@ type ImportOpenWebUIUsersRequest struct {
 type CleanupLogsRequest struct {
 	Type   string `json:"type" binding:"required"`
 	Before string `json:"before" binding:"required"`
-}
-
-// CleanupConversationRunsRequest 管理员按运行清理对话事件请求。
-type CleanupConversationRunsRequest struct {
-	RunIDs []string `json:"runIDs" binding:"required,min=1,max=100,dive,required,max=64"`
 }
 
 // CreatePermissionGroupRequest 创建权限组请求。
@@ -191,12 +186,6 @@ type CleanupLogsResponse struct {
 	DeletedCount int64     `json:"deletedCount"`
 }
 
-// CleanupConversationRunsResponse 管理员按运行清理对话事件响应。
-type CleanupConversationRunsResponse struct {
-	RunCount     int   `json:"runCount"`
-	DeletedCount int64 `json:"deletedCount"`
-}
-
 // ImportOpenWebUIUsersResponse 从 OpenWebUI 导入用户响应。
 type ImportOpenWebUIUsersResponse struct {
 	Source                      string `json:"source"`
@@ -245,22 +234,6 @@ type AuditLogResponse struct {
 	DetailJSON       string    `json:"detailJSON"`
 	CreatedAt        time.Time `json:"createdAt"`
 	UpdatedAt        time.Time `json:"updatedAt"`
-}
-
-// SystemEventResponse 系统事件响应。
-type SystemEventResponse struct {
-	ID         uint      `json:"id"`
-	RequestID  string    `json:"requestID"`
-	TraceID    string    `json:"traceID"`
-	Level      string    `json:"level"`
-	Source     string    `json:"source"`
-	Event      string    `json:"event"`
-	Resource   string    `json:"resource"`
-	ResourceID string    `json:"resourceID"`
-	Message    string    `json:"message"`
-	DetailJSON string    `json:"detailJSON"`
-	CreatedAt  time.Time `json:"createdAt"`
-	UpdatedAt  time.Time `json:"updatedAt"`
 }
 
 // UsageLogResponse 调用日志响应。
@@ -560,6 +533,12 @@ type ResetUserPasswordResponseDoc struct {
 	Data     ResetUserPasswordResponse `json:"data"`
 }
 
+// ResetUserTwoFactorResponseDoc 管理员重置用户双因素认证响应。
+type ResetUserTwoFactorResponseDoc struct {
+	ErrorMsg string                     `json:"errorMsg"`
+	Data     ResetUserTwoFactorResponse `json:"data"`
+}
+
 // DeleteUserResponseDoc 管理员删除用户响应。
 type DeleteUserResponseDoc struct {
 	ErrorMsg string             `json:"errorMsg"`
@@ -608,12 +587,6 @@ type CleanupLogsResponseDoc struct {
 	Data     CleanupLogsResponse `json:"data"`
 }
 
-// CleanupConversationRunsResponseDoc 管理员按运行清理对话事件响应。
-type CleanupConversationRunsResponseDoc struct {
-	ErrorMsg string                          `json:"errorMsg"`
-	Data     CleanupConversationRunsResponse `json:"data"`
-}
-
 // ImportOpenWebUIUsersResponseDoc 从 OpenWebUI 导入用户响应。
 type ImportOpenWebUIUsersResponseDoc struct {
 	ErrorMsg string                       `json:"errorMsg"`
@@ -629,21 +602,43 @@ type UserAuthEventListResponseDoc struct {
 	} `json:"data"`
 }
 
+// ErrorLogResponse 失败请求错误日志。Cause 是已脱敏、截断的原始原因，Detail 是只遮蔽凭证的原始诊断内容，只对管理员返回。
+type ErrorLogResponse struct {
+	ID              uint      `json:"id"`
+	RequestID       string    `json:"requestID"`
+	TraceID         string    `json:"traceID"`
+	UserID          uint      `json:"userID"`
+	UserUsername    string    `json:"userUsername"`
+	UserDisplayName string    `json:"userDisplayName"`
+	UserLabel       string    `json:"userLabel"`
+	Method          string    `json:"method"`
+	Route           string    `json:"route"`
+	Path            string    `json:"path"`
+	StatusCode      int       `json:"statusCode"`
+	ErrorCode       string    `json:"errorCode"`
+	Cause           string    `json:"cause"`
+	Detail          string    `json:"detail"`
+	LatencyMS       int64     `json:"latencyMS"`
+	ClientIP        string    `json:"clientIP"`
+	UserAgent       string    `json:"userAgent"`
+	CreatedAt       time.Time `json:"createdAt"`
+}
+
+// ErrorLogListResponseDoc 错误日志分页响应文档。
+type ErrorLogListResponseDoc struct {
+	ErrorMsg string `json:"errorMsg"`
+	Data     struct {
+		Total   int64              `json:"total"`
+		Results []ErrorLogResponse `json:"results"`
+	} `json:"data"`
+}
+
 // AuditLogListResponseDoc 审计日志分页响应。
 type AuditLogListResponseDoc struct {
 	ErrorMsg string `json:"errorMsg"`
 	Data     struct {
 		Total   int64              `json:"total"`
 		Results []AuditLogResponse `json:"results"`
-	} `json:"data"`
-}
-
-// SystemEventListResponseDoc 系统事件分页响应。
-type SystemEventListResponseDoc struct {
-	ErrorMsg string `json:"errorMsg"`
-	Data     struct {
-		Total   int64                 `json:"total"`
-		Results []SystemEventResponse `json:"results"`
 	} `json:"data"`
 }
 
@@ -814,20 +809,26 @@ func toAuditLogResponse(l domainaudit.Log, label appadmin.UserLabel) AuditLogRes
 	}
 }
 
-func toSystemEventResponse(item domainsystemevent.Event) SystemEventResponse {
-	return SystemEventResponse{
-		ID:         item.ID,
-		RequestID:  item.RequestID,
-		TraceID:    item.TraceID,
-		Level:      item.Level,
-		Source:     item.Source,
-		Event:      item.Event,
-		Resource:   item.Resource,
-		ResourceID: item.ResourceID,
-		Message:    item.Message,
-		DetailJSON: item.DetailJSON,
-		CreatedAt:  item.CreatedAt,
-		UpdatedAt:  item.UpdatedAt,
+func toErrorLogResponse(item domainerrorlog.Log, label appadmin.UserLabel) ErrorLogResponse {
+	return ErrorLogResponse{
+		ID:              item.ID,
+		RequestID:       item.RequestID,
+		TraceID:         item.TraceID,
+		UserID:          item.UserID,
+		UserUsername:    label.Username,
+		UserDisplayName: label.DisplayName,
+		UserLabel:       label.Label,
+		Method:          item.Method,
+		Route:           item.Route,
+		Path:            item.Path,
+		StatusCode:      item.StatusCode,
+		ErrorCode:       item.ErrorCode,
+		Cause:           item.Cause,
+		Detail:          item.Detail,
+		LatencyMS:       item.LatencyMS,
+		ClientIP:        item.ClientIP,
+		UserAgent:       item.UserAgent,
+		CreatedAt:       item.CreatedAt,
 	}
 }
 

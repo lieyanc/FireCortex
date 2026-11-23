@@ -10,3 +10,8 @@ func (m *Module) RegisterAdminRoutes(adminGroup *gin.RouterGroup) {
 	g.POST("/apply", m.Handler.ApplyUpdate)
 	g.POST("/dismiss", m.Handler.DismissUpdate)
 }
+
+// RegisterPublicRoutes 注册不需要登录的系统路由。
+func (m *Module) RegisterPublicRoutes(public *gin.RouterGroup) {
+	public.GET("/capabilities", m.Handler.GetCapabilities)
+}

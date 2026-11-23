@@ -9,6 +9,7 @@ import (
 
 	domainsettings "github.com/lieyanc/FireCortex/backend/internal/domain/settings"
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/secretbox"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 const (
@@ -31,7 +32,7 @@ const (
 	defaultQueueCapacity  = 256
 )
 
-// ServiceConfig is the saved moderation service configuration.
+// ServiceConfig 是已保存的审核服务配置。
 type ServiceConfig struct {
 	Enabled        bool
 	BaseURL        string
@@ -44,7 +45,7 @@ type ServiceConfig struct {
 	Policy         Policy
 }
 
-// UpdateConfigInput is the super-admin PUT body.
+// UpdateConfigInput 是超级管理员 PUT 请求体。
 type UpdateConfigInput struct {
 	Enabled        *bool
 	BaseURL        *string
@@ -106,7 +107,7 @@ func (s *Service) readRuntimeConfig(ctx context.Context) (runtimeConfig, error) 
 
 	apiKey := ""
 	if encrypted := strings.TrimSpace(values[keyAPIKey]); encrypted != "" {
-		decrypted, decErr := secretbox.DecryptString(s.dataEncryptionKey, encrypted)
+		decrypted, decErr := s.keyring.DecryptString(encrypted)
 		if decErr != nil {
 			return runtimeConfig{}, decErr
 		}
@@ -166,7 +167,7 @@ func (s *Service) readRuntimeConfig(ctx context.Context) (runtimeConfig, error) 
 	}, nil
 }
 
-// GetConfig returns masked config for super-admin UI.
+// GetConfig 返回供超级管理员界面使用的脱敏配置。
 func (s *Service) GetConfig(ctx context.Context, actorRole string) (*ServiceConfig, error) {
 	if !isSuperAdmin(actorRole) {
 		return nil, ErrSuperAdminRequired
@@ -178,7 +179,7 @@ func (s *Service) GetConfig(ctx context.Context, actorRole string) (*ServiceConf
 	return toServiceConfig(cfg), nil
 }
 
-// UpdateConfig atomically saves configuration.
+// UpdateConfig 原子地保存配置。
 func (s *Service) UpdateConfig(ctx context.Context, actorRole string, input UpdateConfigInput) (*ServiceConfig, error) {
 	if !isSuperAdmin(actorRole) {
 		return nil, ErrSuperAdminRequired
@@ -252,7 +253,7 @@ func (s *Service) UpdateConfig(ctx context.Context, actorRole string, input Upda
 		}
 	}
 
-	items, err := buildSettingItems(next, s.dataEncryptionKey)
+	items, err := buildSettingItems(next, s.keyring)
 	if err != nil {
 		return nil, err
 	}
@@ -297,14 +298,19 @@ func toServiceConfig(cfg runtimeConfig) *ServiceConfig {
 	}
 }
 
-func buildSettingItems(cfg runtimeConfig, encryptionKey string) ([]domainsettings.SystemSetting, error) {
+// SensitiveSettingKeys 返回本模块加密存储的配置项（审核服务 API Key），供密文轮换使用。
+func SensitiveSettingKeys() []repository.SettingKey {
+	return []repository.SettingKey{{Namespace: settingsNamespace, Key: keyAPIKey}}
+}
+
+func buildSettingItems(cfg runtimeConfig, keyring *secretbox.Keyring) ([]domainsettings.SystemSetting, error) {
 	policyJSON, err := json.Marshal(newPolicyJSON(cfg.Policy))
 	if err != nil {
 		return nil, err
 	}
 	encryptedKey := ""
 	if strings.TrimSpace(cfg.APIKey) != "" {
-		encryptedKey, err = secretbox.EncryptString(encryptionKey, cfg.APIKey)
+		encryptedKey, err = keyring.EncryptString(cfg.APIKey)
 		if err != nil {
 			return nil, err
 		}

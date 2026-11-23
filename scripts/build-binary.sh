@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build the single-binary FireCortex server with the web UI embedded.
 #
-# Steps: export the Next.js frontend, stage frontend/out into
+# Steps: export the Next.js frontend, stage apps/web/out into
 # backend/internal/webui/dist (picked up by go:embed), then go build with CGO
 # (go-sqlite3 + sqlite-vec). The staging directory is reset afterwards so
 # plain backend builds stay API-only.
@@ -9,7 +9,7 @@
 # Usage:
 #   scripts/build-binary.sh [--skip-frontend] [OUTPUT]
 #     OUTPUT           binary path (default: dist/firecortex)
-#     --skip-frontend  reuse an existing frontend/out (CI builds it once)
+#     --skip-frontend  reuse an existing apps/web/out (CI builds it once)
 #
 # Build metadata defaults to the VERSION file and git; CI overrides it with
 # the VERSION, COMMIT and BUILD_TIME environment variables. The updater
@@ -34,11 +34,11 @@ build_time="${BUILD_TIME:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
 if ((!skip_frontend)); then
   echo "==> Building frontend"
   # The embedded UI is served same-origin. An empty value still overrides a
-  # developer's frontend/.env.local, which would otherwise bake in its API URL.
+  # developer's apps/web/.env.local, which would otherwise bake in its API URL.
   NEXT_PUBLIC_API_BASE_URL="" pnpm --dir "$root" --filter @firecortex/web build
 fi
 
-frontend_out="$root/frontend/out"
+frontend_out="$root/apps/web/out"
 if [[ ! -f "$frontend_out/index.html" ]]; then
   echo "frontend export not found at $frontend_out (run without --skip-frontend)" >&2
   exit 1

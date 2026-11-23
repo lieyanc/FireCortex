@@ -140,7 +140,7 @@ func TestLoadResolvesRelativePathsAgainstConfigFile(t *testing.T) {
 	}
 	configPath := filepath.Join(root, "config.json")
 	writeFile(t, configPath, `{
-  "server": {"frontend_dist_dir": "./frontend/out"},
+  "server": {"frontend_dist_dir": "./apps/web/out"},
   "storage": {"local": {"root_dir": "./data/storage"}},
   "geoip": {"database_path": "./data/geoip.mmdb"},
   "update": {"download_dir": "./data/updates"}
@@ -155,7 +155,7 @@ func TestLoadResolvesRelativePathsAgainstConfigFile(t *testing.T) {
 	if cfg.AdminDisplayName != defaultAdminDisplayName {
 		t.Fatalf("expected built-in admin display name, got %q", cfg.AdminDisplayName)
 	}
-	assertPath(t, "frontend dist", cfg.FrontendDistDir, filepath.Join(root, "frontend", "out"))
+	assertPath(t, "frontend dist", cfg.FrontendDistDir, filepath.Join(root, "apps", "web", "out"))
 	assertPath(t, "storage root", cfg.StorageRootDir, filepath.Join(root, "data", "storage"))
 	assertPath(t, "geoip database", cfg.GeoIPDatabasePath, filepath.Join(root, "data", "geoip.mmdb"))
 	assertPath(t, "update download dir", cfg.UpdateDownloadDir, filepath.Join(root, "data", "updates"))
@@ -384,6 +384,7 @@ func cleanupConfigEnv(t *testing.T) {
 		"POSTGRES_DSN",
 		"JWT_SECRET",
 		"DATA_ENCRYPTION_KEY",
+		"DATA_ENCRYPTION_KEYS_PREVIOUS",
 	}
 	for _, key := range keys {
 		key := key

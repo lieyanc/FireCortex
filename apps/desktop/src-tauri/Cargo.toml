@@ -1,0 +1,87 @@
+[package]
+name = "firecortex-desktop"
+version = "0.4.6"
+description = "FireCortex desktop shell"
+authors = ["FireCortex"]
+edition = "2021"
+rust-version = "1.77"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "firecortex_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png", "unstable"] }
+# Without the default `zip` feature: it only unpacks Windows `.zip` and Linux
+# `.AppImage.tar.gz` updates, and releases ship `.exe` / `.msi` / bare `.AppImage`
+# (macOS unpacks its `.app.tar.gz` regardless). It also pulls in `zip` 4, which has
+# extraction advisories (RUSTSEC-2026-0367/0368/0369) and no fixed 4.x release.
+tauri-plugin-updater = { version = "2", default-features = false, features = ["rustls-tls", "system-proxy"] }
+tauri-plugin-process = "2"
+tauri-plugin-opener = "2"
+# OS credential store: macOS Keychain, Windows Credential Manager, Linux Secret Service.
+keyring = { version = "4.2.0", features = [
+  "apple-native-keyring-store",
+  "windows-native-keyring-store",
+  "zbus-secret-service-keyring-store",
+] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Same major/TLS stack as tauri-plugin-updater, so no second HTTP client is linked.
+# `socks` only switches on hyper-util's SOCKS connector for manual proxies.
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls-no-provider", "socks"] }
+# Process-wide TLS provider, installed once at startup (the updater would otherwise
+# install it lazily on first use, which is too late for an early session refresh).
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
+tauri-plugin-shell = "2"
+tauri-plugin-single-instance = "2"
+# Native notifications: the webviews do not deliver Web Notifications.
+tauri-plugin-notification = "2"
+tokio = { version = "1", features = ["time", "macros", "rt-multi-thread"] }
+# Strips Windows verbatim (\\?\) prefixes from canonical paths before they reach
+# WebView2 or the sidecar. Already in the tree through tauri-utils.
+dunce = "1"
+
+
+[features]
+# Used by `tauri dev`/`tauri build` to embed the frontend; see tauri.conf.json.
+custom-protocol = ["tauri/custom-protocol"]
+
+# Shipped profile, identical locally and in CI. `pnpm build:app` relaxes LTO
+# through CARGO_PROFILE_RELEASE_* for faster iteration.
+[profile.release]
+codegen-units = 1
+lto = "fat"
+opt-level = "s"
+panic = "abort"
+strip = true
+
+# Windows-only: enterprise policy (registry) and the native error dialogs shown
+# before any window exists. Both crates are already in the tree through tauri,
+# wry and reqwest; no new code is downloaded.
+[target.'cfg(windows)'.dependencies]
+windows-registry = "0.6"
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  # WinHttpGetIEProxyConfigForCurrentUser: the system proxy (proxy.rs).
+  "Win32_Networking_WinHttp",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["NSString"] }
+# Reads the system proxy (System Settings › Network › Proxies, proxy.rs). The
+# same version hyper-util already links; nothing new is downloaded.
+system-configuration = "0.7"
+
+# Linux-only: sizes the tab strip inside the window's GtkBox (tabs.rs). Same
+# version tauri/wry already link; nothing new is downloaded.
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = "0.18"

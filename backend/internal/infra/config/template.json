@@ -5,7 +5,7 @@
   },
   "server": {
     "http_port": "8080",
-    "cors_allow_origin": "http://127.0.0.1:8080,http://localhost:8080",
+    "cors_allow_origin": "http://127.0.0.1:8080,http://localhost:8080,tauri://localhost,http://tauri.localhost",
     "trusted_proxies": "",
     "public_api_base_url": "",
     "public_web_base_url": "",
@@ -20,6 +20,7 @@
     "jwt_secret": "",
     "mcp_user_context_secret": "",
     "data_encryption_key": "",
+    "data_encryption_keys_previous": [],
     "ssrf_protection_enabled": false,
     "ssrf_allowed_hosts": "",
     "ssrf_allowed_cidrs": "",

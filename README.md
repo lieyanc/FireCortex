@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./frontend/public/logo-white.svg" />
-    <img src="./frontend/public/logo-black.svg" alt="FireCortex" width="220" />
+    <source media="(prefers-color-scheme: dark)" srcset="./apps/web/public/logo-white.svg" />
+    <img src="./apps/web/public/logo-black.svg" alt="FireCortex" width="220" />
   </picture>
 </p>
 
@@ -29,7 +29,7 @@ FireCortex is a self-hosted AI workspace built around one idea: a single chat bo
 - **Adaptive tool injection**: expose only the tools, MCP servers, files, and memory a request actually needs, keeping prompts small and tool selection accurate.
 - **Agent runtime**: plan, call tools, observe results, and iterate across multiple steps until the task is done, with every step traceable.
 
-FireCortex is derived from [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat) v0.4.3 and inherits its production-grade foundation: multi-provider access, files and RAG, MCP tools, billing, identity, audit, and a lightweight single-runtime deployment. <!-- rebrand:keep -->
+FireCortex is derived from [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat) v0.4.6 and inherits its production-grade foundation: multi-provider access, files and RAG, MCP tools, billing, identity, audit, and a lightweight single-runtime deployment. <!-- rebrand:keep -->
 
 ## Roadmap
 
@@ -59,7 +59,7 @@ The capabilities below are inherited from upstream and available today.
 
 ## Architecture and Tech Stack
 
-FireCortex uses a split frontend/backend development model with a single-runtime deployment path. The frontend is built into static assets that are embedded in the Go binary and served by it, while APIs, authorization, model routing, files, billing, and audit capabilities run in the same backend runtime. Heavy document extraction and OCR capabilities are optional services, keeping the base deployment lightweight.
+FireCortex uses a split apps/web/backend development model with a single-runtime deployment path. The frontend is built into static assets that are embedded in the Go binary and served by it, while APIs, authorization, model routing, files, billing, and audit capabilities run in the same backend runtime. Heavy document extraction and OCR capabilities are optional services, keeping the base deployment lightweight.
 
 ```mermaid
 flowchart TB
@@ -131,7 +131,7 @@ The backend keeps clear internal boundaries: `backend/cmd/server` is the executa
 │   │   ├── webui/              # embedded web UI (go:embed)
 │   │   └── shared/             # cross-cutting response and security code
 │   └── docs/                  # generated Swagger artifacts
-├── frontend/                 # Next.js App Router and static export
+├── apps/web/                 # Next.js App Router and static export
 │   ├── app/                   # route entries and layouts
 │   ├── features/              # feature-owned UI and client workflows
 │   ├── entities/              # reusable business entities
@@ -139,14 +139,14 @@ The backend keeps clear internal boundaries: `backend/cmd/server` is the executa
 │   ├── components/            # UI primitives and visual components
 │   └── public/                # static assets
 ├── packages/api-contract/     # generated TypeScript API contract
-├── docker/                    # optional extraction and OCR services
+├── deploy/services/                    # optional extraction and OCR services
 ├── deploy/                    # systemd unit example
 ├── docs/                      # project guides
 ├── scripts/                   # binary build, rebrand, and upstream sync scripts
 └── config*.example.json       # deployment profile overlays
 ```
 
-`frontend/` and `backend/` are independent workspaces managed by pnpm and Turborepo. `packages/api-contract/` connects them through generated Swagger types; update the Go transport contract first, then regenerate the shared package.
+`apps/web/` and `backend/` are independent workspaces managed by pnpm and Turborepo. `packages/api-contract/` connects them through generated Swagger types; update the Go transport contract first, then regenerate the shared package.
 
 ## Prerequisites
 
@@ -178,7 +178,7 @@ cp config.example.json config.json
 
 ```bash
 pnpm install
-cp frontend/.env.example frontend/.env.local
+cp apps/web/.env.example apps/web/.env.local
 ```
 
 3. Start the frontend and backend together:
@@ -189,7 +189,7 @@ pnpm dev
 
 Use `pnpm dev:web` or `pnpm dev:api` to start only one workspace.
 
-The frontend uses `NEXT_PUBLIC_API_BASE_URL` for API requests. For local development, confirm that `frontend/.env.local` contains:
+The frontend uses `NEXT_PUBLIC_API_BASE_URL` for API requests. For local development, confirm that `apps/web/.env.local` contains:
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8080
@@ -225,7 +225,7 @@ Run workspace commands from the repository root:
 | `pnpm api:generate` | Regenerate Swagger artifacts and TypeScript API types. |
 | `pnpm api:check` | Check that generated API artifacts are up to date. |
 
-The frontend is exported as static files, so `pnpm build` writes the browser artifact to `frontend/out`. `pnpm build:binary` embeds that output into the Go binary; see [Build from Source](#build-from-source).
+The frontend is exported as static files, so `pnpm build` writes the browser artifact to `apps/web/out`. `pnpm build:binary` embeds that output into the Go binary; see [Build from Source](#build-from-source).
 
 ### Binary Deployment
 
@@ -337,13 +337,13 @@ Back up `config.json`, `data/`, and `storage/` (or your PostgreSQL database and 
 
 #### Optional Installation Services
 
-These document extraction and OCR services are optional standalone sidecars. FireCortex calls them by URL, so run only the ones you enable in the admin console. The compose files under `docker/` attach to an external `firecortex-network` Docker network; create it once before starting them:
+These document extraction and OCR services are optional standalone sidecars. FireCortex calls them by URL, so run only the ones you enable in the admin console. The compose files under `deploy/services/` attach to an external `firecortex-network` Docker network; create it once before starting them:
 
 ```bash
 docker network create firecortex-network
-docker compose -f docker/tika/docker-compose.yml up -d
-docker compose -f docker/tesseract/docker-compose.yml up -d --build
-docker compose -f docker/docling/docker-compose.yml up -d --build
+docker compose -f deploy/services/tika/docker-compose.yml up -d
+docker compose -f deploy/services/tesseract/docker-compose.yml up -d --build
+docker compose -f deploy/services/docling/docker-compose.yml up -d --build
 ```
 
 Default local endpoints:
@@ -355,10 +355,10 @@ Default local endpoints:
 | Docling | `http://127.0.0.1:8005/ocr` | Document/OCR extraction |
 | RapidOCR | `http://127.0.0.1:8002/ocr` | OCR service |
 
-`docker/rapidocr` provides a Dockerfile and app entrypoint, but no compose file. Build and run it from the repository root:
+`deploy/services/rapidocr` provides a Dockerfile and app entrypoint, but no compose file. Build and run it from the repository root:
 
 ```bash
-docker build -t firecortex-rapidocr:latest -f docker/rapidocr/Dockerfile .
+docker build -t firecortex-rapidocr:latest -f deploy/services/rapidocr/Dockerfile .
 docker run -d --name firecortex-rapidocr --network firecortex-network \
   -p 127.0.0.1:8002:8002 --restart unless-stopped firecortex-rapidocr:latest
 ```
@@ -413,9 +413,9 @@ pnpm build:binary
 
 The script builds the Next.js static export, stages it into `backend/internal/webui/dist`, and runs `go build` with CGO enabled. The result is `dist/firecortex`, which runs exactly like a release binary. Because of CGO, build on the target operating system and architecture.
 
-The embedded UI calls the API on the same origin. Leave `NEXT_PUBLIC_API_BASE_URL` unset (including in `frontend/.env.local`) when building a binary for deployment.
+The embedded UI calls the API on the same origin. Leave `NEXT_PUBLIC_API_BASE_URL` unset (including in `apps/web/.env.local`) when building a binary for deployment.
 
-`server.frontend_dist_dir` (`FRONTEND_DIST_DIR`) is empty by default, which serves the embedded UI. Setting it to a directory such as `./frontend/out` serves the UI from disk instead; use this only for development or debugging.
+`server.frontend_dist_dir` (`FRONTEND_DIST_DIR`) is empty by default, which serves the embedded UI. Setting it to a directory such as `./apps/web/out` serves the UI from disk instead; use this only for development or debugging.
 
 ### Separated Deployment
 
@@ -435,7 +435,7 @@ Use this mode when the frontend and backend are served from different public ori
    NEXT_PUBLIC_API_BASE_URL=https://api.example.com pnpm --filter @firecortex/web build
    ```
 
-   The static output is `frontend/out`. Serve it with Nginx, CDN, object storage, or any static web server. The backend binary still serves its own embedded UI on the API origin, which does not affect the separately hosted copy.
+   The static output is `apps/web/out`. Serve it with Nginx, CDN, object storage, or any static web server. The backend binary still serves its own embedded UI on the API origin, which does not affect the separately hosted copy.
 
 3. Apply CDN rules.
 
@@ -446,7 +446,7 @@ Use this mode when the frontend and backend are served from different public ori
    | `/`, `/*.html`, `/login*`, `/auth*`, `/chat*`, `/recent*`, `/files*`, `/knowledges*`, `/skills-prompt*`, `/setting*`, `/admin*`, `/share*`, `/preview*` | Do not long-cache. Use `no-cache` or a short TTL. |
    | `/api/*`, `/healthz`, `/readyz`, `/swagger/*` | Bypass CDN cache and forward all request headers, methods, query strings, and request bodies. |
 
-   If the CDN serves `frontend/out` from object storage, enable route fallback so clean URLs resolve to their exported `index.html` files, for example `/chat` -> `/chat/index.html`.
+   If the CDN serves `apps/web/out` from object storage, enable route fallback so clean URLs resolve to their exported `index.html` files, for example `/chat` -> `/chat/index.html`.
 
 ### Startup Check and First Login
 
@@ -495,7 +495,7 @@ Static configuration environment variables:
 
 | Area | Environment variable | Purpose |
 | --- | --- | --- |
-| Frontend build | `NEXT_PUBLIC_API_BASE_URL` | Browser API base URL; set in `frontend/.env.local` for local dev or at build time for separated deployment. |
+| Frontend build | `NEXT_PUBLIC_API_BASE_URL` | Browser API base URL; set in `apps/web/.env.local` for local dev or at build time for separated deployment. |
 | Config file | `CONFIG_FILE` | Optional config file path. |
 | Application | `APP_NAME` | Application name. |
 | Application | `APP_ENV` | Runtime environment: `dev`/`development` or `prod`/`production`; omitted values default to `prod`. |
@@ -604,7 +604,7 @@ FireCortex does not have its own user guides yet. The upstream guides apply to i
 - Custom branding: [docs/BRANDING.md](./docs/BRANDING.md)
 - Backend guide: [backend/README.md](./backend/README.md)
 - Backend standards: [backend/docs/README.md](./backend/docs/README.md)
-- Frontend guide: [frontend/README.md](./frontend/README.md)
+- Frontend guide: [apps/web/README.md](./apps/web/README.md)
 - API contract package: [packages/api-contract/README.md](./packages/api-contract/README.md)
 - Contributing: [CONTRIBUTING.md](./.github/CONTRIBUTING.md)
 - Security policy: [SECURITY.md](./.github/SECURITY.md)

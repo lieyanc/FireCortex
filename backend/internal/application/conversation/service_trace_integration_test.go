@@ -2,12 +2,13 @@ package conversation
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
-	persistencemodels "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
 	persistenceconversation "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/postgres/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"gorm.io/driver/sqlite"
@@ -28,7 +29,7 @@ func (r *assistantEditTraceRepository) GetMessageByPublicIDForUser(
 	return &item, nil
 }
 
-func (r *assistantEditTraceRepository) UpdateAssistantMessageContent(
+func (r *assistantEditTraceRepository) UpdateMessageContent(
 	_ context.Context,
 	_ uint,
 	_ string,
@@ -54,6 +55,14 @@ func (r *assistantEditTraceRepository) GetMessageFeedbackCounts(
 	[]uint,
 ) (map[uint]map[string]int64, error) {
 	return map[uint]map[string]int64{}, nil
+}
+
+func (r *assistantEditTraceRepository) GetMessageUIStateMap(
+	context.Context,
+	uint,
+	[]uint,
+) (map[uint]map[string]string, error) {
+	return map[uint]map[string]string{r.message.ID: {"loan": `{"amount":300}`}}, nil
 }
 
 func (r *assistantEditTraceRepository) ListConversationMessageTracesByMessageIDs(
@@ -97,13 +106,12 @@ func TestAssistantEditResponseRetainsProcessTrace(t *testing.T) {
 	}
 	service := &Service{
 		cfg: config.NewRuntime(config.Config{
-			ProcessTraceEnabled:       true,
-			ProcessTraceVisibleToUser: true,
+			ProcessTraceEnabled: true,
 		}),
 		repo: repo,
 	}
 
-	updated, err := service.UpdateAssistantMessageContent(
+	updated, err := service.UpdateMessageContent(
 		context.Background(),
 		repo.message.UserID,
 		repo.message.PublicID,
@@ -121,6 +129,10 @@ func TestAssistantEditResponseRetainsProcessTrace(t *testing.T) {
 	if len(updated.ProcessTrace.Events) != 1 || updated.ProcessTrace.Events[0].EventID != "event_tool_1" {
 		t.Fatalf("edited response lost execution events: %#v", updated.ProcessTrace)
 	}
+	// 前端用编辑响应替换本地消息：组件状态必须一并返回，否则编辑一次正文就丢了界面状态。
+	if updated.UIState["loan"] != `{"amount":300}` {
+		t.Fatalf("edited response lost ui state: %#v", updated.UIState)
+	}
 }
 
 func TestCanceledTraceSettlementPersistsCompleteReasoningForReload(t *testing.T) {
@@ -128,15 +140,13 @@ func TestCanceledTraceSettlementPersistsCompleteReasoningForReload(t *testing.T)
 	if err != nil {
 		t.Fatalf("open sqlite: %v", err)
 	}
-	if err := db.AutoMigrate(&persistencemodels.ChatRunEvent{}); err != nil {
+	if err := db.AutoMigrate(&models.ChatRunEvent{}); err != nil {
 		t.Fatalf("migrate trace table: %v", err)
 	}
 
 	repo := persistenceconversation.NewRepo(db)
 	cfg := config.Config{
-		ProcessTraceEnabled:            true,
-		ProcessTraceVisibleToUser:      true,
-		ProcessTraceStoreUpstreamThink: true,
+		ProcessTraceEnabled: true,
 	}
 	service := &Service{cfg: config.NewRuntime(cfg), repo: repo}
 	assistant := &model.Message{
@@ -180,15 +190,13 @@ func TestToolTraceRoundsSurviveReload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open sqlite: %v", err)
 	}
-	if err := db.AutoMigrate(&persistencemodels.ChatRunEvent{}); err != nil {
+	if err := db.AutoMigrate(&models.ChatRunEvent{}); err != nil {
 		t.Fatalf("migrate trace table: %v", err)
 	}
 
 	repo := persistenceconversation.NewRepo(db)
 	cfg := config.Config{
-		ProcessTraceEnabled:            true,
-		ProcessTraceVisibleToUser:      true,
-		ProcessTraceStoreUpstreamThink: true,
+		ProcessTraceEnabled: true,
 	}
 	service := &Service{cfg: config.NewRuntime(cfg), repo: repo}
 	assistant := &model.Message{
@@ -234,5 +242,36 @@ func TestToolTraceRoundsSurviveReload(t *testing.T) {
 	}
 	if toolEvents[0].RoundID == toolEvents[1].RoundID {
 		t.Fatalf("expected distinct persisted round identities, got %#v", toolEvents)
+	}
+}
+
+func TestUpdateMessageContentAllowsUserAndAssistantOnly(t *testing.T) {
+	cases := []struct {
+		role    string
+		wantErr error
+	}{
+		{role: "user"},
+		{role: "assistant"},
+		{role: "system", wantErr: ErrMessageEditTargetInvalid},
+		{role: "tool", wantErr: ErrMessageEditTargetInvalid},
+	}
+	for _, tc := range cases {
+		repo := &assistantEditTraceRepository{
+			message: model.Message{ID: 1, ConversationID: 1, UserID: 9, PublicID: "message_" + tc.role, Role: tc.role, Status: "success", Content: "before"},
+		}
+		service := &Service{cfg: config.NewRuntime(config.Config{}), repo: repo}
+		updated, err := service.UpdateMessageContent(context.Background(), 9, repo.message.PublicID, "after")
+		if tc.wantErr != nil {
+			if !errors.Is(err, tc.wantErr) {
+				t.Fatalf("%s: got %v, want %v", tc.role, err, tc.wantErr)
+			}
+			continue
+		}
+		if err != nil {
+			t.Fatalf("%s: %v", tc.role, err)
+		}
+		if updated.Content != "after" || updated.EditedAt == nil {
+			t.Fatalf("%s: unexpected result %#v", tc.role, updated)
+		}
 	}
 }

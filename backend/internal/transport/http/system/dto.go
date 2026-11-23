@@ -1,5 +1,6 @@
 package system
 
+import "github.com/lieyanc/FireCortex/backend/internal/infra/config"
 import "github.com/lieyanc/FireCortex/backend/internal/infra/updater"
 
 // UpdateStatusResponse 是自更新状态快照。
@@ -48,4 +49,15 @@ func toUpdateStatusResponse(status updater.Status) UpdateStatusResponse {
 		Source:           status.Source,
 		Repo:             status.Repo,
 	}
+}
+
+// CapabilitiesResponse 是 GET /capabilities 的响应体；契约见 docs/ARCHITECTURE.md §4。
+type CapabilitiesResponse struct {
+	Features config.Capabilities `json:"features"`
+}
+
+// CapabilitiesResponseDoc 仅供 Swagger 描述带信封的响应。
+type CapabilitiesResponseDoc struct {
+	ErrorMsg string               `json:"errorMsg"`
+	Data     CapabilitiesResponse `json:"data"`
 }

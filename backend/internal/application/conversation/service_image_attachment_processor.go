@@ -13,7 +13,7 @@ import (
 	appstorage "github.com/lieyanc/FireCortex/backend/internal/application/objectstorage"
 	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	domainmcp "github.com/lieyanc/FireCortex/backend/internal/domain/mcp"
-	"github.com/lieyanc/FireCortex/backend/internal/ports/objectstore"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/objectstorage"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/toolresult"
 )
 
@@ -203,7 +203,7 @@ type preparedImageAttachment struct {
 
 func prepareImageAttachmentForProcessor(
 	ctx context.Context,
-	store objectstore.Store,
+	store objectstorage.Store,
 	attachment AttachmentInput,
 	maxDimension int,
 ) (preparedImageAttachment, error) {

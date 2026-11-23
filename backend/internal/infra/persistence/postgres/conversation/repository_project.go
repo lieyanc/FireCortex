@@ -7,7 +7,7 @@ import (
 	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	domainknowledgebase "github.com/lieyanc/FireCortex/backend/internal/domain/knowledgebase"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/dberror"
-	models "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

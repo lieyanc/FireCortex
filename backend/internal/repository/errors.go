@@ -15,6 +15,8 @@ var (
 	ErrConflict = errors.New("resource conflict")
 	// ErrInvalidInput 表示输入数据非法。
 	ErrInvalidInput = errors.New("invalid input")
+	// ErrRefreshTokenReuse 表示检测到已轮换的刷新令牌在宽限期外被再次使用；会话已被整体吊销。
+	ErrRefreshTokenReuse = errors.New("refresh token reuse detected")
 	// ErrInsufficientBalance 表示余额不足，无法完成扣费。
 	ErrInsufficientBalance = errors.New("insufficient balance")
 	// ErrUsageReservationLimitExceeded 表示用户活跃付费调用数量达到上限。
@@ -48,6 +50,10 @@ var (
 	ErrMessageDeleteRootInvalid = errors.New("message delete root invalid")
 	// ErrMessageParentDeleted 父消息已被删除，无法再挂在其下创建新消息。
 	ErrMessageParentDeleted = errors.New("message parent deleted")
+	// ErrMessageUIStateInvalid 组件状态快照不合法（块 ID 或状态内容非法）。
+	ErrMessageUIStateInvalid = errors.New("message ui state invalid")
+	// ErrMessageUIStateLimitExceeded 单条消息保存的组件块数量达到上限。
+	ErrMessageUIStateLimitExceeded = errors.New("message ui state limit exceeded")
 
 	// 上游与模型仓储语义错误。
 	ErrUpstreamNotFound           = errors.New("upstream not found")

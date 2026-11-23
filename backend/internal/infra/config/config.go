@@ -1,6 +1,7 @@
 package config
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"net/url"
@@ -8,8 +9,10 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/secretbox"
 	sharedsecurity "github.com/lieyanc/FireCortex/backend/internal/shared/security"
 )
 
@@ -21,6 +24,12 @@ const (
 	defaultAdminUsername     = "admin"
 	defaultAdminDisplayName  = "System Admin"
 
+	// DefaultDesktopDownloadURL 是桌面端下载页的默认地址。
+	DefaultDesktopDownloadURL = "https://github.com/lieyanc/FireCortex"
+	// DefaultPersonalProvidersMaxPerUser 是每个用户可添加的个人模型服务默认上限。
+	DefaultPersonalProvidersMaxPerUser = 10
+	// MaxPersonalProvidersMaxPerUser 是管理员可配置的上限。
+	MaxPersonalProvidersMaxPerUser = 50
 	// DefaultFileFullContextMaxBytes 是全文注入的默认提取文本大小上限（2 MiB）。
 	DefaultFileFullContextMaxBytes int64 = 2 * 1024 * 1024
 
@@ -35,6 +44,7 @@ const (
 	MaxContextCompactTriggerPercent     = 95
 )
 
+
 const (
 	// DefaultTurnstileSiteverifyURL 是 Cloudflare Turnstile 默认校验端点。
 	DefaultTurnstileSiteverifyURL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
@@ -48,6 +58,15 @@ const (
 	EmbeddingDimensionsPolicySend = "send"
 	// EmbeddingDimensionsPolicyOmit 省略 dimensions 参数，返回向量仍按 EmbeddingOutputDimensions 校验。
 	EmbeddingDimensionsPolicyOmit = "omit"
+
+	// EmbeddingProtocolOpenAI 为 OpenAI 兼容的 /embeddings 文本协议。
+	EmbeddingProtocolOpenAI = "openai"
+	// EmbeddingProtocolGemini 为 Google Generative Language 的 batchEmbedContents 协议，支持图片输入。
+	EmbeddingProtocolGemini = "gemini"
+	// EmbeddingProtocolVoyage 为 Voyage AI 的 /multimodalembeddings 协议，支持图片输入。
+	EmbeddingProtocolVoyage = "voyage"
+	// EmbeddingProtocolJina 为 Jina AI 的 /embeddings 协议（对象数组输入），支持图片输入。
+	EmbeddingProtocolJina = "jina"
 )
 
 // DefaultModelOptionAllowedPathsJSON 返回用户可透传模型参数的默认白名单。
@@ -221,19 +240,24 @@ func DefaultModelOptionDeniedPathsJSON() string {
 // 静态字段由 config.json/ENV 加载；动态字段由 settings.RuntimeSettings.ApplyTo 从数据库覆盖。
 type Config struct {
 	// ── 静态配置（config.json/ENV） ──
-	ConfigFile                   string // 实际读取的配置文件路径
-	AppName                      string
-	Env                          string
-	BrandTitle                   string
-	BrandShortName               string
-	BrandDescription             string
-	BrandLogoURL                 string
-	BrandFaviconURL              string
-	BrandPWAIcon192URL           string
-	BrandPWAIcon512URL           string
-	BrandPWAMaskableIcon512URL   string
-	BrandAppleTouchIcon180URL    string
-	HTTPPort                     string
+	ConfigFile                 string // 实际读取的配置文件路径
+	AppName                    string
+	Env                        string
+	BrandTitle                 string
+	BrandShortName             string
+	BrandDescription           string
+	BrandLogoURL               string
+	BrandFaviconURL            string
+	BrandPWAIcon192URL         string
+	BrandPWAIcon512URL         string
+	BrandPWAMaskableIcon512URL string
+	BrandAppleTouchIcon180URL  string
+	HTTPPort                   string
+	// HTTPListenAddr 非空时优先于 HTTPPort，形如 "127.0.0.1:0"（本地模式）。
+	HTTPListenAddr string
+	// LocalMode 表示作为桌面 sidecar 运行；LocalDataDir 是其数据目录。
+	LocalMode                    bool
+	LocalDataDir                 string
 	CORSAllowOrigin              string
 	TrustedProxies               string
 	PublicAPIBaseURL             string
@@ -247,6 +271,7 @@ type Config struct {
 	JWTSecret                    string
 	MCPUserContextSecret         string
 	DataEncryptionKey            string
+	DataEncryptionKeysPrevious   []string // 轮换前的旧主密钥，只用于解密
 	SSRFProtectionEnabled        bool
 	SSRFAllowedHosts             string
 	SSRFAllowedCIDRs             string
@@ -351,6 +376,13 @@ type Config struct {
 	ModelOptionDeniedPaths       string
 	// 知识库配置
 	KnowledgeBaseEnabled bool
+	// 用户自带 Key（个人模型服务）配置
+	PersonalProvidersEnabled      bool   // 是否允许用户添加自己的模型服务
+	PersonalProvidersMaxPerUser   int    // 每个用户最多可添加的服务数
+	PersonalProvidersBlockedHosts string // 禁止接入的域名（逗号或换行分隔；精确匹配，*.example.com 匹配子域名）
+	// 桌面端下载入口配置
+	DesktopDownloadEnabled bool   // 是否在网页端用户菜单展示「下载桌面端」入口
+	DesktopDownloadURL     string // 桌面端下载页地址
 	// 存储配置
 	UserStorageQuotaBytes int64
 	MaxUploadFileBytes    int64
@@ -411,6 +443,7 @@ type Config struct {
 	ExtractLLMOCRPrompt               string // LLM OCR 提示词
 	EmbeddingEnabled                  bool   // 是否启用 Embedding 服务
 	EmbeddingHost                     string // Embedding HTTP 服务地址
+	EmbeddingProtocol                 string // Embedding 请求协议：openai / gemini / voyage / jina
 	EmbeddingKey                      string // Embedding HTTP 服务鉴权 Key，可选
 	EmbeddingTimeoutSeconds           int    // Embedding 请求超时（秒）
 	EmbeddingOutputDimensions         int    // 写库/检索统一输出维度
@@ -444,13 +477,11 @@ type Config struct {
 	// Token 预算感知上下文截断
 	ContextTokenBudgetEnabled bool // 是否按 Token 预算截断上下文（替代消息数截断）
 	// 消息历史 Embedding（语义上下文召回）
-	MessageEmbeddingEnabled        bool // 是否对每轮消息异步生成向量嵌入
-	SemanticContextEnabled         bool // 是否在上下文组装时加入语义召回片段
-	ProcessTraceEnabled            bool // 是否启用消息处理轨迹
-	ProcessTraceVisibleToUser      bool // 是否向聊天页暴露处理轨迹
-	ProcessTraceStoreUpstreamThink bool // 是否持久化上游 think
-	ProcessTracePersistInflight    bool // 是否在流式阶段持久化轨迹
-	ContextArtifactRetentionDays   int  // 上下文证据保留天数，<=0 表示不自动过期
+	MessageEmbeddingEnabled      bool // 是否对每轮消息异步生成向量嵌入
+	SemanticContextEnabled       bool // 是否在上下文组装时加入语义召回片段
+	ProcessTraceEnabled          bool // 是否启用消息处理轨迹
+	ProcessTracePersistInflight  bool // 是否在流式阶段持久化轨迹
+	ContextArtifactRetentionDays int  // 上下文证据保留天数，<=0 表示不自动过期
 	// MCP 配置
 	MCPEnable                     bool
 	MCPToolTimeoutSeconds         int
@@ -466,7 +497,24 @@ type Config struct {
 // 优先级为环境变量 > config.json > 内置模板；环境变量不会写回配置文件。
 // 动态业务配置使用硬编码默认值，启动后由 settings.RuntimeSettings 从 DB 覆盖。
 func Load() (Config, error) {
-	path := resolveConfigFile()
+	return loadPath(resolveConfigFile())
+}
+
+// LoadForDataDir keeps a desktop sidecar's configuration inside its writable data directory.
+func LoadForDataDir(dir string) (Config, error) {
+	if dir == "" {
+		return Load()
+	}
+	if !filepath.IsAbs(dir) {
+		return Config{}, errors.New("local mode: data directory must be an absolute path")
+	}
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return Config{}, err
+	}
+	return loadPath(filepath.Join(dir, "config.json"))
+}
+
+func loadPath(path string) (Config, error) {
 	fc, err := loadFile(path)
 	if err != nil {
 		return Config{}, err
@@ -503,6 +551,7 @@ func Load() (Config, error) {
 		HTTPShutdownTimeoutSeconds:   envOrInt("HTTP_SHUTDOWN_TIMEOUT_SECONDS", fc.Server.ShutdownTimeoutSeconds, def.Server.ShutdownTimeoutSeconds),
 		JWTSecret:                    envOr("JWT_SECRET", fc.Security.JWTSecret, defaultJWTSecret),
 		MCPUserContextSecret:         envOr("MCP_USER_CONTEXT_SECRET", fc.Security.MCPUserContextSecret, def.Security.MCPUserContextSecret),
+		DataEncryptionKeysPrevious:   envOrList("DATA_ENCRYPTION_KEYS_PREVIOUS", fc.Security.DataEncryptionKeysPrevious),
 		DataEncryptionKey:            envOr("DATA_ENCRYPTION_KEY", fc.Security.DataEncryptionKey, defaultDataEncryptionKey),
 		SSRFProtectionEnabled:        envOrBool("SSRF_PROTECTION_ENABLED", fc.Security.SSRFProtectionEnabled),
 		SSRFAllowedHosts:             envOr("SSRF_ALLOWED_HOSTS", fc.Security.SSRFAllowedHosts, def.Security.SSRFAllowedHosts),
@@ -604,6 +653,9 @@ func Load() (Config, error) {
 		ModelOptionAllowedPaths:           DefaultModelOptionAllowedPathsJSON(),
 		ModelOptionDeniedPaths:            DefaultModelOptionDeniedPathsJSON(),
 		KnowledgeBaseEnabled:              true,
+		PersonalProvidersMaxPerUser:       DefaultPersonalProvidersMaxPerUser,
+		DesktopDownloadEnabled:            true,
+		DesktopDownloadURL:                DefaultDesktopDownloadURL,
 		UserStorageQuotaBytes:             104857600,
 		MaxUploadFileBytes:                20971520,
 		MaxMessageFiles:                   10,
@@ -614,7 +666,7 @@ func Load() (Config, error) {
 		FileImageMaxBytes:                 0,
 		FileDocMaxBytes:                   0,
 		FileFullContextPDFMaxPages:        20,
-		FileAllowedMIMETypes:              "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,text/plain,text/markdown,text/csv,text/yaml,application/json,application/yaml,application/x-yaml,application/toml,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel",
+		FileAllowedMIMETypes:              "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,video/mpeg,audio/mpeg,audio/wav,audio/mp4,audio/aac,audio/ogg,audio/flac,audio/aiff,text/plain,text/markdown,text/csv,text/yaml,application/json,application/yaml,application/x-yaml,application/toml,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel",
 		ExtractEngine:                     "builtin",
 		ExtractOCREngine:                  "rapidocr",
 		ExtractImageOCREnabled:            false,
@@ -666,6 +718,7 @@ func Load() (Config, error) {
 		EmbeddingTimeoutSeconds:           60,
 		EmbeddingOutputDimensions:         1536,
 		EmbeddingDimensionsPolicy:         EmbeddingDimensionsPolicySend,
+		EmbeddingProtocol:                 EmbeddingProtocolOpenAI,
 		EmbeddingNormalize:                true,
 		EmbedTriggerOnUpload:              true,
 		EmbedChunkSizeTokens:              1024,
@@ -690,8 +743,6 @@ func Load() (Config, error) {
 		MessageEmbeddingEnabled:           false, // 默认关闭，需要 embedding 服务就绪后开启
 		SemanticContextEnabled:            false,
 		ProcessTraceEnabled:               true,
-		ProcessTraceVisibleToUser:         true,
-		ProcessTraceStoreUpstreamThink:    true,
 		ProcessTracePersistInflight:       true,
 		ContextArtifactRetentionDays:      90,
 		MCPEnable:                         false,
@@ -729,6 +780,9 @@ func (c Config) Validate() error {
 	if err := validateHTTPIntegrationURL(c.TurnstileSiteverifyURL, "TURNSTILE_SITEVERIFY_URL"); err != nil {
 		return err
 	}
+	if _, err := c.Keyring(); err != nil {
+		return fmt.Errorf("invalid config: DATA_ENCRYPTION_KEY: %w", err)
+	}
 	if env != "prod" {
 		return nil
 	}
@@ -748,6 +802,11 @@ func (c Config) Validate() error {
 
 	if strings.TrimSpace(c.CORSAllowOrigin) == "" || strings.TrimSpace(c.CORSAllowOrigin) == "*" {
 		return errors.New("invalid production config: CORS_ALLOW_ORIGIN/server.cors_allow_origin must be explicitly set (wildcard * is not allowed)")
+	}
+	if c.LocalMode {
+		// 本地 sidecar 只在回环地址上服务，公共 URL 在监听后由实际端口填入；
+		// 其余生产级校验（密钥强度、CORS 白名单）对本地模式同样生效。
+		return nil
 	}
 	if err := validatePublicURL(c.PublicAPIBaseURL, "PUBLIC_API_BASE_URL/server.public_api_base_url"); err != nil {
 		return err
@@ -1078,6 +1137,68 @@ func (c Config) StrictOutboundPolicy() sharedsecurity.OutboundPolicy {
 
 func (c Config) ssrfProtectionEnforced() bool {
 	return c.IsProduction() && c.SSRFProtectionEnabled
+}
+
+// envOrList 读取逗号分隔的环境变量；未设置时使用 YAML 列表。
+func envOrList(envKey string, yamlVal []string) []string {
+	if raw, ok := os.LookupEnv(envKey); ok {
+		return splitCommaSeparated(raw)
+	}
+	result := make([]string, 0, len(yamlVal))
+	for _, item := range yamlVal {
+		if value := strings.TrimSpace(item); value != "" {
+			result = append(result, value)
+		}
+	}
+	return result
+}
+
+// isPlaceholderSecret 判断密钥是否为内置默认值或示例配置里的占位值（change-me-…）。
+// 这些值随源码公开，用它们加密等于没有加密。
+func isPlaceholderSecret(value string) bool {
+	value = strings.TrimSpace(value)
+	return value == "" || value == defaultDataEncryptionKey || value == defaultJWTSecret || strings.HasPrefix(strings.ToLower(value), "change-me")
+}
+
+var keyrings sync.Map // 主密钥组合的 SHA-256 -> *secretbox.Keyring
+
+// Keyring 返回由当前主密钥与旧主密钥构建的密钥环。同一组密钥只构建一次。
+func (c Config) Keyring() (*secretbox.Keyring, error) {
+	digest := sha256.New()
+	for _, key := range append([]string{c.DataEncryptionKey}, c.DataEncryptionKeysPrevious...) {
+		digest.Write([]byte(strings.TrimSpace(key)))
+		digest.Write([]byte{0})
+	}
+	cacheKey := string(digest.Sum(nil))
+	if cached, ok := keyrings.Load(cacheKey); ok {
+		return cached.(*secretbox.Keyring), nil
+	}
+	ring, err := secretbox.NewKeyring(c.DataEncryptionKey, c.DataEncryptionKeysPrevious...)
+	if err != nil {
+		return nil, err
+	}
+	actual, _ := keyrings.LoadOrStore(cacheKey, ring)
+	return actual.(*secretbox.Keyring), nil
+}
+
+// SecurityWarnings 返回不阻止启动、但应在日志里提醒运维的配置问题。
+// 示例配置里的 change-me-… 占位值长度合规，生产校验不会拦下；已用它加密的数据只能先把它
+// 移到 DATA_ENCRYPTION_KEYS_PREVIOUS 再换新密钥，所以这里只提醒、不阻止启动。
+func (c Config) SecurityWarnings() []string {
+	var warnings []string
+	if isPlaceholderSecret(c.DataEncryptionKey) {
+		warnings = append(warnings, "DATA_ENCRYPTION_KEY uses a built-in or example placeholder value, so anyone with the source code can decrypt stored credentials. Set DATA_ENCRYPTION_KEY to a random value of at least 32 characters and move the current value to DATA_ENCRYPTION_KEYS_PREVIOUS; existing data is re-encrypted automatically at startup.")
+	}
+	for _, previous := range c.DataEncryptionKeysPrevious {
+		if isPlaceholderSecret(previous) {
+			warnings = append(warnings, "DATA_ENCRYPTION_KEYS_PREVIOUS contains a built-in or example placeholder value. Data encrypted with it stays readable to anyone with the source code until it is re-encrypted; remove the value once key rotation reports completion.")
+			break
+		}
+	}
+	if isPlaceholderSecret(c.JWTSecret) {
+		warnings = append(warnings, "JWT_SECRET uses a built-in or example placeholder value, so anyone with the source code can forge session tokens. Set it to a random value of at least 32 characters; existing sessions will be signed out.")
+	}
+	return warnings
 }
 
 func splitCommaSeparated(raw string) []string {

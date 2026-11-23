@@ -15,31 +15,96 @@ import (
 )
 
 // StreamImageGeneration 处理会话内图片生成流式状态接口。
+// @Summary 生成会话图片
+// @Description 在会话中按提示词生成图片，并以 NDJSON 流式返回任务状态事件
+// @Tags chat
+// @Accept json
+// @Produce application/x-ndjson
+// @Security BearerAuth
+// @Param id path string true "会话 public_id"
+// @Param body body MediaImageRequest true "媒体任务参数"
+// @Success 200 {string} string "NDJSON stream"
+// @Failure 400 {object} ErrorDoc
+// @Failure 401 {object} ErrorDoc
+// @Failure 402 {object} ErrorDoc
+// @Failure 403 {object} ErrorDoc
+// @Failure 404 {object} ErrorDoc
+// @Failure 409 {object} ErrorDoc
+// @Failure 429 {object} ErrorDoc
+// @Failure 500 {object} ErrorDoc
+// @Failure 503 {object} ErrorDoc
+// @Router /conversations/{id}/media/images/generations/stream [post]
 func (h *Handler) StreamImageGeneration(c *gin.Context) {
 	h.streamMediaImage(c, appconversation.MediaImageTaskGeneration)
 }
 
 // StreamImageEdit 处理会话内图片编辑流式状态接口。
+// @Summary 编辑会话图片
+// @Description 在会话中基于参考图片（可附遮罩）按提示词编辑图片，并以 NDJSON 流式返回任务状态事件
+// @Tags chat
+// @Accept json
+// @Produce application/x-ndjson
+// @Security BearerAuth
+// @Param id path string true "会话 public_id"
+// @Param body body MediaImageRequest true "媒体任务参数"
+// @Success 200 {string} string "NDJSON stream"
+// @Failure 400 {object} ErrorDoc
+// @Failure 401 {object} ErrorDoc
+// @Failure 402 {object} ErrorDoc
+// @Failure 403 {object} ErrorDoc
+// @Failure 404 {object} ErrorDoc
+// @Failure 409 {object} ErrorDoc
+// @Failure 429 {object} ErrorDoc
+// @Failure 500 {object} ErrorDoc
+// @Failure 503 {object} ErrorDoc
+// @Router /conversations/{id}/media/images/edits/stream [post]
 func (h *Handler) StreamImageEdit(c *gin.Context) {
 	h.streamMediaImage(c, appconversation.MediaImageTaskEdit)
 }
 
 // StreamVideoGeneration 处理会话内视频生成流式状态接口。
+// @Summary 生成会话视频
+// @Description 在会话中按提示词生成视频，并以 NDJSON 流式返回任务状态事件
+// @Tags chat
+// @Accept json
+// @Produce application/x-ndjson
+// @Security BearerAuth
+// @Param id path string true "会话 public_id"
+// @Param body body MediaVideoRequest true "媒体任务参数"
+// @Success 200 {string} string "NDJSON stream"
+// @Failure 400 {object} ErrorDoc
+// @Failure 401 {object} ErrorDoc
+// @Failure 402 {object} ErrorDoc
+// @Failure 403 {object} ErrorDoc
+// @Failure 404 {object} ErrorDoc
+// @Failure 409 {object} ErrorDoc
+// @Failure 429 {object} ErrorDoc
+// @Failure 500 {object} ErrorDoc
+// @Failure 503 {object} ErrorDoc
+// @Router /conversations/{id}/media/videos/generations/stream [post]
 func (h *Handler) StreamVideoGeneration(c *gin.Context) {
 	h.streamMediaVideo(c, appconversation.MediaVideoTaskGeneration)
 }
 
 // StreamVideoExtension 处理会话内视频扩展流式状态接口。
 // @Summary 扩展会话视频
-// @Tags Conversations
+// @Description 在会话中基于来源视频按提示词扩展视频，并以 NDJSON 流式返回任务状态事件
+// @Tags chat
 // @Accept json
 // @Produce application/x-ndjson
-// @Param id path string true "会话 Public ID"
-// @Param payload body MediaVideoExtensionRequest true "视频扩展请求"
+// @Security BearerAuth
+// @Param id path string true "会话 public_id"
+// @Param body body MediaVideoExtensionRequest true "视频扩展参数"
 // @Success 200 {string} string "NDJSON stream"
-// @Failure 400 {object} response.Envelope
-// @Failure 401 {object} response.Envelope
-// @Failure 404 {object} response.Envelope
+// @Failure 400 {object} ErrorDoc
+// @Failure 401 {object} ErrorDoc
+// @Failure 402 {object} ErrorDoc
+// @Failure 403 {object} ErrorDoc
+// @Failure 404 {object} ErrorDoc
+// @Failure 409 {object} ErrorDoc
+// @Failure 429 {object} ErrorDoc
+// @Failure 500 {object} ErrorDoc
+// @Failure 503 {object} ErrorDoc
 // @Router /conversations/{id}/media/videos/extensions/stream [post]
 func (h *Handler) StreamVideoExtension(c *gin.Context) {
 	h.streamMediaVideo(c, appconversation.MediaVideoTaskExtension)
@@ -70,7 +135,7 @@ func (h *Handler) streamMediaVideo(c *gin.Context, taskType appconversation.Medi
 			response.ErrorFrom(c, http.StatusNotFound, err)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	var req mediaVideoTransportRequest
@@ -100,6 +165,10 @@ func (h *Handler) streamMediaVideo(c *gin.Context, taskType appconversation.Medi
 	}
 	req.ClientRunID = appconversation.EnsureMessageGenerationRunID(req.ClientRunID)
 	req.Options = sanitizeMessageOptions(req.Options)
+	if err := h.service.EnsureGeneratedMediaStorage(c.Request.Context(), userID); err != nil {
+		handleSendMessageError(c, err)
+		return
+	}
 	session, ok := h.beginUsageSession(c, buildBillingInput(billingRequestInput{
 		UserID:            userID,
 		Conversation:      conversation,
@@ -115,6 +184,7 @@ func (h *Handler) streamMediaVideo(c *gin.Context, taskType appconversation.Medi
 	)
 	if !ok {
 		_ = session.Finish(c.Request.Context(), nil)
+		response.RecordError(c, errGenerationLifecycleUnavailable)
 		response.ErrorWithCode(c, http.StatusServiceUnavailable, response.CodeServiceUnavailable)
 		return
 	}
@@ -160,7 +230,7 @@ func (h *Handler) streamMediaImage(c *gin.Context, taskType appconversation.Medi
 			response.ErrorFrom(c, http.StatusNotFound, err)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	var req MediaImageRequest
@@ -170,6 +240,10 @@ func (h *Handler) streamMediaImage(c *gin.Context, taskType appconversation.Medi
 	}
 	req.ClientRunID = appconversation.EnsureMessageGenerationRunID(req.ClientRunID)
 	req.Options = sanitizeMessageOptions(req.Options)
+	if err := h.service.EnsureGeneratedMediaStorage(c.Request.Context(), userID); err != nil {
+		handleSendMessageError(c, err)
+		return
+	}
 	session, ok := h.beginUsageSession(c, buildBillingInput(billingRequestInput{
 		UserID:            userID,
 		Conversation:      conversation,
@@ -185,6 +259,7 @@ func (h *Handler) streamMediaImage(c *gin.Context, taskType appconversation.Medi
 	)
 	if !ok {
 		_ = session.Finish(c.Request.Context(), nil)
+		response.RecordError(c, errGenerationLifecycleUnavailable)
 		response.ErrorWithCode(c, http.StatusServiceUnavailable, response.CodeServiceUnavailable)
 		return
 	}
@@ -273,14 +348,14 @@ func (h *Handler) streamMediaTask(
 		return
 	}
 	if billingErr := session.Finish(c.Request.Context(), result); billingErr != nil {
-		payload := streamErrorPayloadWithResult(billingErr, result)
+		payload := streamErrorPayloadWithResult(c, billingErr, result)
 		if owned, _ := flushStreamEvent(payload); !owned {
 			_ = writeStreamEvent(payload)
 		}
 		return
 	}
 	if err != nil {
-		payload := streamErrorPayloadWithResult(err, result)
+		payload := streamErrorPayloadWithResult(c, err, result)
 		if owned, _ := flushStreamEvent(payload); !owned {
 			_ = writeStreamEvent(payload)
 		}
@@ -290,11 +365,11 @@ func (h *Handler) streamMediaTask(
 		return
 	}
 	if result.AssistantMessage.Status == "canceled" {
-		_, _ = flushStreamEvent(streamErrorPayloadWithResult(appconversation.ErrMessageGenerationCanceled, result))
+		_, _ = flushStreamEvent(streamErrorPayloadWithResult(c, appconversation.ErrMessageGenerationCanceled, result))
 		return
 	}
 	_, _ = flushStreamEvent(map[string]any{
 		"type": "completed",
-		"data": toSendMessageResponse(result),
+		"data": toSendMessageResponse(result, middleware.MustRequestID(c)),
 	})
 }

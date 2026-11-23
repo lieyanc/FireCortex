@@ -10,16 +10,20 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/application/extraction"
 	domainsettings "github.com/lieyanc/FireCortex/backend/internal/domain/settings"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/secretbox"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
+	"go.uber.org/zap"
 )
 
 // Service 封装 settings 业务逻辑。
 type Service struct {
-	repo              repository.SettingsRepository
-	dataEncryptionKey string
-	authSafety        authSafetyService
-	vectorStore       vectorStoreAvailabilityService
-	auditWriter       auditWriter
+	repo        repository.SettingsRepository
+	keyring     *secretbox.Keyring
+	authSafety  authSafetyService
+	vectorStore vectorStoreAvailabilityService
+	auditWriter auditWriter
+	runtime     *config.Runtime
+	logger      *zap.Logger
 }
 
 type authSafetyService interface {
@@ -35,8 +39,8 @@ type auditWriter interface {
 }
 
 // NewService 创建服务。
-func NewService(repo repository.SettingsRepository, dataEncryptionKey string) *Service {
-	return &Service{repo: repo, dataEncryptionKey: strings.TrimSpace(dataEncryptionKey)}
+func NewService(repo repository.SettingsRepository, keyring *secretbox.Keyring) *Service {
+	return &Service{repo: repo, keyring: keyring}
 }
 
 func (s *Service) SetAuthSafetyService(service authSafetyService) {
@@ -50,6 +54,11 @@ func (s *Service) SetVectorStoreAvailabilityService(service vectorStoreAvailabil
 // SetAuditWriter 注入系统设置审计写入器。
 func (s *Service) SetAuditWriter(writer auditWriter) {
 	s.auditWriter = writer
+}
+
+// SetLogger 注入结构化日志记录器。
+func (s *Service) SetLogger(logger *zap.Logger) {
+	s.logger = logger
 }
 
 // AuditInput 描述系统设置审计写入。
@@ -78,17 +87,23 @@ func (s *Service) RecordAudit(ctx context.Context, input AuditInput) {
 	})
 }
 
-// Seed 将注册表中的默认配置写入数据库（仅插入不存在的 key），并清理已废弃的配置项。
+// Seed 将注册表中的默认配置写入数据库（仅插入不存在的 key），并清理重复行与已废弃的配置项。
 func (s *Service) Seed(ctx context.Context) error {
-	items, err := s.encryptSettingsForStorage(defaultSettings())
+	existing, err := s.repo.ListAll(ctx)
+	if err != nil {
+		return err
+	}
+	existing, duplicates := resolveDuplicateSettings(existing)
+	s.repairDuplicateSettings(ctx, duplicates)
+	items, err := s.encryptSettingsForStorage(missingSettings(defaultSettings(), existing))
 	if err != nil {
 		return err
 	}
 	if err := s.repo.UpsertWithDescription(ctx, items); err != nil {
 		return err
 	}
-	// Install replacement defaults before deleting obsolete keys so a partial
-	// startup failure never leaves the deployment without either configuration.
+	// 先安装替代默认值再删除过时键，确保部分
+	// 启动失败时部署不会同时缺失两种配置。
 	for _, item := range obsoleteSettings() {
 		if err := s.repo.Delete(ctx, item.Namespace, item.Key); err != nil {
 			return err
@@ -102,7 +117,7 @@ func (s *Service) Seed(ctx context.Context) error {
 
 // ListAll 查询全部配置，按 namespace 分组。
 func (s *Service) ListAll(ctx context.Context) (map[string][]SettingItem, error) {
-	items, err := s.repo.ListAll(ctx)
+	items, err := listAllSettings(ctx, s.repo)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +126,7 @@ func (s *Service) ListAll(ctx context.Context) (map[string][]SettingItem, error)
 
 // ListByNamespace 查询指定 namespace 的配置。
 func (s *Service) ListByNamespace(ctx context.Context, namespace string) ([]SettingItem, error) {
-	items, err := s.repo.ListByNamespace(ctx, namespace)
+	items, err := listNamespaceSettings(ctx, s.repo, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +139,7 @@ func (s *Service) ListByNamespace(ctx context.Context, namespace string) ([]Sett
 
 // RuntimeValuesByNamespace 返回服务端运行时使用的配置值，敏感项会被解密。
 func (s *Service) RuntimeValuesByNamespace(ctx context.Context, namespace string) (map[string]string, error) {
-	items, err := s.repo.ListByNamespace(ctx, namespace)
+	items, err := listNamespaceSettings(ctx, s.repo, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +155,7 @@ func (s *Service) RuntimeValuesByNamespace(ctx context.Context, namespace string
 }
 
 func (s *Service) migrateDefaultAllowedMIMETypes(ctx context.Context) error {
-	items, err := s.repo.ListByNamespace(ctx, "file")
+	items, err := listNamespaceSettings(ctx, s.repo, "file")
 	if err != nil {
 		return err
 	}
@@ -149,10 +164,15 @@ func (s *Service) migrateDefaultAllowedMIMETypes(ctx context.Context) error {
 			continue
 		}
 		value := strings.TrimSpace(item.Value)
-		if value == "" || !sameCSVSet(value, legacyDefaultAllowedMIMETypes) {
+		if value == "" {
 			return nil
 		}
-		return s.resetToRegistryDefault(ctx, "file", "allowed_mime_types")
+		for _, legacy := range legacyDefaultAllowedMIMETypes {
+			if sameCSVSet(value, legacy) {
+				return s.resetToRegistryDefault(ctx, "file", "allowed_mime_types")
+			}
+		}
+		return nil
 	}
 	return nil
 }
@@ -171,7 +191,7 @@ func (s *Service) resetToRegistryDefault(ctx context.Context, namespace string, 
 }
 
 func (s *Service) migrateDefaultModelOptionAllowedPaths(ctx context.Context) error {
-	items, err := s.repo.ListByNamespace(ctx, "chat")
+	items, err := listNamespaceSettings(ctx, s.repo, "chat")
 	if err != nil {
 		return err
 	}
@@ -336,6 +356,10 @@ func (s *Service) BatchUpdate(ctx context.Context, patches []PatchItem) (map[str
 		if err := validatePatchItem(p); err != nil {
 			return nil, err
 		}
+	}
+
+	if err := s.rejectLockedSettings(ctx, patches); err != nil {
+		return nil, err
 	}
 
 	patches, err := s.applyAuthSettingDependencies(ctx, patches)
@@ -638,7 +662,7 @@ func validateEmailVerificationSMTPSettings(next map[string]string) error {
 func (s *Service) applyEmbeddingDependentCascades(ctx context.Context, patches []PatchItem) ([]PatchItem, error) {
 	hasEmbeddingPatch := false
 	for _, item := range patches {
-		if item.Namespace == "file" && (item.Key == "embedding_enabled" || item.Key == "embedding_host" || item.Key == "rag_model") {
+		if item.Namespace == "file" && (item.Key == "embedding_enabled" || item.Key == "embedding_host" || item.Key == "embedding_protocol" || item.Key == "rag_model") {
 			hasEmbeddingPatch = true
 			break
 		}
@@ -709,7 +733,7 @@ func (s *Service) validateEmbeddingDependentSettings(ctx context.Context, patche
 	for _, item := range patches {
 		if item.Namespace == "file" {
 			switch item.Key {
-			case "embedding_enabled", "embedding_host", "rag_model":
+			case "embedding_enabled", "embedding_host", "embedding_protocol", "rag_model":
 				requiresValidation = true
 			}
 		}

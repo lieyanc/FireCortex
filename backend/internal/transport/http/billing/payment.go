@@ -18,11 +18,9 @@ import (
 
 	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
 	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
-	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 const (
@@ -70,7 +68,7 @@ func (h *Handler) CreateCheckout(c *gin.Context) {
 	}
 	settings, err := h.resolvePaymentSettings(c.Request.Context())
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	provider, err := resolvePaymentProvider(req.PaymentProvider, settings.Providers)
@@ -112,7 +110,7 @@ func (h *Handler) CreateCheckout(c *gin.Context) {
 		if isPublicPaymentOrderError(err) {
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 		} else {
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -132,15 +130,7 @@ func (h *Handler) CreateCheckout(c *gin.Context) {
 		return
 	}
 	if err = h.service.AttachPaymentCheckout(c.Request.Context(), order.OrderNo, checkoutID, checkoutURL); err != nil {
-		if h.logger != nil {
-			h.logger.Error("billing payment checkout persistence failed",
-				zap.String("request_id", middleware.MustRequestID(c)),
-				zap.String("provider", provider),
-				zap.String("order_no", order.OrderNo),
-				zap.Error(err),
-			)
-		}
-		response.InternalError(c)
+		response.InternalError(c, fmt.Errorf("attach payment checkout provider=%s order_no=%s: %w", provider, order.OrderNo, err))
 		return
 	}
 	order.ExternalCheckoutID = checkoutID
@@ -319,11 +309,11 @@ func (h *Handler) preparePaymentCheckout(
 			return preparation, appbilling.ErrPaymentProviderUnavailable
 		}
 		var err error
-		preparation.successURL, err = h.paymentReturnURL(c, req.SuccessURL, "/settings?section=account&payment=success")
+		preparation.successURL, err = h.paymentReturnURL(c, req.SuccessURL, "/settings/subscription?payment=success")
 		if err != nil {
 			return preparation, err
 		}
-		preparation.cancelURL, err = h.paymentReturnURL(c, req.CancelURL, "/settings?section=account&payment=cancel")
+		preparation.cancelURL, err = h.paymentReturnURL(c, req.CancelURL, "/settings/subscription?payment=cancel")
 		if err != nil {
 			return preparation, err
 		}
@@ -343,7 +333,7 @@ func (h *Handler) preparePaymentCheckout(
 		if err != nil {
 			return preparation, err
 		}
-		preparation.successURL, err = h.paymentReturnURL(c, req.SuccessURL, "/settings?section=account&payment=success")
+		preparation.successURL, err = h.paymentReturnURL(c, req.SuccessURL, "/settings/subscription?payment=success")
 		if err != nil {
 			return preparation, err
 		}
@@ -354,21 +344,8 @@ func (h *Handler) preparePaymentCheckout(
 }
 
 func (h *Handler) respondPaymentCheckoutError(c *gin.Context, provider string, stage string, err error) {
-	logger := h.logger
-	if logger == nil {
-		logger = zap.NewNop()
-	}
-	logFields := []zap.Field{
-		zap.String("request_id", middleware.MustRequestID(c)),
-		zap.String("provider", provider),
-		zap.String("stage", stage),
-		zap.Error(err),
-	}
-	if stage == "validate" {
-		logger.Warn("billing payment checkout validation failed", logFields...)
-	} else {
-		logger.Error("billing payment checkout creation failed", logFields...)
-	}
+	// 支付渠道与阶段补进错误链，由访问日志按 request_id 统一记录。
+	response.RecordError(c, fmt.Errorf("payment checkout %s provider=%s: %w", stage, provider, err))
 
 	switch {
 	case errors.Is(err, domainbilling.ErrEPayGatewayInvalid):
@@ -560,7 +537,7 @@ func writePaymentWebhookError(c *gin.Context, err error) {
 		errors.Is(err, errPaymentNotificationMismatch):
 		response.ErrorFrom(c, http.StatusBadRequest, err)
 	default:
-		response.InternalError(c)
+		response.InternalError(c, err)
 	}
 }
 
@@ -818,12 +795,6 @@ func joinPublicBaseURL(baseURL string, path string) (string, error) {
 	}
 	return parsed.ResolveReference(relative).String(), nil
 }
-
-// 客户端传入的 return_url 校验失败属于请求错误（400），与公开地址未配置等服务端问题区分开。
-var (
-	errPaymentReturnURLInvalid     = apperr.New("payment.return_url_invalid", "payment return url is invalid")
-	errPaymentReturnURLCrossOrigin = apperr.New("payment.return_url_cross_origin", "payment return url must use the configured public web origin")
-)
 
 func sameOriginPublicURL(baseURL string, raw string) (string, error) {
 	base, err := url.Parse(strings.TrimRight(strings.TrimSpace(baseURL), "/"))

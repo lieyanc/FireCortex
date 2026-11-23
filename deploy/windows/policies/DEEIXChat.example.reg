@@ -1,0 +1,24 @@
+Windows Registry Editor Version 5.00
+
+; FireCortex enterprise policy - example. Same values as the ADMX template
+; (FireCortexChat.admx). Import from an elevated prompt: reg import FireCortexChat.example.reg
+; HKEY_LOCAL_MACHINE applies to every user of the computer and wins over
+; HKEY_CURRENT_USER\SOFTWARE\Policies\FireCortex\Chat value by value.
+; Delete a value (or the key) to return to the default. Restart FireCortex
+; after a change.
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Policies\FireCortex\Chat]
+; Server address prefilled on the setup screen: http(s) origin, no path.
+"DefaultServerUrl"="https://chat.example.com"
+; 1 = only DefaultServerUrl may be used (also disables local mode).
+"LockServerUrl"=dword:00000001
+; 1 = hide and refuse the built-in local server.
+"DisableLocalMode"=dword:00000001
+; 1 = never check for updates (deliver versions through your software distribution).
+"DisableAutoUpdate"=dword:00000001
+; Network proxy (Chrome's value names). Remove the leading ";" to apply.
+; ProxyMode: "system", "direct" or "fixed_servers"; the other two values are
+; only read for fixed_servers. Credentials cannot be set by policy.
+;"ProxyMode"="fixed_servers"
+;"ProxyServer"="proxy.corp.example:3128"
+;"ProxyBypassList"="*.corp.example;10.*;192.168.*"

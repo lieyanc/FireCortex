@@ -13,6 +13,7 @@ import (
 	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	infraembedding "github.com/lieyanc/FireCortex/backend/internal/infra/embedding"
+	portembedding "github.com/lieyanc/FireCortex/backend/internal/ports/embedding"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 	"go.uber.org/zap"
@@ -207,7 +208,7 @@ func TestReindexStaleFilesDoesNotRequireRAGEnabled(t *testing.T) {
 		EmbeddingHost:    "http://127.0.0.1:8081",
 	}, repo, nil, infraembedding.New(security.OutboundPolicy{}), nil)
 
-	submitted, err := service.ReindexStaleFiles(context.Background(), false)
+	submitted, err := service.ReindexStaleFiles(context.Background())
 	if err != nil {
 		t.Fatalf("expected reindex to ignore chat RAG switch, got %v", err)
 	}
@@ -377,7 +378,7 @@ func TestReindexStaleFilesSkipsUnsupportedCandidates(t *testing.T) {
 		EmbeddingHost:    "http://127.0.0.1:8081",
 	}, repo, nil, infraembedding.New(security.OutboundPolicy{}), nil)
 
-	submitted, err := service.ReindexStaleFiles(context.Background(), false)
+	submitted, err := service.ReindexStaleFiles(context.Background())
 	if err != nil {
 		t.Fatalf("expected reindex to succeed, got %v", err)
 	}
@@ -406,7 +407,7 @@ func TestReindexStaleFilesAdvancesCursorForUnsupportedCandidates(t *testing.T) {
 		EmbeddingHost:    "http://127.0.0.1:8081",
 	}, repo, nil, infraembedding.New(security.OutboundPolicy{}), nil)
 
-	submitted, err := service.ReindexStaleFiles(context.Background(), false)
+	submitted, err := service.ReindexStaleFiles(context.Background())
 	if err != nil {
 		t.Fatalf("expected reindex to succeed, got %v", err)
 	}
@@ -445,7 +446,7 @@ func TestReindexStaleFilesDeduplicatesRunningBatch(t *testing.T) {
 	t.Cleanup(cancel)
 	service.StartBackgroundWorkers(workerCtx)
 
-	submitted, err := service.ReindexStaleFiles(context.Background(), false)
+	submitted, err := service.ReindexStaleFiles(context.Background())
 	if err != nil || submitted != 1 {
 		t.Fatalf("first reindex: submitted=%d err=%v", submitted, err)
 	}
@@ -454,8 +455,11 @@ func TestReindexStaleFilesDeduplicatesRunningBatch(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("background reindex did not start")
 	}
-	if duplicate, duplicateErr := service.ReindexStaleFiles(context.Background(), false); duplicateErr != nil || duplicate != 0 {
-		t.Fatalf("duplicate reindex must be ignored: submitted=%d err=%v", duplicate, duplicateErr)
+	if status, statusErr := service.GetIndexStatus(context.Background()); statusErr != nil || !status.ReindexRunning {
+		t.Fatalf("status must report the running reindex: status=%+v err=%v", status, statusErr)
+	}
+	if duplicate, duplicateErr := service.ReindexStaleFiles(context.Background()); !errors.Is(duplicateErr, ErrReindexInProgress) || duplicate != 0 {
+		t.Fatalf("duplicate reindex must be rejected as in progress: submitted=%d err=%v", duplicate, duplicateErr)
 	}
 	close(repo.releaseBackground)
 
@@ -659,7 +663,13 @@ type reindexRepo struct {
 	claimedFileIDs       []string
 	onStatus             func(status string)
 	processing           *domainconversation.FileObjectProcessing
-	listIncludeEmpty     []bool
+	listStalledBefore    []time.Time
+	reprocessInput       repository.ListFilesForReprocessingInput
+	resetFileIDs         []string
+	stateCounts          []repository.FileEmbeddingStateCount
+	stateScope           repository.EmbeddableFileScope
+	queueStalledBefore   time.Time
+	taskInput            repository.ListFileEmbeddingTasksInput
 }
 
 type blockingReindexRepo struct {
@@ -670,7 +680,7 @@ type blockingReindexRepo struct {
 	releaseBackground chan struct{}
 }
 
-func (r *blockingReindexRepo) ListFilesForReindex(ctx context.Context, limit int, afterID uint, _ bool) ([]domainconversation.FileObject, error) {
+func (r *blockingReindexRepo) ListFilesForReindex(ctx context.Context, input repository.ListFilesForReindexInput) ([]domainconversation.FileObject, error) {
 	r.mu.Lock()
 	r.listCalls++
 	call := r.listCalls
@@ -683,7 +693,7 @@ func (r *blockingReindexRepo) ListFilesForReindex(ctx context.Context, limit int
 			return nil, ctx.Err()
 		}
 	}
-	if call > 2 || afterID > 0 {
+	if call > 2 || input.AfterID > 0 {
 		return nil, nil
 	}
 	return append([]domainconversation.FileObject(nil), r.files...), nil
@@ -719,7 +729,22 @@ func (r *reindexRepo) GetFileObjectProcessingByObjectID(context.Context, uint) (
 	return r.processing, nil
 }
 
-func (r *reindexRepo) QueueFileEmbedding(_ context.Context, _ uint, fileID string, _ string) (bool, error) {
+func (r *reindexRepo) GetActiveFileObjectsByFileIDs(_ context.Context, fileIDs []string) ([]domainconversation.FileObject, error) {
+	wanted := make(map[string]struct{}, len(fileIDs))
+	for _, fileID := range fileIDs {
+		wanted[fileID] = struct{}{}
+	}
+	results := make([]domainconversation.FileObject, 0, len(fileIDs))
+	for _, file := range r.files {
+		if _, ok := wanted[file.FileID]; ok {
+			results = append(results, file)
+		}
+	}
+	return results, nil
+}
+
+func (r *reindexRepo) QueueFileEmbedding(_ context.Context, _ uint, fileID string, _ string, stalledBefore time.Time) (bool, error) {
+	r.queueStalledBefore = stalledBefore
 	r.claimedFileIDs = append(r.claimedFileIDs, fileID)
 	return true, nil
 }
@@ -751,23 +776,99 @@ func (r *reindexRepo) MarkEmbeddedFilesStale(_ context.Context, signature string
 	return 0, nil
 }
 
-func (r *reindexRepo) CountFilesByEmbedStatus(context.Context, string) (int64, error) {
+func (r *reindexRepo) ResetFileForReprocessing(_ context.Context, _ uint, fileID string, _ string, _ time.Time) (bool, error) {
+	r.resetFileIDs = append(r.resetFileIDs, fileID)
+	return true, nil
+}
+
+func (r *reindexRepo) ListFilesForReprocessing(_ context.Context, input repository.ListFilesForReprocessingInput) ([]domainconversation.FileObject, error) {
+	r.reprocessInput = input
+	results := make([]domainconversation.FileObject, 0, len(r.files))
+	for _, file := range r.files {
+		if file.ID > input.AfterID {
+			results = append(results, file)
+		}
+	}
+	return results, nil
+}
+
+// MarkStalledFileEmbeddingsFailed 会被后台巡检协程并发调用，测试桩不修改共享状态。
+func (r *reindexRepo) MarkStalledFileEmbeddingsFailed(context.Context, time.Time, string) (int64, error) {
 	return 0, nil
 }
 
-func (r *reindexRepo) ListFilesForReindex(_ context.Context, limit int, afterID uint, includeEmpty bool) ([]domainconversation.FileObject, error) {
+func (r *reindexRepo) CountFileEmbeddingStates(_ context.Context, scope repository.EmbeddableFileScope, _ time.Time) ([]repository.FileEmbeddingStateCount, error) {
+	r.stateScope = scope
+	return r.stateCounts, nil
+}
+
+func (r *reindexRepo) ListFileEmbeddingTasks(_ context.Context, input repository.ListFileEmbeddingTasksInput) ([]domainconversation.FileObject, int64, error) {
+	r.taskInput = input
+	return r.files, int64(len(r.files)), nil
+}
+
+func (r *reindexRepo) ListFilesForReindex(_ context.Context, input repository.ListFilesForReindexInput) ([]domainconversation.FileObject, error) {
 	r.listCalls++
-	r.afterIDs = append(r.afterIDs, afterID)
-	r.listIncludeEmpty = append(r.listIncludeEmpty, includeEmpty)
-	results := make([]domainconversation.FileObject, 0, limit)
+	r.afterIDs = append(r.afterIDs, input.AfterID)
+	r.listStalledBefore = append(r.listStalledBefore, input.StalledBefore)
+	results := make([]domainconversation.FileObject, 0, input.Limit)
 	for _, file := range r.files {
-		if file.ID <= afterID {
+		if file.ID <= input.AfterID {
 			continue
 		}
 		results = append(results, file)
-		if len(results) >= limit {
+		if len(results) >= input.Limit {
 			break
 		}
 	}
 	return results, nil
+}
+
+func TestShouldTriggerIncludesImagesWhenProtocolEmbedsImages(t *testing.T) {
+	service := newTestService(config.Config{
+		RAGEnabled:             true,
+		EmbeddingEnabled:       true,
+		EmbedTriggerOnUpload:   true,
+		RAGModel:               "gemini-embedding-2",
+		EmbeddingHost:          "http://127.0.0.1:8081",
+		EmbeddingProtocol:      config.EmbeddingProtocolGemini,
+		ExtractImageOCREnabled: false,
+	}, nil, nil, nil, nil)
+
+	fileObj := domainconversation.FileObject{
+		FileID:       "file_1",
+		FileName:     "photo.png",
+		MimeType:     "image/png",
+		FileCategory: "image",
+		StoragePath:  "uploads/photo.png",
+		Status:       "active",
+	}
+	if !service.ShouldTrigger(fileObj) {
+		t.Fatal("expected image embedding when the protocol supports image inputs")
+	}
+	fileObj.MimeType = "image/bmp"
+	fileObj.DetectedMIME = "image/bmp"
+	if service.ShouldTrigger(fileObj) {
+		t.Fatal("expected formats the multimodal endpoints reject to stay unsupported")
+	}
+}
+
+func TestSplitEmbeddingBatchesRespectsCountAndImageBytes(t *testing.T) {
+	inputs := []portembedding.Input{
+		{Kind: portembedding.InputText, Text: "a"},
+		{Kind: portembedding.InputText, Text: "b"},
+		{Kind: portembedding.InputImage, Data: make([]byte, maxImageBatchBytes-1)},
+		{Kind: portembedding.InputImage, Data: make([]byte, 2)},
+		{Kind: portembedding.InputText, Text: "c"},
+	}
+	batches := splitEmbeddingBatches(inputs, 2)
+	if len(batches) != 3 {
+		t.Fatalf("expected 3 batches, got %d", len(batches))
+	}
+	if len(batches[0]) != 2 || len(batches[1]) != 1 || len(batches[2]) != 2 {
+		t.Fatalf("unexpected batch sizes: %d/%d/%d", len(batches[0]), len(batches[1]), len(batches[2]))
+	}
+	if batches[1][0].Kind != portembedding.InputImage || batches[2][0].Kind != portembedding.InputImage {
+		t.Fatalf("large image should open its own batch, next image should start the following one")
+	}
 }

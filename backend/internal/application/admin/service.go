@@ -12,14 +12,14 @@ import (
 	authapp "github.com/lieyanc/FireCortex/backend/internal/application/auth"
 	"github.com/lieyanc/FireCortex/backend/internal/application/billing"
 	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
+	apperrorlog "github.com/lieyanc/FireCortex/backend/internal/application/errorlog"
 	applogcleanup "github.com/lieyanc/FireCortex/backend/internal/application/logcleanup"
-	systemeventapp "github.com/lieyanc/FireCortex/backend/internal/application/systemevent"
 	userapp "github.com/lieyanc/FireCortex/backend/internal/application/user"
 	"github.com/lieyanc/FireCortex/backend/internal/application/userview"
 	domainaudit "github.com/lieyanc/FireCortex/backend/internal/domain/audit"
 	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
 	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
-	domainsystemevent "github.com/lieyanc/FireCortex/backend/internal/domain/systemevent"
+	domainerrorlog "github.com/lieyanc/FireCortex/backend/internal/domain/errorlog"
 	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
@@ -48,10 +48,6 @@ type auditService interface {
 	List(ctx context.Context, page int, pageSize int, filter auditapp.ListFilter) ([]domainaudit.Log, int64, error)
 }
 
-type systemEventService interface {
-	List(ctx context.Context, page int, pageSize int, filter systemeventapp.ListFilter) ([]domainsystemevent.Event, int64, error)
-}
-
 type usageLogService interface {
 	ListUsageLogs(ctx context.Context, page int, pageSize int, filter billing.UsageLogListFilter) ([]domainbilling.UsageLedger, int64, error)
 }
@@ -72,7 +68,10 @@ type conversationEventService interface {
 
 type logCleanupService interface {
 	Cleanup(ctx context.Context, input applogcleanup.Input) (*applogcleanup.Result, error)
-	CleanupConversationRuns(ctx context.Context, input applogcleanup.ConversationRunInput) (*applogcleanup.ConversationRunResult, error)
+}
+
+type errorLogService interface {
+	List(ctx context.Context, page int, pageSize int, filter apperrorlog.ListFilter) ([]domainerrorlog.Log, int64, error)
 }
 
 type authSecurityService interface {
@@ -84,12 +83,12 @@ type authSecurityService interface {
 type Service struct {
 	userService                                userService
 	auditService                               auditService
-	systemEventService                         systemEventService
 	usageLogService                            usageLogService
 	usageStatisticsService                     usageStatisticsService
 	orderLogService                            orderLogService
 	conversationEventSvc                       conversationEventService
 	logCleanupService                          logCleanupService
+	errorLogService                            errorLogService
 	authSecurityService                        authSecurityService
 	subscriptionResolver                       subscriptionResolver
 	openWebUIRowLoader                         openWebUIRowLoader
@@ -122,8 +121,11 @@ type subscriptionResolver interface {
 // UserLabel 是后台日志里展示用户身份的轻量信息。
 type UserLabel struct {
 	ID          uint
+	PublicID    string
 	Username    string
 	DisplayName string
+	Email       string
+	AvatarURL   string
 	Label       string
 }
 
@@ -202,11 +204,6 @@ func (s *Service) SetAuthSecurityService(service authSecurityService) {
 	s.authSecurityService = service
 }
 
-// SetSystemEventService 注入系统事件查询能力。
-func (s *Service) SetSystemEventService(service systemEventService) {
-	s.systemEventService = service
-}
-
 // SetUsageLogService 注入调用日志查询能力。
 func (s *Service) SetUsageLogService(service usageLogService) {
 	s.usageLogService = service
@@ -230,6 +227,11 @@ func (s *Service) SetConversationEventService(service conversationEventService) 
 // SetLogCleanupService 注入日志清理能力。
 func (s *Service) SetLogCleanupService(service logCleanupService) {
 	s.logCleanupService = service
+}
+
+// SetErrorLogService 注入错误日志查询能力。
+func (s *Service) SetErrorLogService(service errorLogService) {
+	s.errorLogService = service
 }
 
 // SetSubscriptionResolver 注入订阅派生解析能力。
@@ -576,8 +578,11 @@ func (s *Service) ResolveUserLabels(ctx context.Context, userIDs []uint) map[uin
 		}
 		labels[userID] = UserLabel{
 			ID:          userID,
+			PublicID:    item.PublicID,
 			Username:    item.Username,
 			DisplayName: item.DisplayName,
+			Email:       item.Email,
+			AvatarURL:   item.AvatarURL,
 			Label:       label,
 		}
 	}

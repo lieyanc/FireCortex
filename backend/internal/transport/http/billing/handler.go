@@ -15,7 +15,6 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 // Handler 封装计费 HTTP 处理。
@@ -25,7 +24,6 @@ type Handler struct {
 	cfg             *config.Runtime
 	officialPricing *appbilling.OfficialPricingService
 	paymentCheckout *appbilling.PaymentCheckoutService
-	logger          *zap.Logger
 }
 
 func writeRedeemCodeError(c *gin.Context, err error) {
@@ -38,7 +36,7 @@ func writeRedeemCodeError(c *gin.Context, err error) {
 	case errors.Is(err, appbilling.ErrRedemptionCodeHashUnavailable):
 		response.ErrorFrom(c, http.StatusInternalServerError, appbilling.ErrRedemptionCodeHashUnavailable)
 	default:
-		response.InternalError(c)
+		response.InternalError(c, err)
 	}
 }
 
@@ -49,18 +47,13 @@ func NewHandler(
 	cfg *config.Runtime,
 	officialPricing *appbilling.OfficialPricingService,
 	paymentCheckout *appbilling.PaymentCheckoutService,
-	logger *zap.Logger,
 ) *Handler {
-	if logger == nil {
-		logger = zap.NewNop()
-	}
 	return &Handler{
 		service:         service,
 		settings:        settingsService,
 		cfg:             cfg,
 		officialPricing: officialPricing,
 		paymentCheckout: paymentCheckout,
-		logger:          logger,
 	}
 }
 
@@ -90,7 +83,7 @@ func (h *Handler) recordAudit(c *gin.Context, userID uint, action string, resour
 func (h *Handler) GetBillingConfig(c *gin.Context) {
 	config, err := h.loadBillingConfig(c.Request.Context())
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, BillingConfigDataResponse{Config: config})
@@ -219,7 +212,7 @@ func (h *Handler) PatchBillingConfig(c *gin.Context) {
 			if errors.Is(err, appbilling.ErrInvalidNativeToolPricing) {
 				response.ErrorFrom(c, http.StatusBadRequest, err)
 			} else {
-				response.InternalError(c)
+				response.InternalError(c, err)
 			}
 			return
 		}
@@ -230,10 +223,13 @@ func (h *Handler) PatchBillingConfig(c *gin.Context) {
 		})
 	}
 	if _, err := h.settings.BatchUpdate(c.Request.Context(), patches); err != nil {
-		if errors.Is(err, appsettings.ErrInvalidSetting) {
+		var disabled *appsettings.FeatureDisabledError
+		if errors.As(err, &disabled) {
+			middleware.WriteFeatureDisabled(c, disabled.Feature, disabled.Keys...)
+		} else if errors.Is(err, appsettings.ErrInvalidSetting) {
 			writeSettingsValidationError(c, err)
 		} else {
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -257,7 +253,7 @@ func (h *Handler) PatchBillingConfig(c *gin.Context) {
 
 	config, err := h.loadBillingConfig(c.Request.Context())
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, BillingConfigDataResponse{Config: config})
@@ -298,7 +294,7 @@ type settingValidationDetailsResponse struct {
 func (h *Handler) ListPlans(c *gin.Context) {
 	items, err := h.service.ListPlans(c.Request.Context())
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, toPlanListResponse(items))
@@ -317,7 +313,7 @@ func (h *Handler) ListPlans(c *gin.Context) {
 func (h *Handler) GetBillingAccount(c *gin.Context) {
 	account, err := h.service.GetBillingAccount(c.Request.Context(), middleware.MustUserID(c))
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, BillingAccountDataResponse{Account: toBillingAccountResponse(account)})
@@ -361,7 +357,7 @@ func (h *Handler) UpdateBillingAccountBalance(c *gin.Context) {
 			errors.Is(err, appbilling.ErrPaymentRequired):
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -390,8 +386,8 @@ func (h *Handler) UpdateBillingAccountBalance(c *gin.Context) {
 // @Param status query string false "状态：active/inactive"
 // @Param availability query string false "可兑换性：available/expired/exhausted"
 // @Param q query string false "搜索关键词"
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
+// @Param page query int false "页码（从 1 开始，默认 1）"
+// @Param page_size query int false "每页数量（1-1000，默认 20）"
 // @Success 200 {object} RedemptionCodeListResponseDoc
 // @Failure 500 {object} ErrorDoc
 // @Router /admin/billing/redemption-codes [get]
@@ -406,7 +402,7 @@ func (h *Handler) ListRedemptionCodes(c *gin.Context) {
 		PageSize:     pageSize,
 	})
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.SuccessPage(c, total, toRedemptionCodeResponses(items))
@@ -500,7 +496,7 @@ func writeRedemptionCodeError(c *gin.Context, err error) {
 		response.ErrorFrom(c, http.StatusBadRequest, appbilling.ErrRedemptionCodePlaintextUnavailable)
 		return
 	}
-	response.InternalError(c)
+	response.InternalError(c, err)
 }
 
 // RevealRedemptionCode godoc
@@ -689,7 +685,7 @@ func (h *Handler) RedeemCode(c *gin.Context) {
 	}
 	overview, err := h.service.GetBillingOverview(c.Request.Context(), userID, time.Now())
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	var account *BillingAccountResponse
@@ -723,7 +719,7 @@ func (h *Handler) RedeemCode(c *gin.Context) {
 func (h *Handler) GetBillingOverview(c *gin.Context) {
 	overview, err := h.service.GetBillingOverview(c.Request.Context(), middleware.MustUserID(c), time.Now())
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, BillingOverviewDataResponse{Overview: toBillingOverviewResponse(overview)})
@@ -766,7 +762,7 @@ func (h *Handler) UpdatePlan(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, err)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 
@@ -824,7 +820,7 @@ func (h *Handler) Subscribe(c *gin.Context) {
 		case errors.Is(err, appbilling.ErrBillingPlanNotFound):
 			response.ErrorFrom(c, http.StatusNotFound, err)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -853,8 +849,8 @@ func (h *Handler) Subscribe(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
+// @Param page query int false "页码（从 1 开始，默认 1）"
+// @Param page_size query int false "每页数量（1-1000，默认 20）"
 // @Param query query string false "搜索模型"
 // @Param status query string false "状态筛选：free/billable"
 // @Param sort query string false "排序：newest/oldest/tokens_desc/cost_desc/latency_desc"
@@ -872,7 +868,7 @@ func (h *Handler) ListUsage(c *gin.Context) {
 
 	items, total, err := h.service.ListUsage(c.Request.Context(), userID, page, pageSize, filter)
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	usages := make([]UsageLedgerResponse, 0, len(items))
@@ -902,7 +898,7 @@ func (h *Handler) ListMonthlyUsage(c *gin.Context) {
 
 	items, err := h.service.ListMonthlyUsage(c.Request.Context(), userID, months)
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	results := make([]UsageMonthlyResponse, 0, len(items))
@@ -936,7 +932,7 @@ func (h *Handler) ListDailyUsage(c *gin.Context) {
 		}
 		items, err := h.service.ListDailyUsageRange(c.Request.Context(), userID, startDate, endDate)
 		if err != nil {
-			response.InternalError(c)
+			response.InternalError(c, err)
 			return
 		}
 		results := make([]UsageDailyResponse, 0, len(items))
@@ -951,7 +947,7 @@ func (h *Handler) ListDailyUsage(c *gin.Context) {
 	if daysText == "" {
 		items, err := h.service.ListCurrentCycleDailyUsage(c.Request.Context(), userID, time.Now())
 		if err != nil {
-			response.InternalError(c)
+			response.InternalError(c, err)
 			return
 		}
 		results := make([]UsageDailyResponse, 0, len(items))
@@ -969,7 +965,7 @@ func (h *Handler) ListDailyUsage(c *gin.Context) {
 	}
 	items, err := h.service.ListDailyUsage(c.Request.Context(), userID, days, time.Now())
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	results := make([]UsageDailyResponse, 0, len(items))
@@ -987,8 +983,8 @@ func (h *Handler) ListDailyUsage(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param q query string false "搜索关键词"
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
+// @Param page query int false "页码（从 1 开始，默认 1）"
+// @Param page_size query int false "每页数量（1-1000，默认 20）"
 // @Success 200 {object} ModelPricingListResponseDoc
 // @Failure 500 {object} ErrorDoc
 // @Router /admin/billing/model-prices [get]
@@ -1001,7 +997,7 @@ func (h *Handler) ListModelPricing(c *gin.Context) {
 		pageSize,
 	)
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	results := make([]ModelPricingResponse, 0, len(items))
@@ -1042,7 +1038,7 @@ func (h *Handler) UpsertModelPricing(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 

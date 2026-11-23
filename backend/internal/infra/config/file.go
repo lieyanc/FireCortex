@@ -46,13 +46,14 @@ type fileConfig struct {
 		ShutdownTimeoutSeconds   int    `json:"shutdown_timeout_seconds" yaml:"shutdown_timeout_seconds"`
 	} `json:"server" yaml:"server"`
 	Security struct {
-		JWTSecret              string `json:"jwt_secret" yaml:"jwt_secret"`
-		MCPUserContextSecret   string `json:"mcp_user_context_secret" yaml:"mcp_user_context_secret"`
-		DataEncryptionKey      string `json:"data_encryption_key" yaml:"data_encryption_key"`
-		SSRFProtectionEnabled  bool   `json:"ssrf_protection_enabled" yaml:"ssrf_protection_enabled"`
-		SSRFAllowedHosts       string `json:"ssrf_allowed_hosts" yaml:"ssrf_allowed_hosts"`
-		SSRFAllowedCIDRs       string `json:"ssrf_allowed_cidrs" yaml:"ssrf_allowed_cidrs"`
-		TurnstileSiteverifyURL string `json:"turnstile_siteverify_url" yaml:"turnstile_siteverify_url"`
+		JWTSecret                  string   `json:"jwt_secret" yaml:"jwt_secret"`
+		MCPUserContextSecret       string   `json:"mcp_user_context_secret" yaml:"mcp_user_context_secret"`
+		DataEncryptionKey          string   `json:"data_encryption_key" yaml:"data_encryption_key"`
+		DataEncryptionKeysPrevious []string `json:"data_encryption_keys_previous" yaml:"data_encryption_keys_previous"`
+		SSRFProtectionEnabled      bool     `json:"ssrf_protection_enabled" yaml:"ssrf_protection_enabled"`
+		SSRFAllowedHosts           string   `json:"ssrf_allowed_hosts" yaml:"ssrf_allowed_hosts"`
+		SSRFAllowedCIDRs           string   `json:"ssrf_allowed_cidrs" yaml:"ssrf_allowed_cidrs"`
+		TurnstileSiteverifyURL     string   `json:"turnstile_siteverify_url" yaml:"turnstile_siteverify_url"`
 	} `json:"security" yaml:"security"`
 	Branding struct {
 		Title                 string `json:"title" yaml:"title"`

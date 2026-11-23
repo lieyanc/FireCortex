@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/dberror"
-	models "github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/models"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/toolresult"
 	"gorm.io/gorm"
@@ -99,6 +99,9 @@ func (r *Repo) CreateForkedConversation(ctx context.Context, input repository.Cr
 		}
 
 		if err := cloneForkedAttachments(tx, target.UserID, input.SourceConversationID, createdConversation.ID, targetMessageIDs); err != nil {
+			return err
+		}
+		if err := cloneForkedMessageUIStates(tx, target.UserID, input.SourceConversationID, createdConversation.ID, targetMessageIDs); err != nil {
 			return err
 		}
 		return cloneForkedDisplayTraces(tx, target.UserID, input.SourceConversationID, createdConversation.ID, targetMessageIDs)

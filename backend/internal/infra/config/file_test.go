@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -50,7 +51,7 @@ func TestLoadReleasesTemplateWithGeneratedSecrets(t *testing.T) {
 		t.Fatal("generated secrets were not persisted")
 	}
 	fc.Security.JWTSecret, fc.Security.DataEncryptionKey = "", ""
-	if fc != templateConfig() {
+	if !reflect.DeepEqual(fc, templateConfig()) {
 		t.Fatalf("released config differs from template beyond secrets:\n%s", released)
 	}
 

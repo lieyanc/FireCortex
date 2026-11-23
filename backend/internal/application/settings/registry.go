@@ -8,7 +8,8 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/application/extraction"
 	domainsettings "github.com/lieyanc/FireCortex/backend/internal/domain/settings"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
-	extractport "github.com/lieyanc/FireCortex/backend/internal/ports/extract"
+	extractionport "github.com/lieyanc/FireCortex/backend/internal/ports/extraction"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/nativetool"
 )
 
@@ -163,6 +164,20 @@ var settingSpecs = []settingSpec{
 	{Namespace: "knowledgebase", Key: "enabled", ValueType: "bool", Default: "true", Description: "是否启用知识库功能；关闭后隐藏用户侧入口并拒绝知识库请求",
 		Validate: boolValue(), Apply: applyField(func(c *config.Config) *bool { return &c.KnowledgeBaseEnabled }, toBool)},
 
+	// 用户自带 Key：默认关闭。开启后符合条件的用户可添加自己的模型服务，只对本人生效、不扣平台余额。
+	{Namespace: "personal_provider", Key: "enabled", ValueType: "bool", Default: "false", Description: "是否允许用户接入自己的模型服务；关闭后已添加的服务立即停止使用",
+		Validate: boolValue(), Apply: applyField(func(c *config.Config) *bool { return &c.PersonalProvidersEnabled }, toBool)},
+	{Namespace: "personal_provider", Key: "max_per_user", ValueType: "int", Default: strconv.Itoa(config.DefaultPersonalProvidersMaxPerUser), Description: "每个用户最多可添加的模型服务数",
+		Validate: intRange(1, config.MaxPersonalProvidersMaxPerUser), Apply: applyField(func(c *config.Config) *int { return &c.PersonalProvidersMaxPerUser }, toInt)},
+	{Namespace: "personal_provider", Key: "blocked_hosts", ValueType: "string", Default: "", Description: "域名黑名单，逗号或换行分隔；精确匹配域名，*.example.com 匹配其子域名。内网、回环与云元数据地址始终禁止，无需在此配置",
+		Validate: validateHostList, Apply: applyField(func(c *config.Config) *string { return &c.PersonalProvidersBlockedHosts }, trimmedText)},
+
+	// 桌面端下载入口配置：仅影响网页端用户菜单入口，桌面端内始终不展示。
+	{Namespace: "desktop", Key: "download_enabled", ValueType: "bool", Default: "true", Description: "是否在网页端用户菜单展示「下载桌面端」入口",
+		Validate: boolValue(), Apply: applyField(func(c *config.Config) *bool { return &c.DesktopDownloadEnabled }, toBool)},
+	{Namespace: "desktop", Key: "download_url", ValueType: "string", Default: config.DefaultDesktopDownloadURL, Description: "桌面端下载页地址，须为不含凭据的 http(s) 绝对地址",
+		Validate: validateDesktopDownloadURL, Apply: applyField(func(c *config.Config) *string { return &c.DesktopDownloadURL }, trimmedText)},
+
 	// 存储配置
 	{Namespace: "storage", Key: "user_storage_quota_bytes", ValueType: "int", Default: "104857600", Description: "用户总存储配额（管理页面按 MB 输入，内部以字节保存），0表示不限制",
 		Validate: int64Min(0), Apply: applyField(func(c *config.Config) *int64 { return &c.UserStorageQuotaBytes }, toInt64)},
@@ -253,7 +268,7 @@ var settingSpecs = []settingSpec{
 	{Namespace: "extract", Key: "aliyun_ocr_timeout_seconds", ValueType: "int", Default: "60", Description: "阿里云 OCR 请求超时(秒)，默认 60s",
 		Validate: intRange(1, 600), Apply: applyField(func(c *config.Config) *int { return &c.ExtractAliyunOCRTimeoutSeconds }, toInt)},
 	{Namespace: "extract", Key: "mineru_source", ValueType: "string", Default: "cloud", Description: "MinerU 服务类型(cloud/self_hosted)",
-		Validate: oneOf(extractport.MinerUSourceCloud, extractport.MinerUSourceSelfHosted), Apply: applyField(func(c *config.Config) *string { return &c.ExtractMinerUSource }, rawText)},
+		Validate: oneOf(extractionport.MinerUSourceCloud, extractionport.MinerUSourceSelfHosted), Apply: applyField(func(c *config.Config) *string { return &c.ExtractMinerUSource }, rawText)},
 	{Namespace: "extract", Key: "mineru_base_url", ValueType: "string", Default: "https://mineru.net/api/v4", Description: "MinerU 服务地址，默认 https://mineru.net/api/v4",
 		Validate: optionalHTTPURL(), Apply: applyField(func(c *config.Config) *string { return &c.ExtractMinerUBaseURL }, rawText)},
 	{Namespace: "extract", Key: "mineru_file_types", ValueType: "string", Default: "pdf,word,presentation", Description: "MinerU 处理的文件类型，逗号分隔：pdf,word,presentation,excel",
@@ -286,6 +301,8 @@ var settingSpecs = []settingSpec{
 		Validate: boolValue(), Apply: applyField(func(c *config.Config) *bool { return &c.EmbeddingEnabled }, toBool)},
 	{Namespace: "file", Key: "embedding_host", ValueType: "string", Default: "", Description: "Embedding HTTP 服务地址，本地或远程均可",
 		Validate: optionalTrustedHTTPURL(), Apply: applyField(func(c *config.Config) *string { return &c.EmbeddingHost }, rawText)},
+	{Namespace: "file", Key: "embedding_protocol", ValueType: "string", Default: config.EmbeddingProtocolOpenAI, Description: "Embedding 请求协议：openai=OpenAI 兼容文本接口；gemini / voyage / jina 支持图片输入",
+		Validate: oneOf(config.EmbeddingProtocolOpenAI, config.EmbeddingProtocolGemini, config.EmbeddingProtocolVoyage, config.EmbeddingProtocolJina), Apply: applyField(func(c *config.Config) *string { return &c.EmbeddingProtocol }, rawText)},
 	{Namespace: "file", Key: "embedding_key", ValueType: "string", Default: "", Description: "Embedding HTTP 服务鉴权 Key，可留空", Sensitive: true,
 		Apply: applyField(func(c *config.Config) *string { return &c.EmbeddingKey }, rawText)},
 	{Namespace: "file", Key: "embedding_timeout_seconds", ValueType: "int", Default: "60", Description: "Embedding 请求超时时间(秒)",
@@ -352,10 +369,6 @@ var settingSpecs = []settingSpec{
 		Validate: boolValue(), Apply: applyField(func(c *config.Config) *bool { return &c.SemanticContextEnabled }, toBool)},
 	{Namespace: "chat", Key: "process_trace_enabled", ValueType: "bool", Default: "true", Description: "启用聊天页处理轨迹",
 		Validate: boolValue(), Apply: applyField(func(c *config.Config) *bool { return &c.ProcessTraceEnabled }, toBool)},
-	{Namespace: "chat", Key: "process_trace_visible_to_user", ValueType: "bool", Default: "true", Description: "向聊天页展示处理轨迹",
-		Validate: boolValue(), Apply: applyField(func(c *config.Config) *bool { return &c.ProcessTraceVisibleToUser }, toBool)},
-	{Namespace: "chat", Key: "process_trace_store_upstream_think", ValueType: "bool", Default: "true", Description: "持久化模型思考原文",
-		Validate: boolValue(), Apply: applyField(func(c *config.Config) *bool { return &c.ProcessTraceStoreUpstreamThink }, toBool)},
 	{Namespace: "chat", Key: "process_trace_persist_inflight", ValueType: "bool", Default: "true", Description: "流式阶段增量持久化处理轨迹",
 		Validate: boolValue(), Apply: applyField(func(c *config.Config) *bool { return &c.ProcessTracePersistInflight }, toBool)},
 	{Namespace: "chat", Key: "context_artifact_retention_days", ValueType: "int", Default: "90", Description: "上下文证据保留天数，<=0 表示不自动过期",
@@ -417,6 +430,17 @@ func IsValidNamespace(namespace string) bool {
 func IsSensitiveSetting(namespace string, key string) bool {
 	spec, ok := lookupSettingSpec(strings.TrimSpace(namespace), strings.TrimSpace(key))
 	return ok && spec.Sensitive
+}
+
+// SensitiveSettingKeys 返回所有加密存储的配置项，供更换主密钥后的密文轮换使用。
+func SensitiveSettingKeys() []repository.SettingKey {
+	var keys []repository.SettingKey
+	for _, spec := range settingSpecs {
+		if spec.Sensitive {
+			keys = append(keys, repository.SettingKey{Namespace: spec.Namespace, Key: spec.Key})
+		}
+	}
+	return keys
 }
 
 func isSensitiveSetting(namespace string, key string) bool {

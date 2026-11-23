@@ -13,7 +13,7 @@ import (
 	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 )
 
-// ---------- Conversation ----------
+// ---------- 会话 ----------
 
 // ConversationResponse 对外会话响应 DTO。
 type ConversationResponse struct {
@@ -179,7 +179,7 @@ func ToConversationExportResponse(item *appconversation.ConversationExportResult
 	}
 	messages := make([]MessageResponse, 0, len(item.Messages))
 	for _, message := range item.Messages {
-		// User-owned archive: keep recoverable user content; assistant blocked body stays empty from DB.
+		// 用户自有归档：保留可恢复的用户内容；被拦截的助手正文在 DB 中本就为空。
 		messages = append(messages, toMessageResponseWithRunAndFallback(message, runModels[strings.TrimSpace(message.RunID)], fallbackModel))
 	}
 
@@ -200,7 +200,7 @@ func ToConversationExportResponse(item *appconversation.ConversationExportResult
 	}
 }
 
-// ToAdminConversationExportResponse redacts blocked originals for administrator bulk export.
+// ToAdminConversationExportResponse 为管理员批量导出脱敏被拦截的原文。
 func ToAdminConversationExportResponse(item *appconversation.ConversationExportResult) ConversationExportResponse {
 	resp := ToConversationExportResponse(item)
 	if item == nil {
@@ -309,20 +309,22 @@ type RevokeConversationSharesResponse struct {
 
 // PublicSharedMessageResponse 公开分享消息响应 DTO。
 type PublicSharedMessageResponse struct {
-	PublicID          string                       `json:"publicID"`
-	ParentPublicID    string                       `json:"parentPublicID"`
-	SourcePublicID    string                       `json:"sourcePublicID"`
-	RunID             string                       `json:"runID"`
-	Role              string                       `json:"role"`
-	ContentType       string                       `json:"contentType"`
-	Content           string                       `json:"content"`
-	BranchReason      string                       `json:"branchReason"`
-	TokenUsage        int64                        `json:"tokenUsage"`
-	InputTokens       int64                        `json:"inputTokens"`
-	OutputTokens      int64                        `json:"outputTokens"`
-	CacheReadTokens   int64                        `json:"cacheReadTokens"`
-	CacheWriteTokens  int64                        `json:"cacheWriteTokens"`
-	ReasoningTokens   int64                        `json:"reasoningTokens"`
+	PublicID         string `json:"publicID"`
+	ParentPublicID   string `json:"parentPublicID"`
+	SourcePublicID   string `json:"sourcePublicID"`
+	RunID            string `json:"runID"`
+	Role             string `json:"role"`
+	ContentType      string `json:"contentType"`
+	Content          string `json:"content"`
+	BranchReason     string `json:"branchReason"`
+	TokenUsage       int64  `json:"tokenUsage"`
+	InputTokens      int64  `json:"inputTokens"`
+	OutputTokens     int64  `json:"outputTokens"`
+	CacheReadTokens  int64  `json:"cacheReadTokens"`
+	CacheWriteTokens int64  `json:"cacheWriteTokens"`
+	ReasoningTokens  int64  `json:"reasoningTokens"`
+	// ReasoningEffort 是生成该消息时生效的规范推理档位；模型无推理能力时为 null。
+	ReasoningEffort   *string                      `json:"reasoningEffort" enums:"none,minimal,low,medium,high,xhigh,max,ultra" extensions:"x-nullable,!x-omitempty"`
 	LatencyMS         int64                        `json:"latencyMS"`
 	Status            string                       `json:"status"`
 	ErrorCode         string                       `json:"errorCode"`
@@ -362,6 +364,7 @@ func toPublicSharedMessageResponse(
 		CacheReadTokens:   item.CacheReadTokens,
 		CacheWriteTokens:  item.CacheWriteTokens,
 		ReasoningTokens:   item.ReasoningTokens,
+		ReasoningEffort:   item.ReasoningEffort,
 		LatencyMS:         item.LatencyMS,
 		Status:            item.Status,
 		ErrorCode:         item.ErrorCode,
@@ -438,7 +441,7 @@ func toConversationDeleteResponse(result *appconversation.DeleteConversationResu
 	return response
 }
 
-// ---------- File Object ----------
+// ---------- 文件对象 ----------
 
 // FileObjectResponse 文件对象响应 DTO。
 type FileObjectResponse struct {
@@ -497,7 +500,7 @@ func toFileObjectResponse(item *model.FileObject, capability appembedding.FileVe
 	}
 }
 
-// ---------- Storage Quota ----------
+// ---------- 存储配额 ----------
 
 // StorageQuotaResponse 存储配额响应 DTO。
 type StorageQuotaResponse struct {
@@ -522,7 +525,7 @@ func toStorageQuotaResponse(q model.StorageQuota) StorageQuotaResponse {
 	}
 }
 
-// ---------- File Upload / Delete ----------
+// ---------- 文件上传 / 删除 ----------
 
 // FileUploadResponse 上传文件响应 DTO。
 type FileUploadResponse struct {
@@ -553,7 +556,7 @@ func toDeleteFileResponse(r *appupload.DeleteFileResult) DeleteFileResponse {
 	}
 }
 
-// ---------- Message ----------
+// ---------- 消息 ----------
 
 // MessageTraceBlockResponse 消息轨迹块响应 DTO。
 type MessageTraceBlockResponse struct {
@@ -630,6 +633,13 @@ type MessageProcessTraceResponse struct {
 	UpstreamThink *MessageTraceBlockResponse  `json:"upstreamThink,omitempty"`
 	PromptTrace   *MessagePromptTraceResponse `json:"promptTrace,omitempty"`
 	Events        []MessageTraceEventResponse `json:"events,omitempty"`
+	// DetailOmitted 为 true 时是消息列表的摘要：思考只保留开头、工具调用不含完整输入输出，完整轨迹通过 GET /messages/{id}/trace 获取。
+	DetailOmitted bool `json:"detailOmitted,omitempty"`
+}
+
+// MessageProcessTraceDetailResponse 单条消息的完整处理轨迹；消息没有轨迹时 processTrace 为 null。
+type MessageProcessTraceDetailResponse struct {
+	ProcessTrace *MessageProcessTraceResponse `json:"processTrace" extensions:"x-nullable,!x-omitempty"`
 }
 
 type MessageBillingCostResponse struct {
@@ -652,6 +662,7 @@ func toMessageProcessTraceResponse(trace *model.MessageProcessTrace) *MessagePro
 		UpstreamThink: toTraceBlockResponse(trace.UpstreamThink),
 		PromptTrace:   toPromptTraceResponse(trace.PromptTrace),
 		Events:        toTraceEventResponses(trace.Events),
+		DetailOmitted: trace.DetailOmitted,
 	}
 }
 
@@ -827,57 +838,66 @@ func toPublicTraceEventResponses(events []model.MessageTraceEvent) []MessageTrac
 	return result
 }
 
-// MessageResponse 消息响应 DTO。
+// MessageKnowledgeSourceResponse 消息引用的知识库来源 DTO。
 type MessageKnowledgeSourceResponse struct {
 	FileName   string  `json:"fileName"`
 	FileID     string  `json:"fileID"`
 	ChunkIndex int     `json:"chunkIndex"`
 	Score      float32 `json:"score"`
 	Preview    string  `json:"preview"`
+	Modality   string  `json:"modality,omitempty"`
 }
 
+// MessageResponse 消息响应 DTO。
 type MessageResponse struct {
-	ID                uint                             `json:"id"`
-	ConversationID    uint                             `json:"conversationID"`
-	UserID            uint                             `json:"userID"`
-	PublicID          string                           `json:"publicID"`
-	ParentMessageID   *uint                            `json:"parentMessageID" extensions:"x-nullable,!x-omitempty"`
-	RunID             string                           `json:"runID"`
-	Role              string                           `json:"role"`
-	ContentType       string                           `json:"contentType"`
-	Content           string                           `json:"content"`
-	BranchReason      string                           `json:"branchReason"`
-	SourceMessageID   *uint                            `json:"sourceMessageID" extensions:"x-nullable,!x-omitempty"`
-	TokenUsage        int64                            `json:"tokenUsage"`
-	InputTokens       int64                            `json:"inputTokens"`
-	OutputTokens      int64                            `json:"outputTokens"`
-	CacheReadTokens   int64                            `json:"cacheReadTokens"`
-	CacheWriteTokens  int64                            `json:"cacheWriteTokens"`
-	ReasoningTokens   int64                            `json:"reasoningTokens"`
-	LatencyMS         int64                            `json:"latencyMS"`
-	Status            string                           `json:"status"`
-	ErrorCode         string                           `json:"errorCode"`
-	ErrorMessage      string                           `json:"errorMessage"`
-	Attachments       string                           `json:"attachments"`
-	PlatformModelName string                           `json:"platformModelName"`
-	UpstreamModelName string                           `json:"upstreamModelName"`
-	ModelVendor       string                           `json:"modelVendor"`
-	ModelIcon         string                           `json:"modelIcon"`
-	ParentPublicID    string                           `json:"parentPublicID"`
-	SourcePublicID    string                           `json:"sourcePublicID"`
-	MyFeedback        string                           `json:"myFeedback"`
-	ThumbsUpCount     int64                            `json:"thumbsUpCount"`
-	ThumbsDownCount   int64                            `json:"thumbsDownCount"`
-	BillingCost       *MessageBillingCostResponse      `json:"billingCost,omitempty"`
-	KnowledgeSources  []MessageKnowledgeSourceResponse `json:"knowledgeSources,omitempty"`
-	ProcessTrace      *MessageProcessTraceResponse     `json:"processTrace,omitempty"`
-	Moderation        *MessageModerationResponse       `json:"moderation,omitempty"`
-	EditedAt          *time.Time                       `json:"editedAt" extensions:"x-nullable,!x-omitempty"`
-	CreatedAt         time.Time                        `json:"createdAt"`
-	UpdatedAt         time.Time                        `json:"updatedAt"`
+	ID               uint   `json:"id"`
+	ConversationID   uint   `json:"conversationID"`
+	UserID           uint   `json:"userID"`
+	PublicID         string `json:"publicID"`
+	ParentMessageID  *uint  `json:"parentMessageID" extensions:"x-nullable,!x-omitempty"`
+	RunID            string `json:"runID"`
+	Role             string `json:"role"`
+	ContentType      string `json:"contentType"`
+	Content          string `json:"content"`
+	BranchReason     string `json:"branchReason"`
+	SourceMessageID  *uint  `json:"sourceMessageID" extensions:"x-nullable,!x-omitempty"`
+	TokenUsage       int64  `json:"tokenUsage"`
+	InputTokens      int64  `json:"inputTokens"`
+	OutputTokens     int64  `json:"outputTokens"`
+	CacheReadTokens  int64  `json:"cacheReadTokens"`
+	CacheWriteTokens int64  `json:"cacheWriteTokens"`
+	ReasoningTokens  int64  `json:"reasoningTokens"`
+	// ReasoningEffort 是生成该消息时生效的规范推理档位；模型无推理能力时为 null。
+	ReasoningEffort *string `json:"reasoningEffort" enums:"none,minimal,low,medium,high,xhigh,max,ultra" extensions:"x-nullable,!x-omitempty"`
+	LatencyMS       int64   `json:"latencyMS"`
+	Status          string  `json:"status"`
+	ErrorCode       string  `json:"errorCode"`
+	ErrorMessage    string  `json:"errorMessage"`
+	// ErrorRequestID 是失败助手消息（status 为 error / interrupted）对应生成请求的 requestId，
+	// 即用户可见的“错误 ID”，管理员凭它检索访问日志；其他消息为空串。
+	ErrorRequestID    string `json:"errorRequestID"`
+	Attachments       string `json:"attachments"`
+	PlatformModelName string `json:"platformModelName"`
+	UpstreamModelName string `json:"upstreamModelName"`
+	ModelVendor       string `json:"modelVendor"`
+	ModelIcon         string `json:"modelIcon"`
+	ParentPublicID    string `json:"parentPublicID"`
+	SourcePublicID    string `json:"sourcePublicID"`
+	MyFeedback        string `json:"myFeedback"`
+	ThumbsUpCount     int64  `json:"thumbsUpCount"`
+	ThumbsDownCount   int64  `json:"thumbsDownCount"`
+	// UIState 是交互式组件块已保存的状态快照，键为块 id、值为该块的差量状态；没有状态时省略。
+	UIState          map[string]json.RawMessage       `json:"uiState,omitempty" swaggertype:"object"`
+	BillingCost      *MessageBillingCostResponse      `json:"billingCost,omitempty"`
+	KnowledgeSources []MessageKnowledgeSourceResponse `json:"knowledgeSources,omitempty"`
+	ProcessTrace     *MessageProcessTraceResponse     `json:"processTrace,omitempty"`
+	Moderation       *MessageModerationResponse       `json:"moderation,omitempty"`
+	EditedAt         *time.Time                       `json:"editedAt" extensions:"x-nullable,!x-omitempty"`
+	CreatedAt        time.Time                        `json:"createdAt"`
+	UpdatedAt        time.Time                        `json:"updatedAt"`
 }
 
-// MessageModerationResponse exposes soft-moderation state to clients.
+// MessageModerationResponse 向客户端暴露软审核状态。
 type MessageModerationResponse struct {
 	State      string   `json:"state,omitempty"`
 	Direction  string   `json:"direction,omitempty"`
@@ -1078,16 +1098,18 @@ func toMessageResponseWithRunAndFallback(m model.Message, run model.Run, fallbac
 	if platformModelName == "" {
 		platformModelName = strings.TrimSpace(fallbackModel)
 	}
-	// Server-side redaction for blocked assistant content (user-facing keeps blocked user text).
+	// 服务端脱敏被拦截的助手内容（面向用户时保留被拦截的用户文本）。
 	content := m.Content
 	attachments := m.Attachments
 	knowledgeSources := m.KnowledgeSources
 	processTrace := m.ProcessTrace
+	uiState := m.UIState
 	if strings.EqualFold(strings.TrimSpace(m.Status), "blocked") && m.Role == "assistant" {
 		content = ""
 		attachments = "[]"
 		knowledgeSources = nil
 		processTrace = nil
+		uiState = nil
 	}
 	return MessageResponse{
 		ID:                m.ID,
@@ -1107,10 +1129,12 @@ func toMessageResponseWithRunAndFallback(m model.Message, run model.Run, fallbac
 		CacheReadTokens:   m.CacheReadTokens,
 		CacheWriteTokens:  m.CacheWriteTokens,
 		ReasoningTokens:   m.ReasoningTokens,
+		ReasoningEffort:   m.ReasoningEffort,
 		LatencyMS:         m.LatencyMS,
 		Status:            m.Status,
 		ErrorCode:         m.ErrorCode,
 		ErrorMessage:      m.ErrorMessage,
+		ErrorRequestID:    messageErrorRequestID(m, run.RequestID),
 		Attachments:       attachments,
 		PlatformModelName: platformModelName,
 		UpstreamModelName: strings.TrimSpace(run.UpstreamModelName),
@@ -1119,6 +1143,7 @@ func toMessageResponseWithRunAndFallback(m model.Message, run model.Run, fallbac
 		ParentPublicID:    m.ParentPublicID,
 		SourcePublicID:    m.SourcePublicID,
 		MyFeedback:        m.MyFeedback,
+		UIState:           appconversation.MergedMessageUIState(uiState),
 		ThumbsUpCount:     m.ThumbsUpCount,
 		ThumbsDownCount:   m.ThumbsDownCount,
 		BillingCost:       toMessageBillingCostResponse(m),
@@ -1128,6 +1153,20 @@ func toMessageResponseWithRunAndFallback(m model.Message, run model.Run, fallbac
 		EditedAt:          m.EditedAt,
 		CreatedAt:         m.CreatedAt,
 		UpdatedAt:         m.UpdatedAt,
+	}
+}
+
+// messageErrorRequestID 只为失败的助手消息返回其生成请求的 requestId。
+// 成功、取消（用户主动）、拦截（有独立审核事件编号）的消息不需要排障凭证，返回空串。
+func messageErrorRequestID(m model.Message, requestID string) string {
+	if m.Role != "assistant" {
+		return ""
+	}
+	switch strings.ToLower(strings.TrimSpace(m.Status)) {
+	case "error", "interrupted":
+		return strings.TrimSpace(requestID)
+	default:
+		return ""
 	}
 }
 
@@ -1143,6 +1182,7 @@ func toMessageKnowledgeSourceResponses(items []model.MessageKnowledgeSource) []M
 			ChunkIndex: item.ChunkIndex,
 			Score:      item.Score,
 			Preview:    item.Preview,
+			Modality:   item.Modality,
 		})
 	}
 	return result
@@ -1196,7 +1236,7 @@ func parseStringJSONArray(raw string) []string {
 	return items
 }
 
-// toMessageResponseWithRunAndFallbackAdmin redacts blocked originals for admin logs/export.
+// toMessageResponseWithRunAndFallbackAdmin 为管理端日志/导出脱敏被拦截的原文。
 func toMessageResponseWithRunAndFallbackAdmin(m model.Message, run model.Run, fallbackModel string) MessageResponse {
 	resp := toMessageResponseWithRunAndFallback(m, run, fallbackModel)
 	if !strings.EqualFold(strings.TrimSpace(m.Status), "blocked") {
@@ -1222,7 +1262,7 @@ func toMessageResponseWithRunAndFallbackAdmin(m model.Message, run model.Run, fa
 	return resp
 }
 
-// ---------- Send Message ----------
+// ---------- 发送消息 ----------
 
 // SendMessageResponse 发送消息响应 DTO。
 type SendMessageResponse struct {
@@ -1247,8 +1287,10 @@ type ActiveMessageGenerationEventResponse struct {
 	ConversationPublicID string                            `json:"conversationPublicID,omitempty"`
 }
 
-func toSendMessageResponse(r *appconversation.SendMessageResult) SendMessageResponse {
+// toSendMessageResponse 组装本次发送的结果；requestID 是当前请求的 ID，本次生成的 run 正是由它创建。
+func toSendMessageResponse(r *appconversation.SendMessageResult, requestID string) SendMessageResponse {
 	run := model.Run{
+		RequestID:         requestID,
 		PlatformModelName: r.PlatformModelName,
 		UpstreamModelName: r.UpstreamModelName,
 	}
@@ -1259,7 +1301,7 @@ func toSendMessageResponse(r *appconversation.SendMessageResult) SendMessageResp
 	}
 }
 
-// ---------- Message Feedback ----------
+// ---------- 消息反馈 ----------
 
 // MessageFeedbackResponse 消息反馈响应 DTO。
 type MessageFeedbackResponse struct {
@@ -1268,6 +1310,13 @@ type MessageFeedbackResponse struct {
 	MyFeedback      string `json:"myFeedback"`
 	ThumbsUpCount   int64  `json:"thumbsUpCount"`
 	ThumbsDownCount int64  `json:"thumbsDownCount"`
+}
+
+// MessageUIStateResponse 消息组件状态写入结果。
+type MessageUIStateResponse struct {
+	MessageID       uint                       `json:"messageID"`
+	MessagePublicID string                     `json:"messagePublicID"`
+	UIState         map[string]json.RawMessage `json:"uiState" swaggertype:"object"`
 }
 
 func toMessageFeedbackResponse(r *appconversation.MessageFeedbackResult) MessageFeedbackResponse {
@@ -1280,32 +1329,34 @@ func toMessageFeedbackResponse(r *appconversation.MessageFeedbackResult) Message
 	}
 }
 
-// ---------- Conversation Run ----------
+// ---------- 会话 Run ----------
 
 // RunResponse 对话运行日志响应 DTO。
 type RunResponse struct {
-	ID                  uint       `json:"id"`
-	RunID               string     `json:"runID"`
-	RequestID           string     `json:"requestID"`
-	UserID              uint       `json:"userID"`
-	ConversationID      uint       `json:"conversationID"`
-	TaskType            string     `json:"taskType"`
-	Endpoint            string     `json:"endpoint"`
-	Provider            string     `json:"provider"`
-	ProviderProtocol    string     `json:"providerProtocol"`
-	UpstreamID          uint       `json:"upstreamID"`
-	UpstreamModelID     uint       `json:"upstreamModelID"`
-	RequestedModelName  string     `json:"requestedModelName"`
-	PlatformModelName   string     `json:"platformModelName"`
-	RoutedBindingCode   string     `json:"routedBindingCode"`
-	ModelVendor         string     `json:"modelVendor"`
-	ModelIcon           string     `json:"modelIcon"`
-	UpstreamModelName   string     `json:"upstreamModelName"`
-	InputTokens         int64      `json:"inputTokens"`
-	OutputTokens        int64      `json:"outputTokens"`
-	CacheReadTokens     int64      `json:"cacheReadTokens"`
-	CacheWriteTokens    int64      `json:"cacheWriteTokens"`
-	ReasoningTokens     int64      `json:"reasoningTokens"`
+	ID                 uint   `json:"id"`
+	RunID              string `json:"runID"`
+	RequestID          string `json:"requestID"`
+	UserID             uint   `json:"userID"`
+	ConversationID     uint   `json:"conversationID"`
+	TaskType           string `json:"taskType"`
+	Endpoint           string `json:"endpoint"`
+	Provider           string `json:"provider"`
+	ProviderProtocol   string `json:"providerProtocol"`
+	UpstreamID         uint   `json:"upstreamID"`
+	UpstreamModelID    uint   `json:"upstreamModelID"`
+	RequestedModelName string `json:"requestedModelName"`
+	PlatformModelName  string `json:"platformModelName"`
+	RoutedBindingCode  string `json:"routedBindingCode"`
+	ModelVendor        string `json:"modelVendor"`
+	ModelIcon          string `json:"modelIcon"`
+	UpstreamModelName  string `json:"upstreamModelName"`
+	InputTokens        int64  `json:"inputTokens"`
+	OutputTokens       int64  `json:"outputTokens"`
+	CacheReadTokens    int64  `json:"cacheReadTokens"`
+	CacheWriteTokens   int64  `json:"cacheWriteTokens"`
+	ReasoningTokens    int64  `json:"reasoningTokens"`
+	// ReasoningEffort 是本次运行生效的规范推理档位；模型无推理能力时为 null。
+	ReasoningEffort     *string    `json:"reasoningEffort" enums:"none,minimal,low,medium,high,xhigh,max,ultra" extensions:"x-nullable,!x-omitempty"`
 	ToolCallsCount      int        `json:"toolCallsCount"`
 	FirstTokenLatencyMS int64      `json:"firstTokenLatencyMS"`
 	TotalLatencyMS      int64      `json:"totalLatencyMS"`
@@ -1342,6 +1393,7 @@ func toRunResponse(r model.Run) RunResponse {
 		CacheReadTokens:     r.CacheReadTokens,
 		CacheWriteTokens:    r.CacheWriteTokens,
 		ReasoningTokens:     r.ReasoningTokens,
+		ReasoningEffort:     r.ReasoningEffort,
 		ToolCallsCount:      r.ToolCallsCount,
 		FirstTokenLatencyMS: r.FirstTokenLatencyMS,
 		TotalLatencyMS:      r.TotalLatencyMS,
@@ -1361,7 +1413,7 @@ type ConversationRunStatusResponse struct {
 	Status string `json:"status"`
 }
 
-// ---------- File Processing Status ----------
+// ---------- 文件处理状态 ----------
 
 // FileEmbeddingSkipResponse 表示未提交向量化的文件及原因。
 type FileEmbeddingSkipResponse struct {
@@ -1460,7 +1512,7 @@ func toFileExtractResponse(d *appconversation.FileExtractResult) FileExtractResp
 	}
 }
 
-// ---------- Chat File Policy ----------
+// ---------- 聊天文件策略 ----------
 
 // ChatFilePolicyResponse 聊天文件策略响应 DTO。
 type ChatFilePolicyResponse struct {
@@ -1529,6 +1581,24 @@ type FileUpdateResponseDoc struct {
 type FileEmbeddingSubmissionResponseDoc struct {
 	ErrorMsg string                          `json:"errorMsg"`
 	Data     FileEmbeddingSubmissionResponse `json:"data"`
+}
+
+// FileProcessingStatusResponseDoc 单文件处理状态响应文档。
+type FileProcessingStatusResponseDoc struct {
+	ErrorMsg string                       `json:"errorMsg"`
+	Data     FileProcessingStatusResponse `json:"data"`
+}
+
+// FileExtractResponseDoc 文件提取文本响应文档。
+type FileExtractResponseDoc struct {
+	ErrorMsg string              `json:"errorMsg"`
+	Data     FileExtractResponse `json:"data"`
+}
+
+// ChatFilePolicyResponseDoc 聊天文件策略响应文档。
+type ChatFilePolicyResponseDoc struct {
+	ErrorMsg string                 `json:"errorMsg"`
+	Data     ChatFilePolicyResponse `json:"data"`
 }
 
 // ConversationCreateResponseDoc 创建会话响应文档。
@@ -1613,6 +1683,18 @@ type MessageResponseDoc struct {
 type MessageFeedbackResponseDoc struct {
 	ErrorMsg string                  `json:"errorMsg"`
 	Data     MessageFeedbackResponse `json:"data"`
+}
+
+// MessageProcessTraceDetailResponseDoc 消息处理轨迹响应文档。
+type MessageProcessTraceDetailResponseDoc struct {
+	ErrorMsg string                            `json:"errorMsg"`
+	Data     MessageProcessTraceDetailResponse `json:"data"`
+}
+
+// MessageUIStateResponseDoc 保存消息组件状态响应文档。
+type MessageUIStateResponseDoc struct {
+	ErrorMsg string                 `json:"errorMsg"`
+	Data     MessageUIStateResponse `json:"data"`
 }
 
 // ConversationRunListResponseDoc 运行日志分页响应文档。

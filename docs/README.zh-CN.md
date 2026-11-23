@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="../frontend/public/logo-white.svg" />
-    <img src="../frontend/public/logo-black.svg" alt="FireCortex" width="220" />
+    <source media="(prefers-color-scheme: dark)" srcset="../apps/web/public/logo-white.svg" />
+    <img src="../apps/web/public/logo-black.svg" alt="FireCortex" width="220" />
   </picture>
 </p>
 
@@ -29,7 +29,7 @@ FireCortex 是一个可自托管的 AI 工作台，核心理念只有一个：�
 - **自适应工具注入**：只向当前请求暴露真正需要的工具、MCP 服务、文件与记忆，让提示词保持精简、工具选择更准确。
 - **Agent Runtime**：规划、调用工具、观察结果并多步迭代直至任务完成，每一步都可追溯。
 
-FireCortex 基于 [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat) v0.4.3 二次开发，继承其生产级基础能力：多上游模型接入、文件与 RAG、MCP 工具、计费、身份、审计以及轻量的单运行时部署。 <!-- rebrand:keep -->
+FireCortex 基于 [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat) v0.4.6 二次开发，继承其生产级基础能力：多上游模型接入、文件与 RAG、MCP 工具、计费、身份、审计以及轻量的单运行时部署。 <!-- rebrand:keep -->
 
 ## 路线图
 
@@ -131,7 +131,7 @@ flowchart TB
 │   │   ├── webui/              # 嵌入的 Web 界面（go:embed）
 │   │   └── shared/             # 响应、安全等横切代码
 │   └── docs/                  # 生成的 Swagger 文件
-├── frontend/                 # Next.js App Router 与静态导出
+├── apps/web/                 # Next.js App Router 与静态导出
 │   ├── app/                   # 路由入口和布局
 │   ├── features/              # 按业务域组织的 UI 与客户端流程
 │   ├── entities/              # 可复用业务实体
@@ -139,14 +139,14 @@ flowchart TB
 │   ├── components/            # 基础 UI 与视觉组件
 │   └── public/                # 静态资源
 ├── packages/api-contract/     # 生成的 TypeScript API 契约
-├── docker/                    # 可选文档提取与 OCR 服务
+├── deploy/services/                    # 可选文档提取与 OCR 服务
 ├── deploy/                    # systemd 单元示例
 ├── docs/                      # 项目指南
 ├── scripts/                   # 二进制构建、品牌替换和上游同步脚本
 └── config*.example.json       # 部署方案配置覆盖片段
 ```
 
-`frontend/` 和 `backend/` 是由 pnpm 与 Turborepo 管理的独立工作区。`packages/api-contract/` 通过生成的 Swagger 类型连接两者；修改 HTTP 契约时先更新 Go 传输层，再重新生成共享包。
+`apps/web/` 和 `backend/` 是由 pnpm 与 Turborepo 管理的独立工作区。`packages/api-contract/` 通过生成的 Swagger 类型连接两者；修改 HTTP 契约时先更新 Go 传输层，再重新生成共享包。
 
 ## 开发前置条件
 
@@ -178,7 +178,7 @@ cp config.example.json config.json
 
 ```bash
 pnpm install
-cp frontend/.env.example frontend/.env.local
+cp apps/web/.env.example apps/web/.env.local
 ```
 
 3. 同时启动前端和后端：
@@ -189,7 +189,7 @@ pnpm dev
 
 只启动单个工作区时，使用 `pnpm dev:web` 或 `pnpm dev:api`。
 
-前端请求后端使用 `NEXT_PUBLIC_API_BASE_URL`。本地开发时确认 `frontend/.env.local` 中包含：
+前端请求后端使用 `NEXT_PUBLIC_API_BASE_URL`。本地开发时确认 `apps/web/.env.local` 中包含：
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8080
@@ -225,7 +225,7 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8080
 | `pnpm api:generate` | 重新生成 Swagger 文件和 TypeScript API 类型。 |
 | `pnpm api:check` | 检查生成的 API 文件是否与源码同步。 |
 
-前端以静态资源形式导出，`pnpm build` 会把浏览器产物写入 `frontend/out`。`pnpm build:binary` 会把该产物嵌入 Go 二进制，详见[从源码构建](#从源码构建)。
+前端以静态资源形式导出，`pnpm build` 会把浏览器产物写入 `apps/web/out`。`pnpm build:binary` 会把该产物嵌入 Go 二进制，详见[从源码构建](#从源码构建)。
 
 ### 二进制部署
 
@@ -337,13 +337,13 @@ sudo systemctl enable --now firecortex
 
 #### 可选安装服务
 
-这些文档提取和 OCR 服务是可选的独立旁路服务，FireCortex 通过 URL 调用，只需启动后台中启用的服务。`docker/` 下的 compose 文件会接入外部 Docker 网络 `firecortex-network`，启动前先创建一次：
+这些文档提取和 OCR 服务是可选的独立旁路服务，FireCortex 通过 URL 调用，只需启动后台中启用的服务。`deploy/services/` 下的 compose 文件会接入外部 Docker 网络 `firecortex-network`，启动前先创建一次：
 
 ```bash
 docker network create firecortex-network
-docker compose -f docker/tika/docker-compose.yml up -d
-docker compose -f docker/tesseract/docker-compose.yml up -d --build
-docker compose -f docker/docling/docker-compose.yml up -d --build
+docker compose -f deploy/services/tika/docker-compose.yml up -d
+docker compose -f deploy/services/tesseract/docker-compose.yml up -d --build
+docker compose -f deploy/services/docling/docker-compose.yml up -d --build
 ```
 
 默认本地地址：
@@ -355,10 +355,10 @@ docker compose -f docker/docling/docker-compose.yml up -d --build
 | Docling | `http://127.0.0.1:8005/ocr` | 文档/OCR 提取 |
 | RapidOCR | `http://127.0.0.1:8002/ocr` | OCR 服务 |
 
-`docker/rapidocr` 提供 Dockerfile 和服务入口，但没有 compose 文件。请在仓库根目录构建并运行：
+`deploy/services/rapidocr` 提供 Dockerfile 和服务入口，但没有 compose 文件。请在仓库根目录构建并运行：
 
 ```bash
-docker build -t firecortex-rapidocr:latest -f docker/rapidocr/Dockerfile .
+docker build -t firecortex-rapidocr:latest -f deploy/services/rapidocr/Dockerfile .
 docker run -d --name firecortex-rapidocr --network firecortex-network \
   -p 127.0.0.1:8002:8002 --restart unless-stopped firecortex-rapidocr:latest
 ```
@@ -413,9 +413,9 @@ pnpm build:binary
 
 脚本会构建 Next.js 静态导出，将其放入 `backend/internal/webui/dist`，再启用 CGO 执行 `go build`。产物为 `dist/firecortex`，用法与发布版二进制完全相同。由于依赖 CGO，请在目标操作系统和架构上构建。
 
-嵌入的界面会以同源方式请求 API。构建用于部署的二进制时，请不要设置 `NEXT_PUBLIC_API_BASE_URL`（包括 `frontend/.env.local` 中的设置）。
+嵌入的界面会以同源方式请求 API。构建用于部署的二进制时，请不要设置 `NEXT_PUBLIC_API_BASE_URL`（包括 `apps/web/.env.local` 中的设置）。
 
-`server.frontend_dist_dir`（`FRONTEND_DIST_DIR`）默认为空，表示使用嵌入的界面。设置为目录（例如 `./frontend/out`）时会改为从磁盘提供界面，仅用于开发或调试。
+`server.frontend_dist_dir`（`FRONTEND_DIST_DIR`）默认为空，表示使用嵌入的界面。设置为目录（例如 `./apps/web/out`）时会改为从磁盘提供界面，仅用于开发或调试。
 
 ### 分离部署
 
@@ -435,7 +435,7 @@ pnpm build:binary
    NEXT_PUBLIC_API_BASE_URL=https://api.example.com pnpm --filter @firecortex/web build
    ```
 
-   静态产物在 `frontend/out`，可由 Nginx、CDN、对象存储或任意静态服务托管。后端二进制仍会在 API 地址上提供自身嵌入的界面，不影响单独托管的这份前端。
+   静态产物在 `apps/web/out`，可由 Nginx、CDN、对象存储或任意静态服务托管。后端二进制仍会在 API 地址上提供自身嵌入的界面，不影响单独托管的这份前端。
 
 3. 配置 CDN 规则。
 
@@ -446,7 +446,7 @@ pnpm build:binary
    | `/`、`/*.html`、`/login*`、`/auth*`、`/chat*`、`/recent*`、`/files*`、`/knowledges*`、`/skills-prompt*`、`/setting*`、`/admin*`、`/share*`、`/preview*` | 不做长期缓存，建议使用 `no-cache` 或较短 TTL。 |
    | `/api/*`、`/healthz`、`/readyz`、`/swagger/*` | 绕过 CDN 缓存，并完整转发请求头、方法、查询参数和请求体。 |
 
-   如果 CDN 从对象存储托管 `frontend/out`，需要开启路由回退，让无扩展名地址能命中导出的 `index.html`，例如 `/chat` -> `/chat/index.html`。
+   如果 CDN 从对象存储托管 `apps/web/out`，需要开启路由回退，让无扩展名地址能命中导出的 `index.html`，例如 `/chat` -> `/chat/index.html`。
 
 ### 启动后检查与首次登录
 
@@ -495,7 +495,7 @@ journalctl -u firecortex -e
 
 | 所属域 | 环境变量 | 说明 |
 | --- | --- | --- |
-| 前端构建 | `NEXT_PUBLIC_API_BASE_URL` | 浏览器请求后端 API 的地址；本地写入 `frontend/.env.local`，分离部署在构建时传入。 |
+| 前端构建 | `NEXT_PUBLIC_API_BASE_URL` | 浏览器请求后端 API 的地址；本地写入 `apps/web/.env.local`，分离部署在构建时传入。 |
 | 配置文件 | `CONFIG_FILE` | 可选配置文件路径。 |
 | 应用 | `APP_NAME` | 应用名称。 |
 | 应用 | `APP_ENV` | 运行环境，支持 `dev`/`development` 和 `prod`/`production`；未配置时默认 `prod`。 |
@@ -604,7 +604,7 @@ FireCortex 暂未提供独立的使用指南。继承自上游的功能可参考
 - 自定义品牌：[docs/BRANDING.md](./BRANDING.md)
 - 后端说明：[backend/README.md](../backend/README.md)
 - 后端规范：[backend/docs/README.md](../backend/docs/README.md)
-- 前端说明：[frontend/README.md](../frontend/README.md)
+- 前端说明：[apps/web/README.md](../apps/web/README.md)
 - API 契约包：[packages/api-contract/README.md](../packages/api-contract/README.md)
 - 贡献指南：[CONTRIBUTING.md](../.github/CONTRIBUTING.md)
 - 安全策略：[SECURITY.md](../.github/SECURITY.md)
