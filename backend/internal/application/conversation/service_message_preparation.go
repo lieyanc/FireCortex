@@ -217,6 +217,7 @@ func (s *Service) persistRejectedMessageSend(
 		TaskType:           "chat",
 		Provider:           strings.TrimSpace(conversation.Provider),
 		RequestedModelName: requestedModelName,
+		AutoRouteJSON:      EncodeAutoRouteDecision(input.AutoRoute),
 		Status:             "running",
 		StartedAt:          time.Now(),
 	}

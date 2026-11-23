@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	appadmin "github.com/lieyanc/FireCortex/backend/internal/application/admin"
+	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
 	appembedding "github.com/lieyanc/FireCortex/backend/internal/application/embedding"
 	appruntime "github.com/lieyanc/FireCortex/backend/internal/application/runtime"
 	appsettings "github.com/lieyanc/FireCortex/backend/internal/application/settings"
@@ -35,6 +36,10 @@ type userLabelResolver interface {
 	ResolveUserLabels(ctx context.Context, userIDs []uint) map[uint]appadmin.UserLabel
 }
 
+type modelRouterTester interface {
+	TestAutoModelRoute(ctx context.Context, input appconversation.TestAutoRouteInput) (*appconversation.TestAutoRouteResult, error)
+}
+
 // Handler 封装 settings HTTP 处理。
 type Handler struct {
 	service         *appsettings.Service
@@ -45,6 +50,7 @@ type Handler struct {
 	fileEmbedder    adminFileEmbeddingSubmitter
 	userLabels      userLabelResolver
 	nativeTools     nativeToolCatalogProvider
+	modelRouter     modelRouterTester
 }
 
 // NewHandler 创建处理器。
@@ -75,6 +81,11 @@ func (h *Handler) SetUserLabelResolver(resolver userLabelResolver) {
 // SetNativeToolCatalogProvider 注入平台级官方原生工具目录提供者。
 func (h *Handler) SetNativeToolCatalogProvider(provider nativeToolCatalogProvider) {
 	h.nativeTools = provider
+}
+
+// SetModelRouterTester 注入自动模型路由沙盒与在线试跑服务。
+func (h *Handler) SetModelRouterTester(tester modelRouterTester) {
+	h.modelRouter = tester
 }
 
 // ListAll godoc

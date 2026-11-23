@@ -5184,6 +5184,22 @@ definitions:
     - data
     - errorMsg
     type: object
+  MessageAutoRouteResponse:
+    properties:
+      category:
+        type: string
+      difficulty:
+        type: string
+      model:
+        type: string
+      reason:
+        type: string
+      source:
+        type: string
+    required:
+    - model
+    - source
+    type: object
   MessageBillingCostResponse:
     properties:
       billedCurrency:
@@ -5433,6 +5449,8 @@ definitions:
     properties:
       attachments:
         type: string
+      autoRoute:
+        $ref: '#/definitions/MessageAutoRouteResponse'
       autoRouted:
         type: boolean
       billingCost:
@@ -6465,6 +6483,245 @@ definitions:
     - vendor
     - vendorIcon
     - vendorName
+    type: object
+  ModelRouterTestCandidateResponse:
+    properties:
+      contextWindow:
+        type: integer
+      failedReasons:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      nativeToolTypes:
+        items:
+          type: string
+        type: array
+      passed:
+        type: boolean
+      tools:
+        type: boolean
+        x-nullable: true
+        x-omitempty: false
+      vision:
+        type: boolean
+        x-nullable: true
+        x-omitempty: false
+    required:
+    - contextWindow
+    - failedReasons
+    - name
+    - nativeToolTypes
+    - passed
+    - tools
+    - vision
+    type: object
+  ModelRouterTestClassificationInput:
+    properties:
+      category:
+        maxLength: 64
+        type: string
+      difficulty:
+        enum:
+        - easy
+        - medium
+        - hard
+        type: string
+      reason:
+        maxLength: 200
+        type: string
+      switch:
+        type: boolean
+    required:
+    - category
+    - difficulty
+    - reason
+    - switch
+    type: object
+  ModelRouterTestClassificationResponse:
+    properties:
+      category:
+        type: string
+      difficulty:
+        type: string
+      reason:
+        type: string
+      switch:
+        type: boolean
+    required:
+    - category
+    - difficulty
+    - reason
+    - switch
+    type: object
+  ModelRouterTestClassifierResponse:
+    properties:
+      attempted:
+        type: boolean
+      classification:
+        $ref: '#/definitions/ModelRouterTestClassificationResponse'
+      error:
+        type: string
+      latencyMS:
+        type: integer
+      rawOutput:
+        type: string
+      routerModel:
+        type: string
+      skippedReason:
+        type: string
+    required:
+    - attempted
+    - latencyMS
+    type: object
+  ModelRouterTestDecisionResponse:
+    properties:
+      category:
+        type: string
+      difficulty:
+        type: string
+      model:
+        type: string
+      reason:
+        type: string
+      source:
+        type: string
+    required:
+    - model
+    - source
+    type: object
+  ModelRouterTestHistoryItem:
+    properties:
+      content:
+        maxLength: 4000
+        type: string
+      role:
+        enum:
+        - user
+        - assistant
+        type: string
+    required:
+    - content
+    - role
+    type: object
+  ModelRouterTestMatchedRuleResponse:
+    properties:
+      category:
+        type: string
+      difficulty:
+        type: string
+      index:
+        type: integer
+      models:
+        items:
+          type: string
+        type: array
+    required:
+    - category
+    - difficulty
+    - index
+    - models
+    type: object
+  ModelRouterTestRequest:
+    properties:
+      dryRun:
+        type: boolean
+      estimatedTokens:
+        maximum: 10000000
+        minimum: 0
+        type: integer
+      history:
+        items:
+          $ref: '#/definitions/ModelRouterTestHistoryItem'
+        maxItems: 20
+        type: array
+      message:
+        maxLength: 8000
+        type: string
+      nativeToolTypes:
+        items:
+          type: string
+        maxItems: 16
+        type: array
+      needsTools:
+        type: boolean
+      needsVision:
+        type: boolean
+      policyJSON:
+        description: PolicyJSON 为空时使用当前已保存的生效策略；非空时使用该草稿策略试跑。
+        maxLength: 25000
+        type: string
+      previousModel:
+        maxLength: 128
+        type: string
+      simulatedClassification:
+        $ref: '#/definitions/ModelRouterTestClassificationInput'
+    required:
+    - dryRun
+    - estimatedTokens
+    - history
+    - message
+    - nativeToolTypes
+    - needsTools
+    - needsVision
+    - policyJSON
+    - previousModel
+    - simulatedClassification
+    type: object
+  ModelRouterTestRequirementsResponse:
+    properties:
+      estimatedTokens:
+        type: integer
+      nativeToolTypes:
+        items:
+          type: string
+        type: array
+      needsTools:
+        type: boolean
+      needsVision:
+        type: boolean
+    required:
+    - estimatedTokens
+    - nativeToolTypes
+    - needsTools
+    - needsVision
+    type: object
+  ModelRouterTestResponse:
+    properties:
+      candidates:
+        items:
+          $ref: '#/definitions/ModelRouterTestCandidateResponse'
+        type: array
+      classifier:
+        $ref: '#/definitions/ModelRouterTestClassifierResponse'
+      constraintsRelaxed:
+        type: boolean
+      decision:
+        $ref: '#/definitions/ModelRouterTestDecisionResponse'
+      matchedRules:
+        items:
+          $ref: '#/definitions/ModelRouterTestMatchedRuleResponse'
+        type: array
+      requirements:
+        $ref: '#/definitions/ModelRouterTestRequirementsResponse'
+    required:
+    - candidates
+    - classifier
+    - constraintsRelaxed
+    - decision
+    - matchedRules
+    - requirements
+    type: object
+  ModelRouterTestResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/ModelRouterTestResponse'
+      errorMsg:
+        type: string
+    required:
+    - data
+    - errorMsg
     type: object
   ModelUpstreamSourceDataResponse:
     properties:
@@ -8879,6 +9136,8 @@ definitions:
     type: object
   RunResponse:
     properties:
+      autoRoute:
+        $ref: '#/definitions/MessageAutoRouteResponse'
       cacheReadTokens:
         type: integer
       cacheWriteTokens:
@@ -17229,6 +17488,42 @@ paths:
       security:
       - BearerAuth: []
       summary: 查询 MinerU 运行状态
+      tags:
+      - admin/settings
+  /admin/settings/model-router/test:
+    post:
+      consumes:
+      - application/json
+      description: 支持传入未保存的草稿策略与模拟硬约束，执行 Dry-Run 推演或真实调用分类器，返回每一步过滤与决策明细
+      parameters:
+      - description: 路由试跑参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ModelRouterTestRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ModelRouterTestResponseDoc'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Envelope'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Envelope'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/Envelope'
+      security:
+      - BearerAuth: []
+      summary: 试跑自动模型路由策略
       tags:
       - admin/settings
   /admin/settings/rapidocr/runtime:

@@ -190,3 +190,28 @@ func TestSelect(t *testing.T) {
 		t.Fatal("expected no decision without candidates")
 	}
 }
+
+func TestUnsatisfiedReasonsAndMatchRules(t *testing.T) {
+	c := CandidateFromCapabilities("small-text", 8000, `{"routing":{"vision":false,"tools":false}}`)
+	reasons := c.UnsatisfiedReasons(Requirements{
+		NeedsVision:     true,
+		NeedsTools:      true,
+		NativeToolTypes: []string{"anthropic.web_search_20250305"},
+		EstimatedTokens: 12000,
+	})
+	wantReasons := strings.Join([]string{
+		ReasonMissingVision,
+		ReasonMissingTools,
+		ReasonMissingNativeTool + ":web_search",
+		ReasonContextExceeded,
+	}, ",")
+	if strings.Join(reasons, ",") != wantReasons {
+		t.Fatalf("UnsatisfiedReasons = %v, want %s", reasons, wantReasons)
+	}
+
+	policy := testPolicy(t)
+	matched := MatchRules(policy.Rules, "coding", DifficultyHard)
+	if len(matched) != 2 || matched[0].Difficulty != DifficultyHard || matched[1].Difficulty != "" {
+		t.Fatalf("MatchRules ordering unexpected: %+v", matched)
+	}
+}

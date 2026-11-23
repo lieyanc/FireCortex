@@ -69,23 +69,42 @@ func CandidateFromCapabilities(name string, contextWindow int, capabilitiesJSON 
 	return candidate
 }
 
-// Satisfies 判断候选是否满足硬约束。
-func (c Candidate) Satisfies(req Requirements) bool {
+// 硬约束未满足时的标准原因码，供测试与诊断视图展示。
+const (
+	ReasonMissingVision     = "missing_vision"
+	ReasonMissingTools      = "missing_tools"
+	ReasonMissingNativeTool = "missing_native_tool"
+	ReasonContextExceeded   = "context_exceeded"
+)
+
+// UnsatisfiedReasons 返回候选未满足的硬约束原因码列表；为空表示满足全部约束。
+func (c Candidate) UnsatisfiedReasons(req Requirements) []string {
+	var reasons []string
 	if req.NeedsVision && c.Vision != nil && !*c.Vision {
-		return false
+		reasons = append(reasons, ReasonMissingVision)
 	}
 	if req.NeedsTools && c.Tools != nil && !*c.Tools {
-		return false
+		reasons = append(reasons, ReasonMissingTools)
 	}
 	for _, toolType := range req.NativeToolTypes {
 		if !c.supportsNativeTool(toolType) {
-			return false
+			family := NativeToolFamily(toolType)
+			if family != "" {
+				reasons = append(reasons, ReasonMissingNativeTool+":"+family)
+			} else {
+				reasons = append(reasons, ReasonMissingNativeTool)
+			}
 		}
 	}
 	if req.EstimatedTokens > 0 && c.ContextWindow > 0 && req.EstimatedTokens > c.ContextWindow {
-		return false
+		reasons = append(reasons, ReasonContextExceeded)
 	}
-	return true
+	return reasons
+}
+
+// Satisfies 判断候选是否满足硬约束。
+func (c Candidate) Satisfies(req Requirements) bool {
+	return len(c.UnsatisfiedReasons(req)) == 0
 }
 
 func (c Candidate) supportsNativeTool(toolType string) bool {

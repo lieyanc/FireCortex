@@ -40,6 +40,7 @@ func (m *Module) RegisterAdminRoutes(adminGroup *gin.RouterGroup) {
 	g.POST("/embedding/reindex", m.Handler.TriggerReindex)
 	g.GET("/embedding/tasks", m.Handler.ListEmbeddingTasks)
 	g.POST("/embedding/tasks/retry", m.Handler.RetryEmbeddingTasks)
+	g.POST("/model-router/test", m.Handler.TestModelRouter)
 	g.GET("/:namespace", m.Handler.ListByNamespace)
 	g.PATCH("", m.Handler.Patch)
 }

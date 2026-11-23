@@ -291,6 +291,7 @@ type ConversationRun struct {
 	UpstreamName             string     `gorm:"size:128;not null;default:'';comment:上游名称快照"`
 	RequestedModelName       string     `gorm:"size:128;not null;default:'';index:idx_chat_runs_requested_model_name;comment:请求平台模型名"`
 	PlatformModelName        string     `gorm:"size:128;not null;default:'';index:idx_chat_runs_platform_model_name;comment:路由命中平台模型名"`
+	AutoRouteJSON            string     `gorm:"type:text;not null;default:'';comment:Auto 路由决策摘要JSON"`
 	RoutedBindingCode        string     `gorm:"size:64;not null;default:'';index:idx_chat_runs_routed_binding_code;comment:实际路由上游模型绑定编码"`
 	ModelVendor              string     `gorm:"size:64;not null;default:'';comment:平台模型厂商快照"`
 	ModelIcon                string     `gorm:"size:2048;not null;default:'';index:idx_chat_runs_asset_model_icon,where:model_icon LIKE 'asset:%';comment:平台模型图标快照"`

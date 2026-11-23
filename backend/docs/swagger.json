@@ -7813,6 +7813,63 @@
                 }
             }
         },
+        "/admin/settings/model-router/test": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "支持传入未保存的草稿策略与模拟硬约束，执行 Dry-Run 推演或真实调用分类器，返回每一步过滤与决策明细",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/settings"
+                ],
+                "summary": "试跑自动模型路由策略",
+                "parameters": [
+                    {
+                        "description": "路由试跑参数",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ModelRouterTestRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ModelRouterTestResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/Envelope"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/Envelope"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/Envelope"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/settings/rapidocr/runtime": {
             "get": {
                 "security": [
@@ -25759,6 +25816,30 @@
                 }
             }
         },
+        "MessageAutoRouteResponse": {
+            "type": "object",
+            "required": [
+                "model",
+                "source"
+            ],
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "difficulty": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                }
+            }
+        },
         "MessageBillingCostResponse": {
             "type": "object",
             "required": [
@@ -26160,6 +26241,9 @@
             "properties": {
                 "attachments": {
                     "type": "string"
+                },
+                "autoRoute": {
+                    "$ref": "#/definitions/MessageAutoRouteResponse"
                 },
                 "autoRouted": {
                     "type": "boolean"
@@ -27548,6 +27632,343 @@
                     "type": "string"
                 },
                 "vendorName": {
+                    "type": "string"
+                }
+            }
+        },
+        "ModelRouterTestCandidateResponse": {
+            "type": "object",
+            "required": [
+                "contextWindow",
+                "failedReasons",
+                "name",
+                "nativeToolTypes",
+                "passed",
+                "tools",
+                "vision"
+            ],
+            "properties": {
+                "contextWindow": {
+                    "type": "integer"
+                },
+                "failedReasons": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nativeToolTypes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "passed": {
+                    "type": "boolean"
+                },
+                "tools": {
+                    "type": "boolean",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                },
+                "vision": {
+                    "type": "boolean",
+                    "x-nullable": true,
+                    "x-omitempty": false
+                }
+            }
+        },
+        "ModelRouterTestClassificationInput": {
+            "type": "object",
+            "required": [
+                "category",
+                "difficulty",
+                "reason",
+                "switch"
+            ],
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "difficulty": {
+                    "type": "string",
+                    "enum": [
+                        "easy",
+                        "medium",
+                        "hard"
+                    ]
+                },
+                "reason": {
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "switch": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "ModelRouterTestClassificationResponse": {
+            "type": "object",
+            "required": [
+                "category",
+                "difficulty",
+                "reason",
+                "switch"
+            ],
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "difficulty": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "switch": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "ModelRouterTestClassifierResponse": {
+            "type": "object",
+            "required": [
+                "attempted",
+                "latencyMS"
+            ],
+            "properties": {
+                "attempted": {
+                    "type": "boolean"
+                },
+                "classification": {
+                    "$ref": "#/definitions/ModelRouterTestClassificationResponse"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "latencyMS": {
+                    "type": "integer"
+                },
+                "rawOutput": {
+                    "type": "string"
+                },
+                "routerModel": {
+                    "type": "string"
+                },
+                "skippedReason": {
+                    "type": "string"
+                }
+            }
+        },
+        "ModelRouterTestDecisionResponse": {
+            "type": "object",
+            "required": [
+                "model",
+                "source"
+            ],
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "difficulty": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                }
+            }
+        },
+        "ModelRouterTestHistoryItem": {
+            "type": "object",
+            "required": [
+                "content",
+                "role"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "maxLength": 4000
+                },
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "user",
+                        "assistant"
+                    ]
+                }
+            }
+        },
+        "ModelRouterTestMatchedRuleResponse": {
+            "type": "object",
+            "required": [
+                "category",
+                "difficulty",
+                "index",
+                "models"
+            ],
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "difficulty": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "models": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "ModelRouterTestRequest": {
+            "type": "object",
+            "required": [
+                "dryRun",
+                "estimatedTokens",
+                "history",
+                "message",
+                "nativeToolTypes",
+                "needsTools",
+                "needsVision",
+                "policyJSON",
+                "previousModel",
+                "simulatedClassification"
+            ],
+            "properties": {
+                "dryRun": {
+                    "type": "boolean"
+                },
+                "estimatedTokens": {
+                    "type": "integer",
+                    "maximum": 10000000,
+                    "minimum": 0
+                },
+                "history": {
+                    "type": "array",
+                    "maxItems": 20,
+                    "items": {
+                        "$ref": "#/definitions/ModelRouterTestHistoryItem"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "maxLength": 8000
+                },
+                "nativeToolTypes": {
+                    "type": "array",
+                    "maxItems": 16,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "needsTools": {
+                    "type": "boolean"
+                },
+                "needsVision": {
+                    "type": "boolean"
+                },
+                "policyJSON": {
+                    "description": "PolicyJSON 为空时使用当前已保存的生效策略；非空时使用该草稿策略试跑。",
+                    "type": "string",
+                    "maxLength": 25000
+                },
+                "previousModel": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "simulatedClassification": {
+                    "$ref": "#/definitions/ModelRouterTestClassificationInput"
+                }
+            }
+        },
+        "ModelRouterTestRequirementsResponse": {
+            "type": "object",
+            "required": [
+                "estimatedTokens",
+                "nativeToolTypes",
+                "needsTools",
+                "needsVision"
+            ],
+            "properties": {
+                "estimatedTokens": {
+                    "type": "integer"
+                },
+                "nativeToolTypes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "needsTools": {
+                    "type": "boolean"
+                },
+                "needsVision": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "ModelRouterTestResponse": {
+            "type": "object",
+            "required": [
+                "candidates",
+                "classifier",
+                "constraintsRelaxed",
+                "decision",
+                "matchedRules",
+                "requirements"
+            ],
+            "properties": {
+                "candidates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ModelRouterTestCandidateResponse"
+                    }
+                },
+                "classifier": {
+                    "$ref": "#/definitions/ModelRouterTestClassifierResponse"
+                },
+                "constraintsRelaxed": {
+                    "type": "boolean"
+                },
+                "decision": {
+                    "$ref": "#/definitions/ModelRouterTestDecisionResponse"
+                },
+                "matchedRules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ModelRouterTestMatchedRuleResponse"
+                    }
+                },
+                "requirements": {
+                    "$ref": "#/definitions/ModelRouterTestRequirementsResponse"
+                }
+            }
+        },
+        "ModelRouterTestResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ModelRouterTestResponse"
+                },
+                "errorMsg": {
                     "type": "string"
                 }
             }
@@ -30983,6 +31404,9 @@
                 "userID"
             ],
             "properties": {
+                "autoRoute": {
+                    "$ref": "#/definitions/MessageAutoRouteResponse"
+                },
                 "cacheReadTokens": {
                     "type": "integer"
                 },

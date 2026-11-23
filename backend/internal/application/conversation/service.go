@@ -258,6 +258,7 @@ type SendMessageResult struct {
 	UpstreamID          uint
 	UpstreamName        string
 	PlatformModelName   string
+	AutoRoute           *modelrouter.Decision
 	RoutedBindingCode   string
 	UpstreamModelName   string
 	UpstreamProtocol    string

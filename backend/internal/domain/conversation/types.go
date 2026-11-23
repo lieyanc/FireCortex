@@ -431,6 +431,7 @@ type Run struct {
 	UpstreamName       string
 	RequestedModelName string
 	PlatformModelName  string
+	AutoRouteJSON      string
 	RoutedBindingCode  string
 	ModelVendor        string
 	ModelIcon          string

@@ -2,6 +2,7 @@ package conversation
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -48,6 +49,54 @@ func AutoRouteEventPayload(decision modelrouter.Decision) map[string]any {
 		"category":   decision.Category,
 		"difficulty": decision.Difficulty,
 		"reason":     decision.Reason,
+	}
+}
+
+type persistedAutoRouteDecision struct {
+	Model      string `json:"model,omitempty"`
+	Source     string `json:"source,omitempty"`
+	Category   string `json:"category,omitempty"`
+	Difficulty string `json:"difficulty,omitempty"`
+	Reason     string `json:"reason,omitempty"`
+}
+
+// EncodeAutoRouteDecision 把一次 Auto 路由决策编码为可落库的紧凑 JSON。
+func EncodeAutoRouteDecision(decision *modelrouter.Decision) string {
+	if decision == nil || strings.TrimSpace(decision.Model) == "" {
+		return ""
+	}
+	payload, err := json.Marshal(persistedAutoRouteDecision{
+		Model:      strings.TrimSpace(decision.Model),
+		Source:     strings.TrimSpace(decision.Source),
+		Category:   strings.TrimSpace(decision.Category),
+		Difficulty: strings.TrimSpace(decision.Difficulty),
+		Reason:     strings.TrimSpace(decision.Reason),
+	})
+	if err != nil {
+		return ""
+	}
+	return string(payload)
+}
+
+// DecodeAutoRouteDecision 反序列化落库的 Auto 路由决策摘要；无效或空串返回 nil。
+func DecodeAutoRouteDecision(raw string) *modelrouter.Decision {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return nil
+	}
+	var payload persistedAutoRouteDecision
+	if err := json.Unmarshal([]byte(trimmed), &payload); err != nil {
+		return nil
+	}
+	if strings.TrimSpace(payload.Model) == "" && strings.TrimSpace(payload.Source) == "" {
+		return nil
+	}
+	return &modelrouter.Decision{
+		Model:      strings.TrimSpace(payload.Model),
+		Source:     strings.TrimSpace(payload.Source),
+		Category:   strings.TrimSpace(payload.Category),
+		Difficulty: strings.TrimSpace(payload.Difficulty),
+		Reason:     strings.TrimSpace(payload.Reason),
 	}
 }
 
@@ -248,6 +297,14 @@ func autoRouteEstimatedTokens(message string, history []modelrouter.HistoryMessa
 	return int(total)
 }
 
+type classifyAutoRouteOutcome struct {
+	Classification *modelrouter.Classification
+	RouterModel    string
+	LatencyMS      int64
+	RawOutput      string
+	Error          string
+}
+
 // classifyAutoRoute 调用快速模型完成分类；任何失败都返回 nil，由选择逻辑回退。
 func (s *Service) classifyAutoRoute(
 	ctx context.Context,
@@ -256,6 +313,16 @@ func (s *Service) classifyAutoRoute(
 	input AutoRouteInput,
 	classifyInput modelrouter.ClassifyInput,
 ) *modelrouter.Classification {
+	return s.classifyAutoRouteDetailed(ctx, policy, conversationTaskModel, input, classifyInput).Classification
+}
+
+func (s *Service) classifyAutoRouteDetailed(
+	ctx context.Context,
+	policy modelrouter.Policy,
+	conversationTaskModel string,
+	input AutoRouteInput,
+	classifyInput modelrouter.ClassifyInput,
+) classifyAutoRouteOutcome {
 	routes, err := s.resolveTextTaskRouteCandidates(ctx, textTaskRouteInput{
 		ConfiguredModel:   textutil.FirstNonEmpty(policy.RouterModel, conversationTaskModel),
 		ConversationModel: input.PreviousModel,
@@ -265,11 +332,22 @@ func (s *Service) classifyAutoRoute(
 	})
 	if err != nil || len(routes) == 0 {
 		s.logModelRouterWarn("model_router_route_unavailable", input, err)
-		return nil
+		errMsg := "classifier route unavailable"
+		if err != nil {
+			errMsg = err.Error()
+		}
+		return classifyAutoRouteOutcome{Error: errMsg}
 	}
 	route := routes[0]
 	if route == nil || strings.TrimSpace(route.PlatformModelName) == "" {
-		return nil
+		return classifyAutoRouteOutcome{Error: "classifier route unavailable"}
+	}
+	outcome := classifyAutoRouteOutcome{
+		RouterModel: strings.TrimSpace(route.PlatformModelName),
+	}
+	if s.llmClient == nil {
+		outcome.Error = "llm client unavailable"
+		return outcome
 	}
 
 	system, user := modelrouter.BuildClassifierMessages(policy, classifyInput)
@@ -281,23 +359,27 @@ func (s *Service) classifyAutoRoute(
 	authorization, err := s.authorizeBasicServiceUsage(ctx, input.UserID, route.PlatformModelName, modelRouterServiceCode)
 	if err != nil {
 		s.logModelRouterWarn("model_router_usage_authorization_failed", input, err)
-		return nil
+		outcome.Error = err.Error()
+		return outcome
 	}
 	startedAt := time.Now()
 	callCtx, cancel := context.WithTimeout(ctx, time.Duration(policy.TimeoutMS)*time.Millisecond)
 	out, err := s.llmClient.Generate(callCtx, routeConfig, generateInput)
 	cancel()
 	latencyMS := time.Since(startedAt).Milliseconds()
+	outcome.LatencyMS = latencyMS
 	settleCtx := background.Detach(ctx)
 	if err != nil {
 		if releaseErr := s.releaseBasicServiceUsageAuthorization(settleCtx, authorization); releaseErr != nil {
 			err = errors.Join(err, releaseErr)
 		}
 		s.logModelRouterWarn("model_router_classify_failed", input, err, zap.Int64("latency_ms", latencyMS))
-		return nil
+		outcome.Error = err.Error()
+		return outcome
 	}
 	text := strings.TrimSpace(out.Text)
-	// 临时对话没有会话归属，基础服务用量不入账，只释放预留。
+	outcome.RawOutput = text
+	// 临时对话与管理端试跑没有会话归属，基础服务用量不入账，只释放预留。
 	if input.ConversationID == 0 {
 		_ = s.releaseBasicServiceUsageAuthorization(settleCtx, authorization)
 	} else if recordErr := s.recordBasicServiceUsage(settleCtx, basicServiceUsageInput{
@@ -322,9 +404,207 @@ func (s *Service) classifyAutoRoute(
 	classification, err := modelrouter.ParseClassification(policy, text)
 	if err != nil {
 		s.logModelRouterWarn("model_router_classification_invalid", input, err)
-		return nil
+		outcome.Error = err.Error()
+		return outcome
 	}
-	return &classification
+	outcome.Classification = &classification
+	return outcome
+}
+
+// TestAutoRouteInput 是管理端路由沙盒 / 在线试跑的请求输入。
+type TestAutoRouteInput struct {
+	UserID                  uint
+	RequestID               string
+	PolicyJSON              string
+	Message                 string
+	History                 []modelrouter.HistoryMessage
+	PreviousModel           string
+	NeedsVision             bool
+	NeedsTools              bool
+	NativeToolTypes         []string
+	EstimatedTokens         int
+	DryRun                  bool
+	SimulatedClassification *modelrouter.Classification
+}
+
+// TestAutoRouteCandidate 记录单个候选模型在硬约束过滤阶段的结果。
+type TestAutoRouteCandidate struct {
+	Name            string
+	ContextWindow   int
+	Vision          *bool
+	Tools           *bool
+	NativeToolTypes []string
+	Passed          bool
+	FailedReasons   []string
+}
+
+// TestAutoRouteClassifierTrace 记录分类器调用的诊断信息。
+type TestAutoRouteClassifierTrace struct {
+	Attempted      bool
+	SkippedReason  string
+	RouterModel    string
+	LatencyMS      int64
+	RawOutput      string
+	Error          string
+	Classification *modelrouter.Classification
+}
+
+// TestAutoRouteResult 返回一次试跑的完整分步路由诊断。
+type TestAutoRouteResult struct {
+	Requirements       modelrouter.Requirements
+	Candidates         []TestAutoRouteCandidate
+	ConstraintsRelaxed bool
+	Classifier         TestAutoRouteClassifierTrace
+	MatchedRules       []modelrouter.MatchedRule
+	Decision           modelrouter.Decision
+}
+
+// TestAutoModelRoute 允许管理员使用未保存的草稿策略或当前配置试跑完整路由管道。
+// 不要求总开关已开启，便于开启前调试；真实分类调用同样遵循超时且不向会话入账。
+func (s *Service) TestAutoModelRoute(ctx context.Context, input TestAutoRouteInput) (*TestAutoRouteResult, error) {
+	cfg := s.cfg.Snapshot()
+	rawPolicy := strings.TrimSpace(input.PolicyJSON)
+	var policy modelrouter.Policy
+	var err error
+	if rawPolicy != "" {
+		policy, err = modelrouter.ParsePolicy(rawPolicy)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		policy, err = modelrouter.ParsePolicy(cfg.ModelRouterPolicy)
+		if err != nil {
+			policy, _ = modelrouter.ParsePolicy("")
+		}
+	}
+
+	candidates, err := s.listAutoRouteCandidates(ctx, input.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if len(candidates) == 0 {
+		return nil, ErrModelRouteNotConfigured
+	}
+
+	history := input.History
+	if policy.HistoryMessages == 0 {
+		history = nil
+	} else if len(history) > policy.HistoryMessages {
+		history = history[len(history)-policy.HistoryMessages:]
+	}
+
+	estimatedTokens := input.EstimatedTokens
+	if estimatedTokens <= 0 {
+		estimatedTokens = autoRouteEstimatedTokens(input.Message, history)
+	}
+	nativeToolTypes := make([]string, 0, len(input.NativeToolTypes))
+	for _, item := range input.NativeToolTypes {
+		if trimmed := strings.TrimSpace(item); trimmed != "" {
+			nativeToolTypes = append(nativeToolTypes, trimmed)
+		}
+	}
+	requirements := modelrouter.Requirements{
+		NeedsVision:     input.NeedsVision,
+		NeedsTools:      input.NeedsTools,
+		NativeToolTypes: nativeToolTypes,
+		EstimatedTokens: estimatedTokens,
+	}
+
+	candidateTraces := make([]TestAutoRouteCandidate, 0, len(candidates))
+	filtered := make([]modelrouter.Candidate, 0, len(candidates))
+	for _, candidate := range candidates {
+		reasons := candidate.UnsatisfiedReasons(requirements)
+		passed := len(reasons) == 0
+		if passed {
+			filtered = append(filtered, candidate)
+		}
+		candidateTraces = append(candidateTraces, TestAutoRouteCandidate{
+			Name:            candidate.Name,
+			ContextWindow:   candidate.ContextWindow,
+			Vision:          candidate.Vision,
+			Tools:           candidate.Tools,
+			NativeToolTypes: candidate.NativeToolTypes,
+			Passed:          passed,
+			FailedReasons:   reasons,
+		})
+	}
+	constraintsRelaxed := false
+	if len(filtered) == 0 {
+		constraintsRelaxed = true
+		filtered = candidates
+	}
+
+	var classifierTrace TestAutoRouteClassifierTrace
+	var classification *modelrouter.Classification
+	if input.DryRun {
+		classifierTrace.SkippedReason = "dry_run"
+		if input.SimulatedClassification != nil {
+			cat := strings.ToLower(strings.TrimSpace(input.SimulatedClassification.Category))
+			diff := strings.ToLower(strings.TrimSpace(input.SimulatedClassification.Difficulty))
+			if diff != modelrouter.DifficultyEasy && diff != modelrouter.DifficultyMedium && diff != modelrouter.DifficultyHard {
+				diff = modelrouter.DifficultyMedium
+			}
+			if cat != "" {
+				sim := modelrouter.Classification{
+					Category:   cat,
+					Difficulty: diff,
+					Switch:     input.SimulatedClassification.Switch,
+					Reason:     strings.TrimSpace(input.SimulatedClassification.Reason),
+				}
+				classification = &sim
+				classifierTrace.Classification = &sim
+			}
+		}
+	} else if len(filtered) <= 1 {
+		classifierTrace.SkippedReason = "single_candidate"
+	} else if len(policy.Rules) == 0 {
+		classifierTrace.SkippedReason = "no_rules"
+	} else {
+		classifierTrace.Attempted = true
+		var attachments []string
+		if input.NeedsVision {
+			attachments = append(attachments, "image")
+		}
+		outcome := s.classifyAutoRouteDetailed(ctx, policy, cfg.ConversationTaskModel, AutoRouteInput{
+			UserID:        input.UserID,
+			RequestID:     input.RequestID,
+			Message:       input.Message,
+			PreviousModel: strings.TrimSpace(input.PreviousModel),
+		}, modelrouter.ClassifyInput{
+			Message:          input.Message,
+			History:          history,
+			Attachments:      attachments,
+			HasPreviousRoute: strings.TrimSpace(input.PreviousModel) != "",
+		})
+		classifierTrace.RouterModel = outcome.RouterModel
+		classifierTrace.LatencyMS = outcome.LatencyMS
+		classifierTrace.RawOutput = outcome.RawOutput
+		classifierTrace.Error = outcome.Error
+		classifierTrace.Classification = outcome.Classification
+		classification = outcome.Classification
+	}
+
+	var matchedRules []modelrouter.MatchedRule
+	if classification != nil {
+		matchedRules = modelrouter.MatchRules(policy.Rules, classification.Category, classification.Difficulty)
+	}
+	decision, ok := modelrouter.Select(modelrouter.SelectInput{
+		Policy:         policy,
+		Candidates:     filtered,
+		Classification: classification,
+		PreviousModel:  strings.TrimSpace(input.PreviousModel),
+	})
+	if !ok {
+		return nil, ErrModelRouteNotConfigured
+	}
+	return &TestAutoRouteResult{
+		Requirements:       requirements,
+		Candidates:         candidateTraces,
+		ConstraintsRelaxed: constraintsRelaxed,
+		Classifier:         classifierTrace,
+		MatchedRules:       matchedRules,
+		Decision:           decision,
+	}, nil
 }
 
 func (s *Service) logModelRouterWarn(event string, input AutoRouteInput, err error, fields ...zap.Field) {

@@ -1221,6 +1221,7 @@ func (s *Service) sendMessageInternal(
 		UpstreamID:            run.UpstreamID,
 		UpstreamName:          run.UpstreamName,
 		PlatformModelName:     route.PlatformModelName,
+		AutoRoute:             input.AutoRoute,
 		RoutedBindingCode:     route.BindingCode,
 		UpstreamModelName:     route.UpstreamModel,
 		UpstreamProtocol:      route.Protocol,

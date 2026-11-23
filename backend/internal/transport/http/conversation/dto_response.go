@@ -906,6 +906,16 @@ type MessageResponse struct {
 	CreatedAt        time.Time                        `json:"createdAt"`
 	UpdatedAt        time.Time                        `json:"updatedAt"`
 	AutoRouted       bool                             `json:"autoRouted"`
+	AutoRoute        *MessageAutoRouteResponse        `json:"autoRoute,omitempty"`
+}
+
+// MessageAutoRouteResponse 向客户端暴露 Auto 模型路由的决策明细。
+type MessageAutoRouteResponse struct {
+	Model      string `json:"model"`
+	Source     string `json:"source"`
+	Category   string `json:"category,omitempty"`
+	Difficulty string `json:"difficulty,omitempty"`
+	Reason     string `json:"reason,omitempty"`
 }
 
 // MessageModerationResponse 向客户端暴露软审核状态。
@@ -1101,11 +1111,29 @@ func toMessageResponseWithRun(m model.Message, run model.Run) MessageResponse {
 	return toMessageResponseWithRunAndFallback(m, run, "")
 }
 
+func toMessageAutoRouteResponse(rawJSON string) *MessageAutoRouteResponse {
+	decision := appconversation.DecodeAutoRouteDecision(rawJSON)
+	if decision == nil {
+		return nil
+	}
+	return &MessageAutoRouteResponse{
+		Model:      decision.Model,
+		Source:     decision.Source,
+		Category:   decision.Category,
+		Difficulty: decision.Difficulty,
+		Reason:     decision.Reason,
+	}
+}
+
 func toMessageResponseWithRunAndFallback(m model.Message, run model.Run, fallbackModel string) MessageResponse {
 	platformModelName := strings.TrimSpace(run.PlatformModelName)
-	autoRouted := strings.EqualFold(strings.TrimSpace(run.RequestedModelName), modelrouter.AutoModelName)
+	autoRoute := toMessageAutoRouteResponse(run.AutoRouteJSON)
+	autoRouted := strings.EqualFold(strings.TrimSpace(run.RequestedModelName), modelrouter.AutoModelName) || autoRoute != nil
 	if platformModelName == "" && !autoRouted {
 		platformModelName = strings.TrimSpace(run.RequestedModelName)
+	}
+	if platformModelName == "" && autoRoute != nil {
+		platformModelName = strings.TrimSpace(autoRoute.Model)
 	}
 	if platformModelName == "" {
 		platformModelName = strings.TrimSpace(fallbackModel)
@@ -1153,6 +1181,7 @@ func toMessageResponseWithRunAndFallback(m model.Message, run model.Run, fallbac
 		ModelVendor:       strings.TrimSpace(run.ModelVendor),
 		ModelIcon:         strings.TrimSpace(run.ModelIcon),
 		AutoRouted:        autoRouted,
+		AutoRoute:         autoRoute,
 		ParentPublicID:    m.ParentPublicID,
 		SourcePublicID:    m.SourcePublicID,
 		MyFeedback:        m.MyFeedback,
@@ -1307,6 +1336,10 @@ func toSendMessageResponse(r *appconversation.SendMessageResult, requestID strin
 		PlatformModelName: r.PlatformModelName,
 		UpstreamModelName: r.UpstreamModelName,
 	}
+	if r.AutoRoute != nil {
+		run.RequestedModelName = modelrouter.AutoModelName
+		run.AutoRouteJSON = appconversation.EncodeAutoRouteDecision(r.AutoRoute)
+	}
 	return SendMessageResponse{
 		UserMessage:         toMessageResponseWithRun(r.UserMessage, run),
 		AssistantMessage:    toMessageResponseWithRun(r.AssistantMessage, run),
@@ -1357,9 +1390,10 @@ type RunResponse struct {
 	ProviderProtocol   string `json:"providerProtocol"`
 	UpstreamID         uint   `json:"upstreamID"`
 	UpstreamModelID    uint   `json:"upstreamModelID"`
-	RequestedModelName string `json:"requestedModelName"`
-	PlatformModelName  string `json:"platformModelName"`
-	RoutedBindingCode  string `json:"routedBindingCode"`
+	RequestedModelName string                    `json:"requestedModelName"`
+	PlatformModelName  string                    `json:"platformModelName"`
+	AutoRoute          *MessageAutoRouteResponse `json:"autoRoute,omitempty"`
+	RoutedBindingCode  string                    `json:"routedBindingCode"`
 	ModelVendor        string `json:"modelVendor"`
 	ModelIcon          string `json:"modelIcon"`
 	UpstreamModelName  string `json:"upstreamModelName"`
@@ -1397,6 +1431,7 @@ func toRunResponse(r model.Run) RunResponse {
 		UpstreamModelID:     r.UpstreamModelID,
 		RequestedModelName:  r.RequestedModelName,
 		PlatformModelName:   r.PlatformModelName,
+		AutoRoute:           toMessageAutoRouteResponse(r.AutoRouteJSON),
 		RoutedBindingCode:   r.RoutedBindingCode,
 		ModelVendor:         r.ModelVendor,
 		ModelIcon:           r.ModelIcon,

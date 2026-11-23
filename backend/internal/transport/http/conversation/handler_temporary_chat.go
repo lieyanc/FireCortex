@@ -149,6 +149,9 @@ func (h *Handler) StreamTemporaryChatMessage(c *gin.Context) {
 		h.recordTemporaryChatAuditAsync(c, req, len(input.Attachments), "failed")
 		return
 	}
+	if result != nil && autoRoute != nil {
+		result.AutoRoute = autoRoute
+	}
 	_ = writeEvent(map[string]any{
 		"type": "completed",
 		"data": toSendMessageResponse(result, middleware.MustRequestID(c)),

@@ -9,6 +9,7 @@ var (
 	errEmbeddingServiceNotAvailable       = apperr.New("embedding.service_unavailable", "embedding service is not available")
 	errInvalidNamespace                   = apperr.New("settings.invalid_namespace", "invalid namespace")
 	errMineruRuntimeServiceUnavailable    = apperr.New("runtime.mineru_unavailable", "mineru runtime service unavailable")
+	errModelRouterServiceUnavailable      = apperr.New("settings.model_router_unavailable", "model router service is not available")
 	errRapidocrRuntimeServiceUnavailable  = apperr.New("runtime.rapidocr_unavailable", "rapidocr runtime service unavailable")
 	errTesseractRuntimeServiceUnavailable = apperr.New("runtime.tesseract_unavailable", "tesseract runtime service unavailable")
 	errTikaRuntimeServiceUnavailable      = apperr.New("runtime.tika_unavailable", "tika runtime service unavailable")

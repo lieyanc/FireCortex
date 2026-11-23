@@ -510,6 +510,7 @@ func NewAppWithOptions(opts Options) (*App, error) {
 	adminModule := adminhttp.NewModule(adminHandler)
 	contentModerationHandler.SetUserLabelResolver(adminService)
 	settingsHandler.SetUserLabelResolver(adminService)
+	settingsHandler.SetModelRouterTester(conversationService)
 	userSettingsRepo := usersettingsrepo.NewRepo(db)
 	userSettingsService := usersettings.NewService(userSettingsRepo)
 	userSettingsService.SetCacheRefresher(conversationService.RefreshUserSettingCache)

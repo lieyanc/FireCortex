@@ -99,6 +99,7 @@ func newMessageSendRunState(
 			UpstreamName:       "",
 			RequestedModelName: textutil.FirstNonEmpty(input.RequestedModelName, conversation.Model),
 			PlatformModelName:  "",
+			AutoRouteJSON:      EncodeAutoRouteDecision(input.AutoRoute),
 			RoutedBindingCode:  "",
 			ModelVendor:        "",
 			ModelIcon:          "",

@@ -2314,6 +2314,14 @@ export interface MemoryErrorDoc {
   requestId?: string;
 }
 
+export interface MessageAutoRouteResponse {
+  category?: string;
+  difficulty?: string;
+  model: string;
+  reason?: string;
+  source: string;
+}
+
 export interface MessageBillingCostResponse {
   billedCurrency: string;
   billedNanousd: number;
@@ -2422,6 +2430,7 @@ export interface MessagePromptTraceSourceResponse {
 
 export interface MessageResponse {
   attachments: string;
+  autoRoute?: MessageAutoRouteResponse;
   autoRouted: boolean;
   billingCost?: MessageBillingCostResponse;
   branchReason: string;
@@ -2872,6 +2881,109 @@ export interface ModelResponse {
   vendor: string;
   vendorIcon: string;
   vendorName: string;
+}
+
+export interface ModelRouterTestCandidateResponse {
+  contextWindow: number;
+  failedReasons: string[];
+  name: string;
+  nativeToolTypes: string[];
+  passed: boolean;
+  tools: boolean | null;
+  vision: boolean | null;
+}
+
+export interface ModelRouterTestClassificationInput {
+  /** @maxLength 64 */
+  category: string;
+  difficulty: "easy" | "medium" | "hard";
+  /** @maxLength 200 */
+  reason: string;
+  switch: boolean;
+}
+
+export interface ModelRouterTestClassificationResponse {
+  category: string;
+  difficulty: string;
+  reason: string;
+  switch: boolean;
+}
+
+export interface ModelRouterTestClassifierResponse {
+  attempted: boolean;
+  classification?: ModelRouterTestClassificationResponse;
+  error?: string;
+  latencyMS: number;
+  rawOutput?: string;
+  routerModel?: string;
+  skippedReason?: string;
+}
+
+export interface ModelRouterTestDecisionResponse {
+  category?: string;
+  difficulty?: string;
+  model: string;
+  reason?: string;
+  source: string;
+}
+
+export interface ModelRouterTestHistoryItem {
+  /** @maxLength 4000 */
+  content: string;
+  role: "user" | "assistant";
+}
+
+export interface ModelRouterTestMatchedRuleResponse {
+  category: string;
+  difficulty: string;
+  index: number;
+  models: string[];
+}
+
+export interface ModelRouterTestRequest {
+  dryRun: boolean;
+  /**
+   * @min 0
+   * @max 10000000
+   */
+  estimatedTokens: number;
+  /** @maxItems 20 */
+  history: ModelRouterTestHistoryItem[];
+  /** @maxLength 8000 */
+  message: string;
+  /** @maxItems 16 */
+  nativeToolTypes: string[];
+  needsTools: boolean;
+  needsVision: boolean;
+  /**
+   * PolicyJSON 为空时使用当前已保存的生效策略；非空时使用该草稿策略试跑。
+   * @maxLength 25000
+   */
+  policyJSON: string;
+  /** @maxLength 128 */
+  previousModel: string;
+  simulatedClassification: ModelRouterTestClassificationInput;
+}
+
+export interface ModelRouterTestRequirementsResponse {
+  estimatedTokens: number;
+  nativeToolTypes: string[];
+  needsTools: boolean;
+  needsVision: boolean;
+}
+
+export interface ModelRouterTestResponse {
+  candidates: ModelRouterTestCandidateResponse[];
+  classifier: ModelRouterTestClassifierResponse;
+  constraintsRelaxed: boolean;
+  decision: ModelRouterTestDecisionResponse;
+  matchedRules: ModelRouterTestMatchedRuleResponse[];
+  requirements: ModelRouterTestRequirementsResponse;
+}
+
+export interface ModelRouterTestResponseDoc {
+  data: ModelRouterTestResponse;
+  errorMsg: string;
 }
 
 export interface ModelUpstreamSourceDataResponse {
@@ -3995,6 +4107,7 @@ export interface RevokeUserSessionsResponseDoc {
 }
 
 export interface RunResponse {
+  autoRoute?: MessageAutoRouteResponse;
   cacheReadTokens: number;
   cacheWriteTokens: number;
   conversationID: number;
@@ -8386,6 +8499,22 @@ export namespace Admin {
     export type RequestBody = never;
     export type RequestHeaders = {};
     export type ResponseBody = Envelope;
+  }
+
+  /**
+   * @description 支持传入未保存的草稿策略与模拟硬约束，执行 Dry-Run 推演或真实调用分类器，返回每一步过滤与决策明细
+   * @tags admin/settings
+   * @name SettingsModelRouterTestCreate
+   * @summary 试跑自动模型路由策略
+   * @request POST:/admin/settings/model-router/test
+   * @secure
+   */
+  export namespace SettingsModelRouterTestCreate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = ModelRouterTestRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = ModelRouterTestResponseDoc;
   }
 
   /**

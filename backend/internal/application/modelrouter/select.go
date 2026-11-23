@@ -89,19 +89,43 @@ func Select(input SelectInput) (Decision, bool) {
 	return decision, true
 }
 
-// matchRuleModels 返回命中规则的模型：精确匹配难度的规则优先，其次是不限难度的规则。
-func matchRuleModels(rules []Rule, category string, difficulty string) []string {
-	var exact, any []string
-	for _, rule := range rules {
+// MatchedRule 描述一次分类命中策略中的哪条规则（用于诊断与测试展示）。
+type MatchedRule struct {
+	Index      int
+	Category   string
+	Difficulty string
+	Models     []string
+}
+
+// MatchRules 按优先级返回命中的规则列表：精确匹配难度的规则优先，其次是不限难度的规则。
+func MatchRules(rules []Rule, category string, difficulty string) []MatchedRule {
+	var exact, any []MatchedRule
+	for index, rule := range rules {
 		if rule.Category != category {
 			continue
 		}
+		matched := MatchedRule{
+			Index:      index,
+			Category:   rule.Category,
+			Difficulty: rule.Difficulty,
+			Models:     append([]string(nil), rule.Models...),
+		}
 		switch rule.Difficulty {
 		case difficulty:
-			exact = append(exact, rule.Models...)
+			exact = append(exact, matched)
 		case "":
-			any = append(any, rule.Models...)
+			any = append(any, matched)
 		}
 	}
 	return append(exact, any...)
+}
+
+// matchRuleModels 返回命中规则的模型：精确匹配难度的规则优先，其次是不限难度的规则。
+func matchRuleModels(rules []Rule, category string, difficulty string) []string {
+	matched := MatchRules(rules, category, difficulty)
+	var models []string
+	for _, item := range matched {
+		models = append(models, item.Models...)
+	}
+	return models
 }
