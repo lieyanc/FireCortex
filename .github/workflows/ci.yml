@@ -96,6 +96,14 @@ jobs:
             exit 1
           fi
 
+  rebrand:
+    name: Rebrand
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check for leftover upstream brand tokens
+        run: bash scripts/rebrand.sh --check
+
   api:
     name: API
     needs: changes

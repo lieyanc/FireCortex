@@ -6,8 +6,8 @@
 SHELL := /bin/bash
 PNPM ?= pnpm
 
-.PHONY: help setup dev api web desktop build build-api build-web build-desktop \
-        release-desktop check test verify lint fmt api-docs version version-check clean
+.PHONY: help setup setup-git dev api web desktop build build-api build-web build-desktop \
+        release-desktop check test verify lint fmt rebrand-check api-docs version version-check clean
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage: make <target>\n\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n%s\n", substr($$0, 5) }' $(MAKEFILE_LIST)
@@ -16,6 +16,9 @@ help: ## Show this help
 setup: ## Install JS dependencies and Go modules
 	$(PNPM) install
 	cd backend && go mod download
+
+setup-git: ## Configure local Git safety, isolated upstream tags, merge.ours, and rerere
+	bash scripts/setup-git.sh
 
 ##@ Develop
 dev: ## Run API + web together (turbo)
@@ -63,6 +66,9 @@ lint: ## Go lint + JS lint
 fmt: ## Format Go and JS sources
 	$(MAKE) -C backend fmt
 	$(PNPM) -r --parallel --if-present lint:fix
+
+rebrand-check: ## Verify no upstream brand tokens remain in the repository
+	bash scripts/rebrand.sh --check
 
 ##@ Maintenance
 api-docs: ## Regenerate Swagger docs and the TypeScript API contract

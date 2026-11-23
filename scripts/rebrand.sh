@@ -29,11 +29,13 @@ target="${1:-$(cd "$script_dir/.." && pwd)}"
 cd "$target"
 
 EXCLUDED_FILES=(
+  AGENTS.md
   LICENSE
   NOTICE
   docs/UPSTREAM.md
   apps/web/shared/config/upstream.ts
   scripts/rebrand.sh
+  scripts/setup-git.sh
   scripts/sync-upstream.sh
 )
 

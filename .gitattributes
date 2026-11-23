@@ -6,3 +6,19 @@
 # Windows) changes the hash and dirties the tree on every start.
 *.svg text eol=lf
 apps/web/shared/generated/** text eol=lf
+
+# Fork-exclusive documentation, policy, and release files.
+# Requires `bash scripts/setup-git.sh` (sets `merge.ours.driver = true`).
+# Upstream changes to these files never overwrite FireCortex's copy during
+# merges; inspect `git diff <prev>..<curr> -- <file>` on `upstream-rebranded`
+# whenever upstream updates need to be reviewed manually.
+AGENTS.md merge=ours
+CLAUDE.md merge=ours
+README.md merge=ours
+docs/README.zh-CN.md merge=ours
+docs/UPSTREAM.md merge=ours
+deploy/README.md merge=ours
+deploy/firecortex.service merge=ours
+.github/CODE_OF_CONDUCT.md merge=ours
+.github/SECURITY.md merge=ours
+.github/workflows/release.yml merge=ours

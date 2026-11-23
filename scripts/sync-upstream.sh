@@ -3,12 +3,16 @@
 #
 # The raw upstream tree at <ref> is checked out into a temporary worktree,
 # rewritten by scripts/rebrand.sh, and committed on top of upstream-rebranded
-# (second parent: the raw upstream commit). Merging that branch into the fork
-# then only conflicts where upstream and FireCortex changed the same lines.
-# See docs/UPSTREAM.md for the full workflow.
+# (second parent: the raw upstream commit). Upstream tags are fetched into
+# `refs/upstream-tags/*` rather than `refs/tags/*` so they never collide with
+# FireCortex's own release tags.
+#
+# Both full release merges (`git merge --no-ff upstream-rebranded`) and
+# selective feature porting (`git diff <prev>..<curr> -- <path> | git apply -3`)
+# consume the snapshots recorded by this script. See docs/UPSTREAM.md.
 #
 # Usage:
-#   scripts/sync-upstream.sh <upstream-ref>    e.g. v0.4.4 or upstream/dev
+#   scripts/sync-upstream.sh <upstream-ref>    e.g. v0.4.7 or upstream/main
 #
 # Environment:
 #   UPSTREAM_REMOTE   remote name of DEEIX-AI/DEEIX-Chat (default: upstream)
@@ -24,8 +28,8 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
 if ! git remote get-url "$remote" >/dev/null 2>&1; then
-  echo "sync-upstream: remote '$remote' is missing; add it with:" >&2
-  echo "  git remote add $remote https://github.com/DEEIX-AI/DEEIX-Chat.git" >&2
+  echo "sync-upstream: remote '$remote' is missing; run:" >&2
+  echo "  bash scripts/setup-git.sh" >&2
   exit 1
 fi
 if ! parent="$(git rev-parse --verify -q "refs/heads/$branch")"; then
@@ -37,9 +41,28 @@ if [[ "$(git symbolic-ref -q --short HEAD || true)" == "$branch" ]]; then
   exit 1
 fi
 
-git fetch --quiet --tags "$remote"
-upstream_commit="$(git rev-parse --verify "$ref^{commit}")"
-label="$(git describe --tags --always "$upstream_commit")"
+# Fetch upstream branches and isolated tags without polluting refs/tags/*.
+git fetch --quiet --no-tags "$remote" \
+  "+refs/heads/*:refs/remotes/${remote}/*" \
+  "+refs/tags/*:refs/upstream-tags/*"
+
+# Prefer isolated refs/upstream-tags/<ref> when the caller passes a bare tag name (e.g. v0.4.7).
+resolved_ref="$ref"
+label=""
+if git rev-parse --verify -q "refs/upstream-tags/${ref}^{commit}" >/dev/null 2>&1; then
+  resolved_ref="refs/upstream-tags/${ref}"
+  label="$ref"
+elif [[ "$ref" == refs/upstream-tags/* ]] && git rev-parse --verify -q "${ref}^{commit}" >/dev/null 2>&1; then
+  label="${ref#refs/upstream-tags/}"
+fi
+
+upstream_commit="$(git rev-parse --verify "${resolved_ref}^{commit}")"
+if [[ -z "$label" ]]; then
+  label="$(git for-each-ref --points-at="$upstream_commit" --format='%(refname:lstrip=2)' refs/upstream-tags/ | head -n 1 || true)"
+fi
+if [[ -z "$label" ]]; then
+  label="$(git rev-parse --short "$upstream_commit")"
+fi
 
 tmp="$(mktemp -d)"
 cleanup() {
@@ -62,8 +85,12 @@ if [[ "$tree" == "$(git rev-parse "$parent^{tree}")" ]]; then
 fi
 
 commit="$(git commit-tree "$tree" -p "$parent" -p "$upstream_commit" \
-  -m "chore(upstream): rebrand DEEIX Chat $label")"
+  -m "chore: rebrand DEEIX Chat $label")"
 git update-ref -m "sync-upstream: $label" "refs/heads/$branch" "$commit" "$parent"
 
-echo "sync-upstream: $branch -> $(git rev-parse --short "$commit") (rebranded $label)"
-echo "next: git merge --no-ff $branch"
+prev_short="$(git rev-parse --short "$parent")"
+new_short="$(git rev-parse --short "$commit")"
+echo "sync-upstream: $branch -> $new_short (rebranded $label)"
+echo "next (publish mirror):      git push origin $branch"
+echo "next (full release merge):  git switch -c sync/upstream-$label dev && git merge --no-ff $branch"
+echo "next (selective port):      git diff $prev_short..$new_short -- <path> | git apply -3"
