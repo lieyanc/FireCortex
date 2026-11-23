@@ -12,7 +12,7 @@ FireCortex is a heavily rebranded, independently maintained **server-first** for
 - **Opt-in / unsupported by default:**
   - **SQLite** stays strictly behind the `sqlite` / `cgo` build tags (`FIRECORTEX_SQLITE=1` / `-tags sqlite`). Never introduce untagged `go-sqlite3`, `sqlite-vec`, or CGO imports into default builds.
   - **Desktop app (`apps/desktop`)** is retained from upstream only for manual `workflow_dispatch` builds. Never re-enable automatic dispatch of `.github/workflows/desktop-release.yml` from `.github/workflows/release.yml`.
-  - **Docker app images** are intentionally dropped. Do not add an application `Dockerfile`, root `docker-compose*.yml`, or container image workflows. Optional extraction sidecars under `deploy/services/` stay as-is.
+  - **Docker app images** are intentionally dropped. Do not add an application `Dockerfile`, root `docker-compose*.yml`, or main-application container image workflows. Optional extraction sidecars under `deploy/services/` stay as-is and may publish prebuilt sidecar-only images via `.github/workflows/sidecar-images.yml` for FireCortex's built-in Docker infrastructure manager (`managedinfra`).
 - **Configuration:** FireCortex uses `config.json` backed by embedded `backend/internal/infra/config/template.json` (not upstream's `config.yaml`). Whenever adding or changing a config field, update `template.json` and `fileConfig` in matching field order (`TestTemplateMatchesFileConfig` enforces this) and update `config*.example.json` overlays if needed.
 
 ---
