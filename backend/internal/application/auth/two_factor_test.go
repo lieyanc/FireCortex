@@ -10,7 +10,6 @@ import (
 
 	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
-	"github.com/lieyanc/FireCortex/backend/internal/pkg/secretbox"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
@@ -106,7 +105,7 @@ func TestConfirmCurrentTwoFactorSetupFailsWhenEnabledStateDoesNotPersist(t *test
 	if err != nil {
 		t.Fatalf("generate secret: %v", err)
 	}
-	encrypted, err := secretbox.EncryptString(cfg.DataEncryptionKey, secret)
+	encrypted, err := sealForTest(t, cfg.DataEncryptionKey, secret)
 	if err != nil {
 		t.Fatalf("encrypt secret: %v", err)
 	}

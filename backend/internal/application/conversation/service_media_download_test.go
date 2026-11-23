@@ -1,13 +1,20 @@
 package conversation
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"image"
+	"image/png"
 	"testing"
 
+	"github.com/lieyanc/FireCortex/backend/internal/application/channel"
+	appupload "github.com/lieyanc/FireCortex/backend/internal/application/upload"
 	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/objectstorage"
 	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
@@ -56,7 +63,8 @@ func TestReadGeneratedImageDelegatesURLDownloadAndValidatesBytes(t *testing.T) {
 		cfg: config.NewRuntime(config.Config{MaxUploadFileBytes: 1024}),
 		mediaDownloader: generatedMediaDownloaderStub{
 			downloadImage: func(_ context.Context, sourceURL string, trustedProviderEndpoint string, maxBytes int64) ([]byte, string, error) {
-				if sourceURL != "https://cdn.example.test/image" || trustedProviderEndpoint != "http://model.internal:8080/v1" || maxBytes != 1024 {
+				// 生成图片按 maxGeneratedImageBytes 下载，不受用户上传上限约束。
+				if sourceURL != "https://cdn.example.test/image" || trustedProviderEndpoint != "http://model.internal:8080/v1" || maxBytes != maxGeneratedImageBytes {
 					t.Fatalf("unexpected download input: URL=%q trustedEndpoint=%q maxBytes=%d", sourceURL, trustedProviderEndpoint, maxBytes)
 				}
 				return pngHeader, "image/png", nil
@@ -67,12 +75,59 @@ func TestReadGeneratedImageDelegatesURLDownloadAndValidatesBytes(t *testing.T) {
 	data, mimeType, err := service.readGeneratedImage(t.Context(), llm.GeneratedImage{
 		URL:      "https://cdn.example.test/image",
 		MIMEType: "application/octet-stream",
-	}, "http://model.internal:8080/v1")
+	}, mediaArtifactSource{endpoint: "http://model.internal:8080/v1"})
 	if err != nil {
 		t.Fatalf("read generated image: %v", err)
 	}
 	if string(data) != string(pngHeader) || mimeType != "image/png" {
 		t.Fatalf("unexpected generated image: data=%q MIME=%q", data, mimeType)
+	}
+}
+
+// generatedImageUploadRepository 只实现保存一张新文件需要的仓储方法。
+type generatedImageUploadRepository struct {
+	repository.UploadRepository
+}
+
+func (generatedImageUploadRepository) GetUserByID(context.Context, uint) (*domainuser.User, error) {
+	return &domainuser.User{ID: 1, PublicID: "user_1", Status: domainuser.StatusActive}, nil
+}
+
+func (generatedImageUploadRepository) GetLatestActiveFileObjectBySHA(context.Context, uint, string, int64) (*model.FileObject, error) {
+	return nil, nil
+}
+
+func (generatedImageUploadRepository) CreateFileObjectAndConsumeQuota(_ context.Context, item *model.FileObject, quotaLimit int64) (*model.StorageQuota, error) {
+	return &model.StorageQuota{UserID: item.UserID, QuotaBytes: quotaLimit, UsedBytes: item.SizeBytes}, nil
+}
+
+func (generatedImageUploadRepository) GetOrInitUserStorageQuota(_ context.Context, userID uint, quotaLimit int64) (*model.StorageQuota, error) {
+	return &model.StorageQuota{UserID: userID, QuotaBytes: quotaLimit}, nil
+}
+
+// 4K PNG 输出常超过 20 MiB 的默认上传上限；生成图片按自身上限保存，不受用户上传上限约束。
+func TestSaveAssistantImagesIgnoresUserUploadLimits(t *testing.T) {
+	var encoded bytes.Buffer
+	if err := png.Encode(&encoded, image.NewRGBA(image.Rect(0, 0, 64, 64))); err != nil {
+		t.Fatalf("encode png: %v", err)
+	}
+	runtimeCfg := config.NewRuntime(config.Config{MaxUploadFileBytes: 16, FileImageMaxBytes: 16})
+	uploadSvc := appupload.NewServiceWithRuntime(runtimeCfg, generatedImageUploadRepository{}, nil, appupload.Hooks{}, appupload.ErrorSet{
+		FileTooLarge: ErrFileTooLarge,
+	}, "test")
+	uploadSvc.SetObjectStoreProvider(&conversationTestStoreProvider{store: objectstorage.NewLocal(t.TempDir())})
+	service := &Service{cfg: runtimeCfg, uploadSvc: uploadSvc}
+
+	result, err := service.saveAssistantImages(t.Context(), assistantImageSaveInput{
+		UserID:    1,
+		ModelName: "image-model",
+		Images:    []assistantImagePayload{{Bytes: encoded.Bytes(), MIMEType: "image/png"}},
+	})
+	if err != nil {
+		t.Fatalf("save generated image: %v", err)
+	}
+	if result == nil || len(result.AttachmentRows) != 1 || result.AttachmentRows[0].FileSize != int64(encoded.Len()) {
+		t.Fatalf("unexpected saved image: %#v", result)
 	}
 }
 
@@ -88,7 +143,7 @@ func TestReadGeneratedVideoMapsAdapterSizeLimit(t *testing.T) {
 
 	_, _, err := service.readGeneratedVideo(t.Context(), llm.GeneratedVideo{
 		URL: "https://cdn.example.test/video",
-	}, "", "")
+	}, mediaArtifactSource{})
 	if !errors.Is(err, ErrFileTooLarge) {
 		t.Fatalf("expected application file size error, got %v", err)
 	}
@@ -107,7 +162,7 @@ func TestReadGeneratedImageHidesAdapterSecurityDetails(t *testing.T) {
 
 	_, _, err := service.readGeneratedImage(t.Context(), llm.GeneratedImage{
 		URL: "https://cdn.example.test/image",
-	}, "")
+	}, mediaArtifactSource{})
 	if !errors.Is(err, ErrGeneratedMediaArtifactUnavailable) {
 		t.Fatalf("expected generated media artifact error, got %v", err)
 	}
@@ -205,5 +260,46 @@ func TestFinalizeGeneratedMediaArtifactFailurePreservesCancellation(t *testing.T
 	}
 	if repo.contextError != nil || repo.status != "canceled" || repo.errorCode != "conversation_run.canceled" {
 		t.Fatalf("unexpected persisted cancellation: status=%q code=%q contextErr=%v", repo.status, repo.errorCode, repo.contextError)
+	}
+}
+
+// 用户自带 Key 的制品只走专用下载客户端（由它保证端点不获得信任）；没有专用客户端时拒绝下载，不回退。
+func TestUntrustedRouteArtifactsUseTheUntrustedDownloader(t *testing.T) {
+	pngHeader := []byte{0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'}
+	route := &channel.ResolvedRoute{BaseURL: "https://relay.example.com/v1", APIKey: "sk-user", UntrustedEndpoint: true}
+	platformCalls := 0
+	service := &Service{
+		cfg: config.NewRuntime(config.Config{MaxUploadFileBytes: 1024}),
+		mediaDownloader: generatedMediaDownloaderStub{
+			downloadImage: func(context.Context, string, string, int64) ([]byte, string, error) {
+				platformCalls++
+				return pngHeader, "image/png", nil
+			},
+		},
+	}
+	image := llm.GeneratedImage{URL: "https://relay.example.com/files/1.png"}
+	if _, _, err := service.readGeneratedImage(t.Context(), image, mediaArtifactSourceFor(route)); !errors.Is(err, ErrGeneratedMediaArtifactUnavailable) {
+		t.Fatalf("without an untrusted downloader: err = %v", err)
+	}
+	service.untrustedMediaDownloader = generatedMediaDownloaderStub{
+		downloadImage: func(context.Context, string, string, int64) ([]byte, string, error) {
+			return pngHeader, "image/png", nil
+		},
+		downloadVideo: func(_ context.Context, _ string, endpoint string, apiKey string, _ int64) ([]byte, string, error) {
+			// 同源制品需要端点的 Key（如 Gemini Files、xAI 视频），由下载客户端决定是否携带。
+			if endpoint != route.BaseURL || apiKey != route.APIKey {
+				t.Fatalf("download input = %q %q", endpoint, apiKey)
+			}
+			return nil, "", generatedMediaTooLargeError{}
+		},
+	}
+	if _, _, err := service.readGeneratedImage(t.Context(), image, mediaArtifactSourceFor(route)); err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if _, _, err := service.readGeneratedVideo(t.Context(), llm.GeneratedVideo{URL: "https://relay.example.com/v.mp4"}, mediaArtifactSourceFor(route)); !errors.Is(err, ErrFileTooLarge) {
+		t.Fatalf("video: err = %v", err)
+	}
+	if platformCalls != 0 {
+		t.Fatalf("platform downloader used for a user endpoint %d times", platformCalls)
 	}
 }

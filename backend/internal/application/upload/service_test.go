@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"image"
+	"image/png"
 	"io"
 	"os"
 	"strings"
@@ -15,7 +17,7 @@ import (
 	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
-	"github.com/lieyanc/FireCortex/backend/internal/infra/objectstore"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/objectstorage"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
@@ -371,6 +373,29 @@ func TestUploadFileAllowsUnlimitedUserStorageQuota(t *testing.T) {
 	}
 }
 
+func TestEnsureStorageAvailableRejectsOnlyFullStorage(t *testing.T) {
+	ctx := context.Background()
+	repo := newUploadTestRepo()
+	service := newUploadTestService(repo, newUploadTestStore())
+	cfg := service.cfg.Snapshot()
+	cfg.UserStorageQuotaBytes = 100
+	service.cfg.Store(cfg)
+
+	repo.quota.UsedBytes = 99
+	if err := service.EnsureStorageAvailable(ctx, 1); err != nil {
+		t.Fatalf("storage with space left was rejected: %v", err)
+	}
+	repo.quota.UsedBytes = 100
+	if err := service.EnsureStorageAvailable(ctx, 1); !errors.Is(err, repository.ErrConflict) {
+		t.Fatalf("expected full storage to be rejected, got %v", err)
+	}
+	cfg.UserStorageQuotaBytes = 0
+	service.cfg.Store(cfg)
+	if err := service.EnsureStorageAvailable(ctx, 1); err != nil {
+		t.Fatalf("unlimited storage was rejected: %v", err)
+	}
+}
+
 func TestNormalizeDetectedMIMEDowngradesActiveContent(t *testing.T) {
 	tests := []struct {
 		detected string
@@ -388,7 +413,7 @@ func TestNormalizeDetectedMIMEDowngradesActiveContent(t *testing.T) {
 	}
 }
 
-func TestNormalizeDetectedMIMERecognizesVideoExtensions(t *testing.T) {
+func TestNormalizeDetectedMIMERecognizesMediaExtensions(t *testing.T) {
 	tests := []struct {
 		detected string
 		fileName string
@@ -396,6 +421,11 @@ func TestNormalizeDetectedMIMERecognizesVideoExtensions(t *testing.T) {
 	}{
 		{detected: "application/octet-stream", fileName: "clip.mp4", want: "video/mp4"},
 		{detected: "application/octet-stream", fileName: "clip.webm", want: "video/webm"},
+		{detected: "application/octet-stream", fileName: "clip.mov", want: "video/quicktime"},
+		{detected: "audio/mpeg", fileName: "voice.mp3", want: "audio/mpeg"},
+		{detected: "audio/wave", fileName: "voice.wav", want: "audio/wav"},
+		// m4a 的内容嗅探结果是 video/mp4，按扩展名纠正为音频。
+		{detected: "video/mp4", fileName: "voice.m4a", want: "audio/mp4"},
 	}
 	for _, tt := range tests {
 		if got := normalizeDetectedMIME(tt.detected, tt.fileName); got != tt.want {
@@ -474,6 +504,58 @@ func TestUploadFileAllowsMP4WhenVideoMP4IsAllowed(t *testing.T) {
 	}
 }
 
+// 平台生成的制品使用调用方给出的上限，不受管理员为用户上传配置的上限约束。
+func TestUploadFileMaxBytesOverridesConfiguredLimits(t *testing.T) {
+	ctx := context.Background()
+	repo := newUploadTestRepo()
+	store := newUploadTestStore()
+	service := newUploadTestService(repo, store)
+	cfg := service.cfg.Snapshot()
+	cfg.MaxUploadFileBytes = 16
+	cfg.FileImageMaxBytes = 16
+	service.cfg.Store(cfg)
+
+	var encoded bytes.Buffer
+	if err := png.Encode(&encoded, image.NewRGBA(image.Rect(0, 0, 32, 32))); err != nil {
+		t.Fatalf("encode png: %v", err)
+	}
+	content := encoded.Bytes()
+	input := func(maxBytes int64) UploadFileInput {
+		return UploadFileInput{
+			UserID:       1,
+			Purpose:      "generated_image",
+			FileName:     "generated.png",
+			MimeType:     "image/png",
+			DeclaredSize: int64(len(content)),
+			Reader:       bytes.NewReader(content),
+			MaxBytes:     maxBytes,
+		}
+	}
+
+	if _, err := service.UploadFile(ctx, input(0)); !errors.Is(err, repository.ErrInvalidInput) {
+		t.Fatalf("expected configured limit to reject the image, got %v", err)
+	}
+	if _, err := service.UploadFile(ctx, input(int64(len(content))-1)); !errors.Is(err, repository.ErrInvalidInput) {
+		t.Fatalf("expected MaxBytes to stay enforced, got %v", err)
+	}
+	result, err := service.UploadFile(ctx, input(int64(len(content))))
+	if err != nil {
+		t.Fatalf("expected MaxBytes to replace configured limits: %v", err)
+	}
+	if result.File.FileCategory != fileCategoryImage || result.File.SizeBytes != int64(len(content)) {
+		t.Fatalf("unexpected stored file: %#v", result.File)
+	}
+}
+
+func TestInferFileCategoryRecognizesAudio(t *testing.T) {
+	if got := inferFileCategory("audio/mpeg", "voice.mp3"); got != fileCategoryAudio {
+		t.Fatalf("inferFileCategory(audio/mpeg) = %q, want %q", got, fileCategoryAudio)
+	}
+	if fileCategoryRequiresProcessing(fileCategoryAudio) || maxBytesForCategory(fileCategoryAudio, config.Config{FileDocMaxBytes: 1}) != 0 {
+		t.Fatal("audio files need no extraction and are limited only by the global upload size")
+	}
+}
+
 func TestValidateImageFile(t *testing.T) {
 	repo := newUploadTestRepo()
 	store := newUploadTestStore()
@@ -547,7 +629,7 @@ type uploadTestStoreProvider struct {
 	store *uploadTestStore
 }
 
-func (p uploadTestStoreProvider) Open(ctx context.Context) (objectstore.Store, error) {
+func (p uploadTestStoreProvider) Open(ctx context.Context) (objectstorage.Store, error) {
 	_ = ctx
 	return p.store, nil
 }
@@ -561,28 +643,28 @@ func newUploadTestStore() *uploadTestStore {
 	return &uploadTestStore{objects: map[string][]byte{}}
 }
 
-func (s *uploadTestStore) Put(ctx context.Context, key string, body io.Reader, opts objectstore.PutOptions) (objectstore.ObjectInfo, error) {
+func (s *uploadTestStore) Put(ctx context.Context, key string, body io.Reader, opts objectstorage.PutOptions) (objectstorage.ObjectInfo, error) {
 	_ = ctx
 	data, err := io.ReadAll(body)
 	if err != nil {
-		return objectstore.ObjectInfo{}, err
+		return objectstorage.ObjectInfo{}, err
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.objects[key] = append([]byte(nil), data...)
-	return objectstore.ObjectInfo{Key: key, SizeBytes: int64(len(data)), ContentType: opts.ContentType, ModTime: time.Now()}, nil
+	return objectstorage.ObjectInfo{Key: key, SizeBytes: int64(len(data)), ContentType: opts.ContentType, ModTime: time.Now()}, nil
 }
 
-func (s *uploadTestStore) Open(ctx context.Context, key string) (io.ReadCloser, objectstore.ObjectInfo, error) {
+func (s *uploadTestStore) Open(ctx context.Context, key string) (io.ReadCloser, objectstorage.ObjectInfo, error) {
 	_ = ctx
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	data, ok := s.objects[key]
 	if !ok {
-		return nil, objectstore.ObjectInfo{}, objectstore.ErrNotFound
+		return nil, objectstorage.ObjectInfo{}, objectstorage.ErrNotFound
 	}
 	copyOfData := append([]byte(nil), data...)
-	return io.NopCloser(bytes.NewReader(copyOfData)), objectstore.ObjectInfo{Key: key, SizeBytes: int64(len(copyOfData)), ModTime: time.Now()}, nil
+	return io.NopCloser(bytes.NewReader(copyOfData)), objectstorage.ObjectInfo{Key: key, SizeBytes: int64(len(copyOfData)), ModTime: time.Now()}, nil
 }
 
 func (s *uploadTestStore) Delete(ctx context.Context, key string) error {
@@ -598,7 +680,7 @@ func (s *uploadTestStore) Materialize(ctx context.Context, key string) (string, 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.objects[key]; !ok {
-		return "", nil, objectstore.ErrNotFound
+		return "", nil, objectstorage.ErrNotFound
 	}
 	return key, func() {}, nil
 }
@@ -634,10 +716,6 @@ func newUploadTestRepo() *uploadTestRepo {
 
 func (r *uploadTestRepo) ListFileObjectsByUserWithFilter(context.Context, repository.ListFileObjectsInput) ([]domainconversation.FileObject, int64, error) {
 	return nil, 0, nil
-}
-
-func (r *uploadTestRepo) MarkTimedOutFileEmbeddingsFailed(context.Context, uint, time.Time, string) (int64, error) {
-	return 0, nil
 }
 
 func (r *uploadTestRepo) GetActiveFileObjectByID(_ context.Context, userID uint, fileID string) (*domainconversation.FileObject, error) {
@@ -826,4 +904,4 @@ func cloneQuota(q domainconversation.StorageQuota) *domainconversation.StorageQu
 }
 
 var _ repository.UploadRepository = (*uploadTestRepo)(nil)
-var _ objectstore.Store = (*uploadTestStore)(nil)
+var _ objectstorage.Store = (*uploadTestStore)(nil)

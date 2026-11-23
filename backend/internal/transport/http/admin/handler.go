@@ -14,8 +14,8 @@ import (
 	auditapp "github.com/lieyanc/FireCortex/backend/internal/application/audit"
 	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
 	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
+	apperrorlog "github.com/lieyanc/FireCortex/backend/internal/application/errorlog"
 	applogcleanup "github.com/lieyanc/FireCortex/backend/internal/application/logcleanup"
-	systemeventapp "github.com/lieyanc/FireCortex/backend/internal/application/systemevent"
 	"github.com/lieyanc/FireCortex/backend/internal/application/user"
 	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	domainknowledgebase "github.com/lieyanc/FireCortex/backend/internal/domain/knowledgebase"
@@ -63,8 +63,8 @@ func (h *Handler) SetConversationExporter(exporter conversationExporter) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
+// @Param page query int false "页码（从 1 开始，默认 1）"
+// @Param page_size query int false "每页数量（1-1000，默认 20）"
 // @Param q query string false "搜索用户名、昵称、邮箱或公开ID"
 // @Param subscription_status query string false "订阅状态过滤(active/free)"
 // @Param identity_provider query string false "身份源 slug 过滤"
@@ -80,7 +80,7 @@ func (h *Handler) ListUsers(c *gin.Context) {
 		IdentityProvider:   c.Query("identity_provider"),
 	})
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	views := make([]UserResponse, 0, len(items))
@@ -146,7 +146,7 @@ func (h *Handler) CreateUser(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 			return
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 			return
 		}
 	}
@@ -162,7 +162,7 @@ func (h *Handler) CreateUser(c *gin.Context) {
 
 	view, err := h.service.BuildUserView(c.Request.Context(), *item)
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 
@@ -217,10 +217,10 @@ func (h *Handler) ImportOpenWebUIUsers(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusForbidden, err)
 			return
 		case errors.Is(err, appadmin.ErrOpenWebUIImportFailed):
-			response.InternalError(c)
+			response.InternalError(c, err)
 			return
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 			return
 		}
 	}
@@ -299,18 +299,80 @@ func (h *Handler) PatchUser(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusConflict, err)
 			return
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 			return
 		}
 	}
 
 	view, err := h.service.BuildUserView(c.Request.Context(), *item)
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 
 	response.Success(c, UserDataResponse{User: toUserResponse(view)})
+}
+
+// ListErrorLogs godoc
+// @Summary 管理员查询错误日志
+// @Description 分页查看失败请求（5xx 与以错误结束的流式请求）的原始原因；按错误 ID（request_id）精确检索
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "页码（从 1 开始，默认 1）"
+// @Param page_size query int false "每页数量（1-1000，默认 20）"
+// @Param request_id query string false "错误 ID（请求 ID），精确匹配"
+// @Param query query string false "搜索关键词：错误 ID / 追踪 ID 精确匹配，路由、路径、错误码、原因模糊匹配"
+// @Param error_code query string false "对外错误码"
+// @Param status_class query string false "状态分类" Enums(5xx, stream)
+// @Param user_id query int false "用户ID"
+// @Param created_from query string false "创建时间起点(RFC3339)"
+// @Param created_to query string false "创建时间终点(RFC3339)"
+// @Param sort query string false "排序方式" Enums(created_desc, created_asc)
+// @Success 200 {object} ErrorLogListResponseDoc
+// @Failure 400 {object} ErrorDoc
+// @Failure 500 {object} ErrorDoc
+// @Router /admin/error-logs [get]
+// ListErrorLogs 查询错误日志。
+func (h *Handler) ListErrorLogs(c *gin.Context) {
+	page, pageSize := pagination.Parse(c.Query("page"), c.Query("page_size"))
+	userID, ok := parseOptionalUintQuery(c, "user_id")
+	if !ok {
+		return
+	}
+	createdFrom, ok := parseOptionalTimeQuery(c, "created_from")
+	if !ok {
+		return
+	}
+	createdTo, ok := parseOptionalTimeQuery(c, "created_to")
+	if !ok {
+		return
+	}
+	items, total, err := h.service.ListErrorLogs(c.Request.Context(), page, pageSize, apperrorlog.ListFilter{
+		RequestID:   c.Query("request_id"),
+		Query:       c.Query("query"),
+		ErrorCode:   c.Query("error_code"),
+		StatusClass: c.Query("status_class"),
+		UserID:      userID,
+		CreatedFrom: createdFrom,
+		CreatedTo:   createdTo,
+		Sort:        c.Query("sort"),
+	})
+	if err != nil {
+		response.InternalError(c, err)
+		return
+	}
+	userIDs := make([]uint, 0, len(items))
+	for _, item := range items {
+		userIDs = append(userIDs, item.UserID)
+	}
+	userLabels := h.service.ResolveUserLabels(c.Request.Context(), userIDs)
+	results := make([]ErrorLogResponse, 0, len(items))
+	for _, item := range items {
+		results = append(results, toErrorLogResponse(item, userLabels[item.UserID]))
+	}
+	response.SuccessPage(c, total, results)
 }
 
 // ListAuditLogs godoc
@@ -320,8 +382,8 @@ func (h *Handler) PatchUser(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
+// @Param page query int false "页码（从 1 开始，默认 1）"
+// @Param page_size query int false "每页数量（1-1000，默认 20）"
 // @Param query query string false "搜索关键词"
 // @Param resource query string false "资源类型"
 // @Param action query string false "动作"
@@ -357,7 +419,7 @@ func (h *Handler) ListAuditLogs(c *gin.Context) {
 		Sort:        c.Query("sort"),
 	})
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	userIDs := make([]uint, 0, len(items))
@@ -412,7 +474,7 @@ func (h *Handler) CleanupLogs(c *gin.Context) {
 			errors.Is(err, applogcleanup.ErrFutureBefore):
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -424,46 +486,6 @@ func (h *Handler) CleanupLogs(c *gin.Context) {
 	})
 }
 
-// CleanupConversationRuns godoc
-// @Summary 管理员按运行清理对话事件
-// @Description 物理删除指定运行的全部对话事件；保留消息、附件、调用与计费记录
-// @Tags admin
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param body body CleanupConversationRunsRequest true "运行轨迹清理参数"
-// @Success 200 {object} CleanupConversationRunsResponseDoc
-// @Failure 400 {object} ErrorDoc
-// @Failure 500 {object} ErrorDoc
-// @Router /admin/conversation-events/cleanup [post]
-// CleanupConversationRuns 清理指定运行的全部对话事件。
-func (h *Handler) CleanupConversationRuns(c *gin.Context) {
-	var req CleanupConversationRunsRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.InvalidRequestBody(c, err)
-		return
-	}
-	result, err := h.service.CleanupConversationRuns(c.Request.Context(), applogcleanup.ConversationRunInput{
-		RunIDs:      req.RunIDs,
-		RequestID:   middleware.MustRequestID(c),
-		ActorUserID: middleware.MustUserID(c),
-		IP:          c.ClientIP(),
-		UserAgent:   c.Request.UserAgent(),
-	})
-	if err != nil {
-		if errors.Is(err, applogcleanup.ErrInvalidRunIDs) {
-			response.ErrorFrom(c, http.StatusBadRequest, err)
-			return
-		}
-		response.InternalError(c)
-		return
-	}
-	response.Success(c, CleanupConversationRunsResponse{
-		RunCount:     result.RunCount,
-		DeletedCount: result.DeletedCount,
-	})
-}
-
 // ListUsageLogs godoc
 // @Summary 管理员查询模型调用日志
 // @Description 管理员分页查看全量模型调用与计费用量账本
@@ -471,8 +493,8 @@ func (h *Handler) CleanupConversationRuns(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
+// @Param page query int false "页码（从 1 开始，默认 1）"
+// @Param page_size query int false "每页数量（1-1000，默认 20）"
 // @Param query query string false "搜索模型、上游、绑定编码、协议"
 // @Param platform_model_name query string false "平台模型名筛选"
 // @Param billing_mode query string false "计费模式筛选：free/token/call/duration/tiered"
@@ -509,7 +531,7 @@ func (h *Handler) ListUsageLogs(c *gin.Context) {
 		Sort:              c.Query("sort"),
 	})
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	userIDs := make([]uint, 0, len(items))
@@ -631,7 +653,7 @@ func (h *Handler) GetUsageStatistics(c *gin.Context) {
 		case errors.Is(err, appadmin.ErrPermissionGroupNotFound):
 			response.ErrorFrom(c, http.StatusNotFound, err)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -650,8 +672,8 @@ func (h *Handler) GetUsageStatistics(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
+// @Param page query int false "页码（从 1 开始，默认 1）"
+// @Param page_size query int false "每页数量（1-1000，默认 20）"
 // @Param query query string false "搜索订单号、支付渠道、外部支付ID"
 // @Param order_type query string false "订单类型(subscription/topup)"
 // @Param provider query string false "支付渠道"
@@ -690,7 +712,7 @@ func (h *Handler) ListPaymentOrders(c *gin.Context) {
 		Sort:        c.Query("sort"),
 	})
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	userIDs := make([]uint, 0, len(items))
@@ -712,8 +734,8 @@ func (h *Handler) ListPaymentOrders(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
+// @Param page query int false "页码（从 1 开始，默认 1）"
+// @Param page_size query int false "每页数量（1-1000，默认 20）"
 // @Param query query string false "搜索兑换流水号、兑换码摘要、兑换码备注"
 // @Param code_id query int false "兑换码ID"
 // @Param user_id query int false "用户ID"
@@ -754,7 +776,7 @@ func (h *Handler) ListRedemptions(c *gin.Context) {
 		Sort:        c.Query("sort"),
 	})
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	userIDs := make([]uint, 0, len(items))
@@ -776,8 +798,8 @@ func (h *Handler) ListRedemptions(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
+// @Param page query int false "页码（从 1 开始，默认 1）"
+// @Param page_size query int false "每页数量（1-1000，默认 20）"
 // @Param query query string false "搜索运行ID、事件、阶段、标题、工具名"
 // @Param event_scope query string false "事件范围(trace_block/trace_event/tool_call)"
 // @Param event_type query string false "事件类型"
@@ -822,7 +844,7 @@ func (h *Handler) ListConversationEvents(c *gin.Context) {
 		Sort:           c.Query("sort"),
 	})
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	userIDs := make([]uint, 0, len(items))
@@ -863,61 +885,11 @@ func (h *Handler) GetConversationEvent(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, err)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	label := h.service.ResolveUserLabels(c.Request.Context(), []uint{item.UserID})[item.UserID]
 	response.Success(c, toConversationEventResponse(*item, label))
-}
-
-// ListSystemEvents godoc
-// @Summary 管理员查询系统事件
-// @Description 管理员分页查看后台结构化系统事件
-// @Tags admin
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
-// @Param query query string false "搜索关键词"
-// @Param level query string false "级别"
-// @Param source query string false "来源"
-// @Param event query string false "事件"
-// @Param created_from query string false "创建时间起点(RFC3339)"
-// @Param created_to query string false "创建时间终点(RFC3339)"
-// @Param sort query string false "排序方式"
-// @Success 200 {object} SystemEventListResponseDoc
-// @Failure 400 {object} ErrorDoc
-// @Failure 500 {object} ErrorDoc
-// @Router /admin/system-events [get]
-func (h *Handler) ListSystemEvents(c *gin.Context) {
-	page, pageSize := pagination.Parse(c.Query("page"), c.Query("page_size"))
-	createdFrom, ok := parseOptionalTimeQuery(c, "created_from")
-	if !ok {
-		return
-	}
-	createdTo, ok := parseOptionalTimeQuery(c, "created_to")
-	if !ok {
-		return
-	}
-	items, total, err := h.service.ListSystemEvents(c.Request.Context(), page, pageSize, systemeventapp.ListFilter{
-		Query:       c.Query("query"),
-		Level:       c.Query("level"),
-		Source:      c.Query("source"),
-		Event:       c.Query("event"),
-		CreatedFrom: createdFrom,
-		CreatedTo:   createdTo,
-		Sort:        c.Query("sort"),
-	})
-	if err != nil {
-		response.InternalError(c)
-		return
-	}
-	results := make([]SystemEventResponse, 0, len(items))
-	for _, item := range items {
-		results = append(results, toSystemEventResponse(item))
-	}
-	response.SuccessPage(c, total, results)
 }
 
 func parseOptionalUintQuery(c *gin.Context, key string) (uint, bool) {
@@ -985,7 +957,7 @@ func (h *Handler) RevokeUserSessions(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusForbidden, err)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 
@@ -1049,13 +1021,13 @@ func (h *Handler) UpdateUserStatus(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusForbidden, err)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 
 	view, err := h.service.BuildUserView(c.Request.Context(), *item)
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 
@@ -1123,13 +1095,27 @@ func (h *Handler) ResetUserPassword(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 
 	response.Success(c, ResetUserPasswordResponse{Reset: true})
 }
 
+// ResetUserTwoFactor godoc
+// @Summary 管理员重置用户双因素认证
+// @Description 管理员清除指定用户的 TOTP 与恢复码并吊销其全部会话；不允许重置超级管理员
+// @Tags admin
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "用户ID"
+// @Success 200 {object} ResetUserTwoFactorResponseDoc
+// @Failure 400 {object} ErrorDoc
+// @Failure 403 {object} ErrorDoc
+// @Failure 404 {object} ErrorDoc
+// @Failure 409 {object} ErrorDoc
+// @Failure 500 {object} ErrorDoc
+// @Router /admin/users/{id}/reset-2fa [post]
 func (h *Handler) ResetUserTwoFactor(c *gin.Context) {
 	actorUserID := middleware.MustUserID(c)
 	rawID := c.Param("id")
@@ -1158,7 +1144,7 @@ func (h *Handler) ResetUserTwoFactor(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusForbidden, err)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, ResetUserTwoFactorResponse{Reset: true})
@@ -1212,7 +1198,7 @@ func (h *Handler) DeleteUser(c *gin.Context) {
 			response.ErrorWithCode(c, http.StatusConflict, "knowledge_base.owner_file_reference")
 			return
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 			return
 		}
 	}
@@ -1230,8 +1216,8 @@ func (h *Handler) DeleteUser(c *gin.Context) {
 // @Param user_id query int false "用户ID过滤"
 // @Param event_type query string false "事件类型过滤"
 // @Param result query string false "结果过滤(success/failure/blocked)"
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
+// @Param page query int false "页码（从 1 开始，默认 1）"
+// @Param page_size query int false "每页数量（1-1000，默认 20）"
 // @Success 200 {object} UserAuthEventListResponseDoc
 // @Failure 400 {object} ErrorDoc
 // @Failure 500 {object} ErrorDoc
@@ -1256,7 +1242,7 @@ func (h *Handler) ListUserAuthEvents(c *gin.Context) {
 		PageSize:  pageSize,
 	})
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 
@@ -1284,7 +1270,7 @@ func (h *Handler) ListUserAuthEvents(c *gin.Context) {
 // ExportConversations 流式导出全量对话。
 func (h *Handler) ExportConversations(c *gin.Context) {
 	if h.conversationExport == nil {
-		response.InternalError(c)
+		response.InternalError(c, errors.New("conversation export service is not configured"))
 		return
 	}
 

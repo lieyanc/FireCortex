@@ -1,4 +1,4 @@
-// Package mediaartifact 负责下载模型提供商返回的临时媒体制品。
+// Package mediaartifact 负责下载模型提供方返回的临时媒体制品。
 package mediaartifact
 
 import (
@@ -51,13 +51,16 @@ type downloadResult struct {
 	MIMEType string
 }
 
-// Client 维护提供商返回媒体 URL 所使用的隔离出站客户端。
+// Client 维护提供方返回媒体 URL 所使用的隔离出站客户端。
 // 仅当制品 URL 与管理员配置的模型 endpoint 同 origin 时继承局部信任；其他 URL 仍按不可信输入处理。
 type Client struct {
-	basePolicy   security.OutboundPolicy
-	httpClients  *outboundhttp.Pool
-	pollAttempts int
-	pollInterval time.Duration
+	basePolicy  security.OutboundPolicy
+	httpClients *outboundhttp.Pool
+	// untrustedEndpoints 为 true 时，模型 endpoint 由普通用户配置：同源制品仍可携带该 endpoint 的 Key，
+	// 但出站策略不因 endpoint 放宽，私网等受限目标始终拒绝。
+	untrustedEndpoints bool
+	pollAttempts       int
+	pollInterval       time.Duration
 }
 
 // New 使用注入的严格出站策略创建可复用的媒体制品客户端。
@@ -72,6 +75,14 @@ func New(policy security.OutboundPolicy) *Client {
 	}
 }
 
+// NewForUntrustedEndpoints 创建用于用户自配端点的制品客户端：policy 应为只允许公网目标的策略，
+// 且不会因为制品与 endpoint 同源而放宽。同源制品照常携带 Key（Key 本就属于该 endpoint），跨源与重定向不携带。
+func NewForUntrustedEndpoints(policy security.OutboundPolicy) *Client {
+	client := New(policy)
+	client.untrustedEndpoints = true
+	return client
+}
+
 func newMediaArtifactHTTPClient(policy security.OutboundPolicy, strictPolicy security.OutboundPolicy, trustedOrigin string) outboundhttp.ManagedClient {
 	transport := security.NewOutboundHTTPTransport(policy, defaultConnectTimeout)
 	// 媒体制品 URL 经常携带签名查询参数，不能使用会记录 url.full 的通用 HTTP tracing。
@@ -80,7 +91,7 @@ func newMediaArtifactHTTPClient(policy security.OutboundPolicy, strictPolicy sec
 	return outboundhttp.ManagedClient{Client: httpClient, CloseIdleConnections: transport.CloseIdleConnections}
 }
 
-// DownloadImage 从不可信的提供商返回 URL 下载生成图片。
+// DownloadImage 从不可信的提供方返回 URL 下载生成图片。
 func (c *Client) DownloadImage(ctx context.Context, sourceURL string, trustedProviderEndpoint string, maxBytes int64) ([]byte, string, error) {
 	if _, _, ok := geminiGeneratedFileURLs(sourceURL); ok {
 		return nil, "", errors.New("gemini files generated image URI is not supported")
@@ -171,9 +182,9 @@ func (c *Client) download(ctx context.Context, input downloadRequest) (downloadR
 	for key, value := range input.headers {
 		request.Header.Set(key, value)
 	}
-	// 仅在制品 URL 与管理员配置的 Provider endpoint 明确同源时携带 Key。
-	// 跨 origin 制品和后续跨 origin 重定向都不得获得 Provider 凭据。
-	if trustedEndpoint != "" && sameArtifactOrigin(input.url, input.trustedEndpoint) && strings.TrimSpace(input.providerBearerToken) != "" {
+	// 仅在制品 URL 与提供方 endpoint 明确同源时携带 Key。
+	// 跨 origin 制品和后续跨 origin 重定向都不得获得提供方凭据。
+	if sameArtifactOrigin(input.url, input.trustedEndpoint) && strings.TrimSpace(input.providerBearerToken) != "" {
 		request.Header.Set("Authorization", "Bearer "+strings.TrimSpace(input.providerBearerToken))
 	}
 	response, err := c.httpClients.Do(request, trustedEndpoint, "")
@@ -209,6 +220,10 @@ func (c *Client) artifactPolicy(sourceURL string, trustedProviderEndpoint string
 		}
 	}
 	policy := c.basePolicy
+	if c.untrustedEndpoints {
+		// 用户自配端点不获得局部信任：策略不放宽，客户端也不按 endpoint 分池（空串表示无信任 origin）。
+		return "", policy, nil
+	}
 	if trustedEndpoint != "" {
 		var err error
 		policy, err = c.basePolicy.WithTrustedHTTPURLs(trustedEndpoint)

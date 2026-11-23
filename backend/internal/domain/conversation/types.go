@@ -134,6 +134,8 @@ type MessageProcessTrace struct {
 	UpstreamThink *MessageTraceBlock
 	PromptTrace   *MessagePromptTrace
 	Events        []MessageTraceEvent
+	// DetailOmitted 表示这是摘要：思考全文与工具输入输出已省略，完整轨迹需单独查询。
+	DetailOmitted bool
 }
 
 // MessagePromptTraceBlock 表示一次上游请求中的上下文规划块。
@@ -176,28 +178,31 @@ type MessageKnowledgeSource struct {
 	ChunkIndex int
 	Score      float32
 	Preview    string
+	Modality   string
 }
 
 // Message 表示会话消息。
 type Message struct {
-	ID                       uint
-	ConversationID           uint
-	UserID                   uint
-	PublicID                 string
-	ParentMessageID          *uint
-	RunID                    string
-	Role                     string
-	ContentType              string
-	Content                  string
-	ReasoningContent         string
-	BranchReason             string
-	SourceMessageID          *uint
-	TokenUsage               int64
-	InputTokens              int64
-	OutputTokens             int64
-	CacheReadTokens          int64
-	CacheWriteTokens         int64
-	ReasoningTokens          int64
+	ID               uint
+	ConversationID   uint
+	UserID           uint
+	PublicID         string
+	ParentMessageID  *uint
+	RunID            string
+	Role             string
+	ContentType      string
+	Content          string
+	ReasoningContent string
+	BranchReason     string
+	SourceMessageID  *uint
+	TokenUsage       int64
+	InputTokens      int64
+	OutputTokens     int64
+	CacheReadTokens  int64
+	CacheWriteTokens int64
+	ReasoningTokens  int64
+	// ReasoningEffort 是生成该 assistant 消息时生效的规范推理档位；模型无推理能力时为 nil。
+	ReasoningEffort          *string
 	LatencyMS                int64
 	BilledCurrency           string
 	BilledNanousd            int64
@@ -213,11 +218,25 @@ type Message struct {
 	SourcePublicID           string
 	MyFeedback               string
 	ThumbsUpCount            int64
-	ThumbsDownCount          int64
-	ProcessTrace             *MessageProcessTrace
-	EditedAt                 *time.Time
-	CreatedAt                time.Time
-	UpdatedAt                time.Time
+	// UIState 按组件块 id 保存该消息里持久化的交互状态 JSON；只在所有者读取路径填充。
+	UIState         map[string]string
+	ThumbsDownCount int64
+	ProcessTrace    *MessageProcessTrace
+	EditedAt        *time.Time
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+}
+
+// MessageUIState 表示一条助手消息内单个交互式组件块的状态快照。
+type MessageUIState struct {
+	ID             uint
+	UserID         uint
+	ConversationID uint
+	MessageID      uint
+	BlockID        string
+	StateJSON      string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 // MessageFeedback 表示消息反馈。
@@ -355,13 +374,21 @@ type FileObjectProcessing struct {
 }
 
 // FileChunk 表示文件分片。
+// FileChunkModality 标识分片向量来自何种输入。
+const (
+	FileChunkModalityText  = "text"
+	FileChunkModalityImage = "image"
+)
+
 type FileChunk struct {
-	ID                 uint
-	FileObjID          uint
-	UserID             uint
-	ChunkIndex         int
-	PageNum            int
-	CharOffset         int
+	ID         uint
+	FileObjID  uint
+	UserID     uint
+	ChunkIndex int
+	PageNum    int
+	CharOffset int
+	// Modality 为 image 时向量由文件原图计算，Content 是可选的 OCR 文本，仅用于全文检索与展示。
+	Modality           string
 	Content            string
 	TokenCount         int
 	EmbeddingSignature string
@@ -388,29 +415,31 @@ type StorageQuota struct {
 
 // Run 表示对话运行日志。
 type Run struct {
-	ID                       uint
-	RunID                    string
-	RequestID                string
-	UserID                   uint
-	ConversationID           uint
-	TaskType                 string
-	Endpoint                 string
-	Provider                 string
-	ProviderProtocol         string
-	UpstreamID               uint
-	UpstreamModelID          uint
-	UpstreamName             string
-	RequestedModelName       string
-	PlatformModelName        string
-	RoutedBindingCode        string
-	ModelVendor              string
-	ModelIcon                string
-	UpstreamModelName        string
-	InputTokens              int64
-	OutputTokens             int64
-	CacheReadTokens          int64
-	CacheWriteTokens         int64
-	ReasoningTokens          int64
+	ID                 uint
+	RunID              string
+	RequestID          string
+	UserID             uint
+	ConversationID     uint
+	TaskType           string
+	Endpoint           string
+	Provider           string
+	ProviderProtocol   string
+	UpstreamID         uint
+	UpstreamModelID    uint
+	UpstreamName       string
+	RequestedModelName string
+	PlatformModelName  string
+	RoutedBindingCode  string
+	ModelVendor        string
+	ModelIcon          string
+	UpstreamModelName  string
+	InputTokens        int64
+	OutputTokens       int64
+	CacheReadTokens    int64
+	CacheWriteTokens   int64
+	ReasoningTokens    int64
+	// ReasoningEffort 是本次运行最终路由上生效的规范推理档位；模型无推理能力时为 nil。
+	ReasoningEffort          *string
 	ToolCallsCount           int
 	FirstTokenLatencyMS      int64
 	TotalLatencyMS           int64
@@ -430,6 +459,8 @@ type Run struct {
 type RunStatus struct {
 	RunID  string
 	Status string
+	// RequestID 是发起该 run 的 HTTP 请求 ID，用于把续传等后续请求关联回原始请求的日志。
+	RequestID string
 }
 
 // MessageTrace 表示消息处理轨迹。
@@ -589,6 +620,7 @@ type RAGChunk struct {
 	FileName   string
 	FileID     string
 	ChunkIndex int
+	Modality   string
 	Score      float32
 }
 

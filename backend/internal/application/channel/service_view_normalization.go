@@ -8,6 +8,7 @@ import (
 	"unicode"
 
 	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
+	domainpersonalprovider "github.com/lieyanc/FireCortex/backend/internal/domain/personalprovider"
 	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/google/uuid"
@@ -681,6 +682,10 @@ func normalizePlatformModelName(raw string) (string, error) {
 		return "", ErrInvalidPlatformModelName
 	}
 	if strings.ContainsFunc(value, hasUnsafeModelNameRune) {
+		return "", ErrInvalidPlatformModelName
+	}
+	// personal: 是用户自带 Key 模型的命名空间；平台模型占用它会被当成个人模型路由并跳过定价。
+	if domainpersonalprovider.IsModelRef(value) {
 		return "", ErrInvalidPlatformModelName
 	}
 	return value, nil

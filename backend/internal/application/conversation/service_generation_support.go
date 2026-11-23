@@ -92,7 +92,7 @@ func (s *Service) recallSemanticContext(ctx context.Context, scope repository.Hi
 	if s.embeddingSvc == nil || !scope.Valid() || strings.TrimSpace(query) == "" {
 		return nil
 	}
-	embeddings, embeddingSignature, err := s.embeddingSvc.EmbedTextsWithSignature(ctx, []string{query})
+	embeddings, embeddingSignature, err := s.embeddingSvc.EmbedQueriesWithSignature(ctx, []string{query})
 	if err != nil || len(embeddings) == 0 {
 		return nil
 	}
@@ -147,19 +147,7 @@ func (s *Service) callCompactLLM(ctx context.Context, platformModelName string, 
 	}
 
 	attributionReferer, attributionTitle := s.llmAttribution()
-	routeConfig := llm.RouteConfig{
-		Protocol:            route.Protocol,
-		BaseURL:             route.BaseURL,
-		APIKey:              route.APIKey,
-		HeadersJSON:         route.HeadersJSON,
-		ConnectTimeoutMS:    route.ConnectTimeoutMS,
-		ReadTimeoutMS:       route.ReadTimeoutMS,
-		StreamIdleTimeoutMS: route.StreamIdleTimeoutMS,
-		Endpoint:            llm.DefaultEndpointForAdapter(route.Protocol),
-		UpstreamModel:       route.UpstreamModel,
-		AttributionReferer:  attributionReferer,
-		AttributionTitle:    attributionTitle,
-	}
+	routeConfig := routeConfigFromResolved(route, llm.DefaultEndpointForAdapter(route.Protocol), attributionReferer, attributionTitle)
 	startedAt := time.Now()
 	generateInput := buildTextTaskGenerateInput(route, s.cfg.Snapshot(), llmMsgs)
 	var authorization *domainbilling.UsageAuthorization

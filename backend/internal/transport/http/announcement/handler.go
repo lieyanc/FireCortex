@@ -38,7 +38,7 @@ func (h *Handler) ListAnnouncements(c *gin.Context) {
 	includeDismissed, _ := strconv.ParseBool(c.Query("include_dismissed"))
 	items, err := h.service.ListActive(c.Request.Context(), middleware.MustUserID(c), time.Now(), includeDismissed)
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, toAnnouncementResponses(items))
@@ -122,8 +122,8 @@ func (h *Handler) CloseAnnouncement(c *gin.Context) {
 // @Param type query string false "类型：critical/warning/info/normal/general"
 // @Param pinned query bool false "是否置顶"
 // @Param q query string false "搜索关键词"
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
+// @Param page query int false "页码（从 1 开始，默认 1）"
+// @Param page_size query int false "每页数量（1-1000，默认 20）"
 // @Success 200 {object} AdminAnnouncementListResponseDoc
 // @Failure 500 {object} ErrorDoc
 // @Router /admin/announcements [get]
@@ -144,7 +144,7 @@ func (h *Handler) ListAdminAnnouncements(c *gin.Context) {
 		PageSize: pageSize,
 	})
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.SuccessPage(c, total, toAnnouncementResponses(items))
@@ -255,5 +255,5 @@ func writeAnnouncementError(c *gin.Context, err error) {
 		response.ErrorFrom(c, http.StatusBadRequest, err)
 		return
 	}
-	response.InternalError(c)
+	response.InternalError(c, err)
 }

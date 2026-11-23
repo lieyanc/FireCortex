@@ -8,31 +8,12 @@ import (
 	"net/url"
 	"strings"
 
-	systemeventapp "github.com/lieyanc/FireCortex/backend/internal/application/systemevent"
 	domainmcp "github.com/lieyanc/FireCortex/backend/internal/domain/mcp"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/mcpauth"
-	"github.com/lieyanc/FireCortex/backend/internal/pkg/secretbox"
 	portmcp "github.com/lieyanc/FireCortex/backend/internal/ports/mcp"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
-	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
-)
-
-var (
-	ErrInvalidServerName           = apperr.New("mcp.invalid_server_name", "invalid mcp server name")
-	ErrInvalidServerBaseURL        = apperr.New("mcp.invalid_server_base_url", "invalid mcp server base url")
-	ErrInvalidServerStatus         = apperr.New("mcp.invalid_server_status", "invalid mcp server status")
-	ErrInvalidServerHeaders        = apperr.New("mcp.invalid_server_headers", "invalid mcp server headers json")
-	ErrInvalidToolStatus           = apperr.New("mcp.invalid_tool_status", "invalid mcp tool status")
-	ErrInvalidToolName             = apperr.New("mcp.invalid_tool_name", "invalid mcp tool display name")
-	ErrInvalidToolDesc             = apperr.New("mcp.invalid_tool_description", "invalid mcp tool description")
-	ErrInvalidToolAttachmentConfig = apperr.NewMasked("mcp.invalid_attachment_configuration", "invalid MCP tool attachment configuration", "invalid mcp tool attachment configuration")
-	ErrInvalidToolSelection        = apperr.New("mcp.invalid_tool_selection", "invalid mcp tool selection")
-	ErrInvalidToolPrice            = apperr.New("request.invalid_mcp_tool_price", "invalid mcp tool price")
-	ErrMCPClientUnavailable        = apperr.New("mcp.client_unavailable", "mcp client unavailable")
-	// ErrServerLimitExceeded MCP 服务数量超限。
-	ErrServerLimitExceeded = apperr.New("mcp.server_limit_exceeded", "mcp server limit exceeded")
 )
 
 const mcpServerToolListTimeoutMS = 10000
@@ -41,7 +22,6 @@ type Service struct {
 	cfg                 *config.Runtime
 	repo                repository.MCPRepository
 	client              toolLister
-	systemEventWriter   systemEventWriter
 	billingModeProvider billingModeProvider
 }
 
@@ -58,10 +38,6 @@ type billingModeProvider interface {
 type ReorderServerInput struct {
 	ServerID uint
 	ToolIDs  []uint
-}
-
-type systemEventWriter interface {
-	Write(ctx context.Context, input systemeventapp.WriteInput)
 }
 
 type ServerInput struct {
@@ -94,11 +70,6 @@ type SyncServerToolsInput struct {
 // NewServiceWithRuntime 创建 MCP 应用服务。
 func NewServiceWithRuntime(cfg *config.Runtime, repo repository.MCPRepository, client toolLister) *Service {
 	return &Service{cfg: cfg, repo: repo, client: client}
-}
-
-// SetSystemEventWriter 注入系统事件写入器。
-func (s *Service) SetSystemEventWriter(writer systemEventWriter) {
-	s.systemEventWriter = writer
 }
 
 // SetBillingModeProvider 注入计费模式查询器。
@@ -160,20 +131,6 @@ func (s *Service) DeleteServer(ctx context.Context, serverID uint) error {
 func (s *Service) SyncServerTools(ctx context.Context, input SyncServerToolsInput) ([]domainmcp.Tool, error) {
 	serverID := input.ServerID
 	fail := func(err error) ([]domainmcp.Tool, error) {
-		s.writeToolSyncEvent(ctx, systemeventapp.WriteInput{
-			RequestID:  input.RequestID,
-			Level:      "error",
-			Source:     "mcp",
-			Event:      "mcp.tools_sync_failed",
-			Resource:   "mcp_server",
-			ResourceID: fmt.Sprintf("%d", serverID),
-			Message:    "MCP 工具同步失败",
-			Detail: map[string]any{
-				"server_id":  serverID,
-				"error":      "MCP 工具同步失败",
-				"error_code": mcpSyncErrorCode(err),
-			},
-		})
 		return nil, err
 	}
 
@@ -250,20 +207,6 @@ func (s *Service) SyncServerTools(ctx context.Context, input SyncServerToolsInpu
 	if err != nil {
 		return fail(err)
 	}
-	s.writeToolSyncEvent(ctx, systemeventapp.WriteInput{
-		RequestID:  input.RequestID,
-		Level:      "info",
-		Source:     "mcp",
-		Event:      "mcp.tools_synced",
-		Resource:   "mcp_server",
-		ResourceID: fmt.Sprintf("%d", serverID),
-		Message:    "MCP 工具已同步",
-		Detail: map[string]any{
-			"server_id":                     serverID,
-			"tool_count":                    len(result),
-			"overwrite_customized_metadata": input.OverwriteCustomizedMetadata,
-		},
-	})
 	return result, nil
 }
 
@@ -279,13 +222,6 @@ func removeSignedUserContextTemplates(headers map[string]string) map[string]stri
 		filtered[key] = value
 	}
 	return filtered
-}
-
-func mcpSyncErrorCode(err error) string {
-	if code := apperr.Code(err); code != "" {
-		return code
-	}
-	return "mcp.tools_sync_failed"
 }
 
 func preserveCompatibleToolAttachmentConfig(discovered *domainmcp.Tool, existing domainmcp.Tool) {
@@ -305,14 +241,6 @@ func preserveCompatibleToolAttachmentConfig(discovered *domainmcp.Tool, existing
 	discovered.AttachmentArgument = config.Argument
 	discovered.AttachmentEncoding = config.Encoding
 	discovered.AttachmentPromptArgument = config.PromptArgument
-}
-
-func (s *Service) writeToolSyncEvent(ctx context.Context, input systemeventapp.WriteInput) {
-	if s.systemEventWriter == nil {
-		return
-	}
-	input.RequestID = strings.TrimSpace(input.RequestID)
-	s.systemEventWriter.Write(ctx, input)
 }
 
 func (s *Service) ListTools(ctx context.Context, serverID uint, onlyActive bool) ([]domainmcp.Tool, error) {
@@ -670,12 +598,27 @@ func normalizeToolStatus(status string) (string, error) {
 	}
 }
 
+// encryptToken 加密 MCP 认证令牌；未配置令牌的服务不需要主密钥。
 func (s *Service) encryptToken(token string) (string, error) {
-	return secretbox.EncryptString(s.cfg.Snapshot().DataEncryptionKey, token)
+	if strings.TrimSpace(token) == "" {
+		return "", nil
+	}
+	keyring, err := s.cfg.Snapshot().Keyring()
+	if err != nil {
+		return "", err
+	}
+	return keyring.EncryptString(token)
 }
 
 func (s *Service) decryptToken(encrypted string) (string, error) {
-	return secretbox.DecryptString(s.cfg.Snapshot().DataEncryptionKey, encrypted)
+	if strings.TrimSpace(encrypted) == "" {
+		return "", nil
+	}
+	keyring, err := s.cfg.Snapshot().Keyring()
+	if err != nil {
+		return "", err
+	}
+	return keyring.DecryptString(encrypted)
 }
 
 func parseHeadersJSON(raw string) (map[string]string, error) {

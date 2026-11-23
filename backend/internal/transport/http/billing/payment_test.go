@@ -12,13 +12,11 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 func TestPreparePaymentCheckoutRejectsUnsafeEPayEndpoint(t *testing.T) {
 	handler := &Handler{
-		cfg:    config.NewRuntime(config.Config{Env: "dev"}),
-		logger: zap.NewNop(),
+		cfg: config.NewRuntime(config.Config{Env: "dev"}),
 	}
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
 	ctx.Request = httptest.NewRequest("POST", "https://chat.example.com/api/v1/billing/payments/checkout", nil)
@@ -42,7 +40,6 @@ func TestPreparePaymentCheckoutAcceptsClassicEPayEndpoint(t *testing.T) {
 			PublicAPIBaseURL: "https://api.example.com",
 			PublicWebBaseURL: "https://chat.example.com",
 		}),
-		logger: zap.NewNop(),
 	}
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
 	ctx.Request = httptest.NewRequest("POST", "https://api.example.com/api/v1/billing/payments/checkout", nil)
@@ -54,7 +51,7 @@ func TestPreparePaymentCheckoutAcceptsClassicEPayEndpoint(t *testing.T) {
 		EPayTypes:      defaultEPayTypes(),
 	}, CreateCheckoutRequest{
 		EPayType:   "alipay",
-		SuccessURL: "https://chat.example.com/setting/subscription?payment=success",
+		SuccessURL: "https://chat.example.com/settings/subscription?payment=success",
 	})
 	if err != nil {
 		t.Fatalf("preparePaymentCheckout() error = %v", err)
@@ -73,7 +70,7 @@ func TestSameOriginPublicURLReturnsTypedReturnURLErrors(t *testing.T) {
 		{name: "protocol relative", raw: "//evil.example.com/callback", want: errPaymentReturnURLCrossOrigin},
 		{name: "foreign origin", raw: "https://evil.example.com/callback", want: errPaymentReturnURLCrossOrigin},
 		{name: "not a url", raw: "callback", want: errPaymentReturnURLInvalid},
-		{name: "unparsable relative path", raw: "/settings%zz", want: errPaymentReturnURLInvalid},
+		{name: "unparsable relative path", raw: "/settings/subscription%zz", want: errPaymentReturnURLInvalid},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -83,13 +80,13 @@ func TestSameOriginPublicURLReturnsTypedReturnURLErrors(t *testing.T) {
 			}
 		})
 	}
-	if got, err := sameOriginPublicURL("https://chat.example.com", "/settings?payment=success"); err != nil || got != "https://chat.example.com/settings?payment=success" {
+	if got, err := sameOriginPublicURL("https://chat.example.com", "/settings/subscription?payment=success"); err != nil || got != "https://chat.example.com/settings/subscription?payment=success" {
 		t.Fatalf("relative path = %q, %v", got, err)
 	}
 }
 
 func TestRespondPaymentCheckoutErrorMapsReturnURLErrorsToBadRequest(t *testing.T) {
-	handler := &Handler{logger: zap.NewNop()}
+	handler := &Handler{}
 	cases := []struct {
 		err  error
 		code string

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Group Policy template for FireCortex (desktop).
+  Copy FireCortexChat.admx to %SystemRoot%\PolicyDefinitions (or the domain's
+  Central Store, \\<domain>\SYSVOL\<domain>\Policies\PolicyDefinitions) and the
+  en-US / zh-CN folders' .adml files into the matching language folders.
+
+  Values are written to SOFTWARE\Policies\FireCortex\Chat under HKLM (Computer
+  Configuration) or HKCU (User Configuration). The app reads them at start-up;
+  a value set under HKLM wins over the same value under HKCU. The three proxy
+  values are one setting: whichever hive sets ProxyMode decides all three.
+-->
+<policyDefinitions xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   revision="1.1" schemaVersion="1.0"
+                   xmlns="http://schemas.microsoft.com/GroupPolicy/2006/07/PolicyDefinitions">
+  <policyNamespaces>
+    <target prefix="firecortexchat" namespace="FireCortex.Policies.Chat" />
+  </policyNamespaces>
+  <resources minRequiredRevision="1.1" />
+  <supportedOn>
+    <definitions>
+      <definition name="SUPPORTED_Windows10" displayName="$(string.SUPPORTED_Windows10)" />
+    </definitions>
+  </supportedOn>
+  <categories>
+    <category name="FireCortexChat" displayName="$(string.Category_FireCortexChat)" explainText="$(string.Category_FireCortexChat_Explain)" />
+  </categories>
+  <policies>
+    <policy name="DefaultServerUrl" class="Both"
+            displayName="$(string.DefaultServerUrl)"
+            explainText="$(string.DefaultServerUrl_Explain)"
+            presentation="$(presentation.DefaultServerUrl)"
+            key="SOFTWARE\Policies\FireCortex\Chat">
+      <parentCategory ref="FireCortexChat" />
+      <supportedOn ref="SUPPORTED_Windows10" />
+      <elements>
+        <text id="DefaultServerUrl" valueName="DefaultServerUrl" required="true" maxLength="2048" />
+      </elements>
+    </policy>
+
+    <policy name="LockServerUrl" class="Both"
+            displayName="$(string.LockServerUrl)"
+            explainText="$(string.LockServerUrl_Explain)"
+            key="SOFTWARE\Policies\FireCortex\Chat"
+            valueName="LockServerUrl">
+      <parentCategory ref="FireCortexChat" />
+      <supportedOn ref="SUPPORTED_Windows10" />
+      <enabledValue>
+        <decimal value="1" />
+      </enabledValue>
+      <disabledValue>
+        <decimal value="0" />
+      </disabledValue>
+    </policy>
+
+    <policy name="DisableLocalMode" class="Both"
+            displayName="$(string.DisableLocalMode)"
+            explainText="$(string.DisableLocalMode_Explain)"
+            key="SOFTWARE\Policies\FireCortex\Chat"
+            valueName="DisableLocalMode">
+      <parentCategory ref="FireCortexChat" />
+      <supportedOn ref="SUPPORTED_Windows10" />
+      <enabledValue>
+        <decimal value="1" />
+      </enabledValue>
+      <disabledValue>
+        <decimal value="0" />
+      </disabledValue>
+    </policy>
+
+    <policy name="DisableAutoUpdate" class="Both"
+            displayName="$(string.DisableAutoUpdate)"
+            explainText="$(string.DisableAutoUpdate_Explain)"
+            key="SOFTWARE\Policies\FireCortex\Chat"
+            valueName="DisableAutoUpdate">
+      <parentCategory ref="FireCortexChat" />
+      <supportedOn ref="SUPPORTED_Windows10" />
+      <enabledValue>
+        <decimal value="1" />
+      </enabledValue>
+      <disabledValue>
+        <decimal value="0" />
+      </disabledValue>
+    </policy>
+
+    <!-- Value names and modes follow Chrome's ProxySettings policy. -->
+    <policy name="ProxySettings" class="Both"
+            displayName="$(string.ProxySettings)"
+            explainText="$(string.ProxySettings_Explain)"
+            presentation="$(presentation.ProxySettings)"
+            key="SOFTWARE\Policies\FireCortex\Chat">
+      <parentCategory ref="FireCortexChat" />
+      <supportedOn ref="SUPPORTED_Windows10" />
+      <elements>
+        <enum id="ProxyMode" valueName="ProxyMode" required="true">
+          <item displayName="$(string.ProxyMode_System)">
+            <value>
+              <string>system</string>
+            </value>
+          </item>
+          <item displayName="$(string.ProxyMode_Direct)">
+            <value>
+              <string>direct</string>
+            </value>
+          </item>
+          <item displayName="$(string.ProxyMode_FixedServers)">
+            <value>
+              <string>fixed_servers</string>
+            </value>
+          </item>
+        </enum>
+        <text id="ProxyServer" valueName="ProxyServer" maxLength="2048" />
+        <text id="ProxyBypassList" valueName="ProxyBypassList" maxLength="8192" />
+      </elements>
+    </policy>
+  </policies>
+</policyDefinitions>

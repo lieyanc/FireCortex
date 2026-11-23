@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./frontend/public/logo-white.svg" />
-    <img src="./frontend/public/logo-black.svg" alt="FireCortex" width="160" />
+    <source media="(prefers-color-scheme: dark)" srcset="./apps/web/public/logo-white.svg" />
+    <img src="./apps/web/public/logo-black.svg" alt="FireCortex" width="160" />
   </picture>
 </p>
 
@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  English | <a href="./docs/README.zh-CN.md">简体中文</a>
+  English | <a href="./README.zh-CN.md">简体中文</a>
 </p>
 
 <p align="center">
@@ -131,28 +131,30 @@ The backend keeps clear internal boundaries: `backend/cmd/server` is the executa
 │   │   ├── transport/http/     # handlers, DTOs, middleware, routes
 │   │   └── shared/             # cross-cutting response and security code
 │   └── docs/                  # generated Swagger artifacts
-├── frontend/                 # Next.js App Router and static export
-│   ├── app/                   # route entries and layouts
-│   ├── features/              # feature-owned UI and client workflows
-│   ├── entities/              # reusable business entities
-│   ├── shared/                # API, auth, UI, hooks, models, utilities
-│   ├── components/            # UI primitives and visual components
-│   └── public/                # static assets
-├── packages/api-contract/     # generated TypeScript API contract
-├── docker/                    # optional extraction and OCR services
+├── apps/                     # client applications (one directory per platform)
+│   ├── web/                  # Next.js App Router and static export
+│   └── desktop/              # Tauri 2 shell: tray, deep links, auto-update, OS keychain
+│       ├── app/              # route entries and layouts
+│       ├── features/         # feature-owned UI and client workflows
+│       ├── entities/         # reusable business entities
+│       ├── shared/           # API, auth, UI, hooks, models, utilities
+│       ├── components/       # UI primitives and visual components
+│       └── public/           # static assets
+├── packages/
+│   ├── api-contract/         # generated TypeScript API contract (single source for all clients)
+│   └── core/                 # platform-agnostic client logic shared by web / desktop / mobile
+├── deploy/                    # Docker deployment: compose profiles, config templates, optional services
 ├── docs/                      # project guides and screenshots
-├── config*.example.yaml       # deployment profile templates
-├── docker-compose*.yml        # deployment profiles
 └── Dockerfile                 # frontend + backend production image
 ```
 
-`frontend/` and `backend/` are independent workspaces managed by pnpm and Turborepo. `packages/api-contract/` connects them through generated Swagger types; update the Go transport contract first, then regenerate the shared package.
+`apps/web/` and `backend/` are independent workspaces managed by pnpm and Turborepo. `packages/api-contract/` connects them through generated Swagger types; update the Go transport contract first, then regenerate the shared package. `packages/core/` holds client logic that must stay identical across platforms and is forbidden from importing any UI or platform framework. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for platform boundaries and rules.
 
 ## Prerequisites
 
-- Node.js 20.9 or newer (the repository Docker image and CI use Node.js 24).
-- pnpm 10.17.0, normally enabled through Corepack.
-- Go 1.26.8 for backend development.
+- Node.js 22.23.4, 24.22.1 or 26.12.1 — the first patched release of each maintained line (`engines` allows all three; Node 20 and older are end-of-life). `.nvmrc`, CI and the Docker image all use 26.12.1.
+- pnpm 10.17.0 (`npm install -g pnpm@10.17.0`; Node 26 no longer bundles Corepack).
+- Go 1.26.10 for backend development.
 - Docker Engine with Docker Compose v2 for container deployments or local PostgreSQL/Redis services.
 
 The SQLite profile does not require a separately managed database or cache. The default development configuration uses PostgreSQL and Redis; the full Compose profile starts both services for you.
@@ -168,7 +170,7 @@ Local development is intended for editing source code and running the frontend a
 1. Prepare backend configuration:
 
 ```bash
-cp config.example.yaml config.yaml
+cp deploy/config.example.yaml config.yaml
 ```
 
 Adjust `database.postgres.dsn`, `database.redis.*`, and public URLs in `config.yaml` for your local environment.
@@ -177,18 +179,19 @@ Adjust `database.postgres.dsn`, `database.redis.*`, and public URLs in `config.y
 
 ```bash
 pnpm install
-cp frontend/.env.example frontend/.env.local
+cp apps/web/.env.example apps/web/.env.local
 ```
 
 3. Start the frontend and backend together:
 
 ```bash
-pnpm dev
+make dev
 ```
 
-Use `pnpm dev:web` or `pnpm dev:api` to start only one workspace.
+`make api`, `make web` and `make desktop` start one app at a time; `make help`
+lists everything.
 
-The frontend uses `NEXT_PUBLIC_API_BASE_URL` for API requests. For local development, confirm that `frontend/.env.local` contains:
+The frontend uses `NEXT_PUBLIC_API_BASE_URL` for API requests. For local development, confirm that `apps/web/.env.local` contains:
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8080
@@ -209,25 +212,58 @@ If `NEXT_PUBLIC_API_BASE_URL` is omitted, local development defaults to `localho
 
 ### Workspace Commands
 
-Run workspace commands from the repository root:
+The root `Makefile` is the single entry point; every target runs from the
+repository root and routes to pnpm / turbo / cargo / go underneath.
 
 | Command | Purpose |
 | --- | --- |
-| `pnpm dev` | Start the frontend and backend in watch mode. |
-| `pnpm dev:web` | Start only the Next.js frontend. |
-| `pnpm dev:api` | Start only the Go API. |
-| `pnpm check` | Run workspace lint, type, backend version, and API contract checks. |
-| `pnpm test` | Run workspace tests. |
-| `pnpm build` | Build the static frontend and backend binary. |
-| `pnpm verify` | Run checks, tests, and builds together. |
-| `pnpm api:generate` | Regenerate Swagger artifacts and TypeScript API types. |
-| `pnpm api:check` | Check that generated API artifacts are up to date. |
+| `make dev` | Frontend and backend in watch mode. |
+| `make api` / `make web` / `make desktop` | One app at a time. |
+| `make check` | Lint, type, architecture and version checks, all workspaces. |
+| `make test` | Tests, all workspaces. |
+| `make build` | Static frontend, backend binary, desktop (turbo, cached). |
+| `make build-desktop` / `make release-desktop` | Quick local `.app` / signed release bundle. |
+| `make verify` | check + test + build, what CI runs. |
+| `make api-docs` | Regenerate Swagger artifacts and TypeScript API types. |
+| `make version` / `make version-check` | Synchronize/check versions, Cargo.lock and generated Swagger/TypeScript API contracts. |
 
-The frontend is exported as static files, so `pnpm build` writes the browser artifact to `frontend/out`. The Go service can serve that directory in the production image or through `server.frontend_dist_dir`.
+The same verbs exist as pnpm scripts (`pnpm dev:api`, `pnpm check`, …) for
+tooling that prefers them; CI uses those directly.
+
+The frontend is exported as static files, so `pnpm build` writes the browser artifact to `apps/web/out`. The Go service can serve that directory in the production image or through `server.frontend_dist_dir`.
+
+### Desktop Releases
+
+Merging a `VERSION` bump into `main` creates `v<VERSION>` and starts
+[`desktop-release.yml`](.github/workflows/desktop-release.yml). Tag pushes also
+trigger it. The parent workflow delegates to reusable workflows:
+
+| Workflow | Responsibility |
+| --- | --- |
+| [`desktop-prepare.yml`](.github/workflows/desktop-prepare.yml) | Resolve the source commit, validate versions, build the frontend and refresh catalog snapshots once. |
+| [`desktop-macos.yml`](.github/workflows/desktop-macos.yml) | Separate arm64 and x64 invocations build, sign, notarize and verify the DMG/updater packages. |
+| [`desktop-linux.yml`](.github/workflows/desktop-linux.yml) | Build x64 deb/AppImage packages and verify Wayland library exclusions. |
+| [`desktop-windows.yml`](.github/workflows/desktop-windows.yml) | Build x64 NSIS/MSI/portable packages, verify signatures and attest their provenance. |
+
+The four native jobs run in parallel after preparation and reuse the same
+frontend/catalog artifacts. Releases run in their tag's context and every job
+checks out the run's immutable commit. Tag caches remain isolated from the
+default branch and other tags, while compatible default-branch CI caches can
+still be restored. Rust is pinned, Rust/Go caches are separated by
+target, and the fat LTO release profile is unchanged. macOS packages are created
+from the same final signed app, avoiding DMG recompression.
+
+Only after every target passes does the parent assemble `latest.json` and
+`SHA256SUMS` and upload a **draft** release. Publishing the draft ships the update.
+Manual branch runs with an empty `release_tag` only upload workflow artifacts;
+manual tag runs create a draft release. A branch run with `release_tag` set
+dispatches the build onto that tag. See the
+[desktop release guide](apps/desktop/README.md#release-workflows) for manual tag
+builds, signing secrets, cache behavior and compilation timing reports.
 
 ### Docker Deployment
 
-Run the following Docker commands from the repository root. Choose one installation profile first, then copy the matching config file. All root compose profiles expose the app at `http://localhost:8080` by default and mount the repository-level `config.yaml` to `/app/config.yaml` inside the container.
+All Docker assets live in [`deploy/`](deploy/README.md); copy that directory to your server, the application source is not needed. Run the following commands from inside `deploy/`. Choose one installation profile first, then copy the matching config template to `deploy/config.yaml`. All profiles expose the app at `http://localhost:8080` by default and mount `./config.yaml` (relative to `deploy/`) to `/app/config.yaml` inside the container.
 
 | Profile | Use case | Config file | Compose file | Built-in dependencies |
 | --- | --- | --- | --- | --- |
@@ -240,6 +276,7 @@ Run the following Docker commands from the repository root. Choose one installat
 This is the lowest-dependency deployment. It starts only the `app` container, stores data and local vector indexes in SQLite, and uses the in-process memory cache. Use it for local evaluation, personal deployments, and small single-node setups.
 
 ```bash
+cd deploy
 cp config.sqlite.example.yaml config.yaml
 docker compose -f docker-compose.sqlite.yml up -d
 ```
@@ -251,6 +288,7 @@ SQLite + memory cache is single-process only. It is good for local use, evaluati
 Use this when PostgreSQL and Redis are already managed outside this compose stack. Before starting, set database and Redis addresses to values reachable from inside the container; if the services run on the Docker host, `host.docker.internal` is usually the right hostname.
 
 ```bash
+cd deploy
 cp config.example.yaml config.yaml
 # Edit database.postgres.dsn, database.redis.*, and public URLs.
 docker compose up -d
@@ -263,6 +301,7 @@ The default `docker-compose.yml` starts only the application container. Keep com
 Use this when you want compose to start the app, PostgreSQL, and Redis together.
 
 ```bash
+cd deploy
 cp config.full.example.yaml config.yaml
 docker compose -f docker-compose.full.yml up -d
 ```
@@ -282,11 +321,13 @@ The default compose files persist application data:
 | PostgreSQL data | `/var/lib/postgresql/data`, full installation only |
 | Redis data | `/data`, full installation only |
 
-The default application image is `ghcr.io/lieyanc/firecortex:latest`. Compose files reference an image and do not define a build step. Build a local image first, then select it with `FIRECORTEX_IMAGE`:
+To move a PostgreSQL database to another machine, use `pg_dump` and restore into a freshly initialized server. Do not copy the data directory or volume between images with a different C library or locale (for example `postgres:*-alpine` and the Debian-based `pgvector/pgvector`): text indexes are ordered by the collation they were built with, so after such a move unique indexes stop detecting existing rows and duplicates appear. If a database has already been moved this way, run `REINDEX DATABASE <name>;` (and `ALTER DATABASE <name> REFRESH COLLATION VERSION;` when the server reports a collation version mismatch). Duplicate rows block the rebuild and must be removed first. On startup the application removes duplicate rows in `system_settings` and rebuilds that table's indexes, and logs a warning when it does.
+
+The default application image is `ghcr.io/lieyanc/firecortex:latest`. Compose files reference an image and do not define a build step. Build a local image from the repository root first, then select it with `FIRECORTEX_IMAGE`:
 
 ```bash
 docker build -t firecortex:local .
-FIRECORTEX_IMAGE=firecortex:local docker compose up -d
+cd deploy && FIRECORTEX_IMAGE=firecortex:local docker compose up -d
 ```
 
 Use the matching `-f docker-compose.sqlite.yml` or `-f docker-compose.full.yml` option when starting another profile.
@@ -296,12 +337,12 @@ Use the matching `-f docker-compose.sqlite.yml` or `-f docker-compose.full.yml` 
 #### Optional Installation Services
 
 These services are optional. Start only the ones you enable in the admin console or `config.yaml`.
-They attach to `firecortex-network`; start one root compose profile first, or create the network manually with `docker network create firecortex-network`.
+They live under `deploy/services/` and attach to `firecortex-network`; start one application profile first, or create the network manually with `docker network create firecortex-network`. Run from inside `deploy/`:
 
 ```bash
-docker compose -f docker/tika/docker-compose.yml up -d
-docker compose -f docker/tesseract/docker-compose.yml up -d --build
-docker compose -f docker/docling/docker-compose.yml up -d --build
+docker compose -f services/tika/docker-compose.yml up -d
+docker compose -f services/tesseract/docker-compose.yml up -d --build
+docker compose -f services/docling/docker-compose.yml up -d --build
 ```
 
 Default local endpoints:
@@ -312,7 +353,7 @@ Default local endpoints:
 | Tesseract OCR | `http://127.0.0.1:8004/ocr` | OCR service |
 | Docling | `http://127.0.0.1:8005/ocr` | Document/OCR extraction |
 
-`docker/rapidocr` currently provides a Dockerfile and app entrypoint, but no compose file. Add a compose file or run it manually if you choose RapidOCR.
+`deploy/services/rapidocr` currently provides a Dockerfile and app entrypoint, but no compose file. Add a compose file or run it manually if you choose RapidOCR.
 
 ### Separated Deployment
 
@@ -338,7 +379,7 @@ Use this mode when the frontend and backend are served from different public ori
    NEXT_PUBLIC_API_BASE_URL=https://api.example.com pnpm --filter @firecortex/web build
    ```
 
-   The static output is `frontend/out`. Serve it with Nginx, CDN, object storage, or any static web server. To let the Go backend serve the frontend, place `frontend/out` under `server.frontend_dist_dir`; the Docker image defaults to `/app/frontend/out`.
+   The static output is `apps/web/out`. Serve it with Nginx, CDN, object storage, or any static web server. To let the Go backend serve the frontend, place `apps/web/out` under `server.frontend_dist_dir`; the Docker image defaults to `/app/frontend/out`.
 
 3. Apply CDN rules.
 
@@ -346,10 +387,10 @@ Use this mode when the frontend and backend are served from different public ori
    | --- | --- |
    | `/_next/static/*` | Cache for 1 year with immutable assets enabled. |
    | `/logo*.svg`, `/*.ico`, `/*.png`, `/*.jpg`, `/*.webp`, `/*.woff2` | Cache for 1 day to 30 days. |
-   | `/`, `/*.html`, `/login*`, `/auth*`, `/chat*`, `/recent*`, `/files*`, `/knowledges*`, `/skills-prompt*`, `/setting*`, `/admin*`, `/share*`, `/preview*` | Do not long-cache. Use `no-cache` or a short TTL. |
+   | `/`, `/*.html`, `/login*`, `/auth*`, `/chat*`, `/recent*`, `/files*`, `/knowledge-bases*`, `/library*`, `/settings*`, `/admin*`, `/share*`, `/preview*` | Do not long-cache. Use `no-cache` or a short TTL. |
    | `/api/*`, `/healthz`, `/readyz`, `/swagger/*` | Bypass CDN cache and forward all request headers, methods, query strings, and request bodies. |
 
-   If the CDN serves `frontend/out` from object storage, enable route fallback so clean URLs resolve to their exported `index.html` files, for example `/chat` -> `/chat/index.html`.
+   If the CDN serves `apps/web/out` from object storage, enable route fallback so clean URLs resolve to their exported `index.html` files, for example `/chat` -> `/chat/index.html`.
 
 ### Startup Check and First Login
 
@@ -381,7 +422,7 @@ If a superadmin already exists, the service does not regenerate or print the ini
 
 Backend configuration is split into static runtime configuration and runtime business settings. Static runtime configuration describes branding and the infrastructure, security, and storage parameters required to start the service, and is provided through `config.yaml` and environment variables. Runtime business settings cover product capabilities such as authentication, conversations, models, files, and billing; they are stored in `system_settings` and maintained from the admin console. Environment variables override matching config-file values, which is useful for containerized deployments, separated deployments, and secret injection.
 
-At startup, the backend resolves the default config file from the working directory: starting from the repository root reads `config.yaml`, while starting from `backend/` reads `../config.yaml`. Docker deployments usually mount host `./config.yaml` as read-only `/app/config.yaml` inside the container. If the config file is stored elsewhere, set `CONFIG_FILE` to a path accessible from the running process or container. The effective priority is `environment variables > config.yaml > built-in defaults`.
+At startup, the backend resolves the default config file from the working directory: starting from the repository root reads `config.yaml`, while starting from `backend/` reads `../config.yaml`. Docker deployments mount `deploy/config.yaml` as read-only `/app/config.yaml` inside the container. If the config file is stored elsewhere, set `CONFIG_FILE` to a path accessible from the running process or container. The effective priority is `environment variables > config.yaml > built-in defaults`.
 
 Frontend branding is also runtime configuration. Set the `branding` section in `config.yaml`, then restart the application; rebuilding the frontend or Docker image is not required. See [Custom branding](docs/BRANDING.md).
 
@@ -389,14 +430,14 @@ Static configuration environment variables:
 
 | Area | Environment variable | Purpose |
 | --- | --- | --- |
-| Frontend build | `NEXT_PUBLIC_API_BASE_URL` | Browser API base URL; set in `frontend/.env.local` for local dev or at build time for separated deployment. |
+| Frontend build | `NEXT_PUBLIC_API_BASE_URL` | Browser API base URL; set in `apps/web/.env.local` for local dev or at build time for separated deployment. |
 | Config file | `CONFIG_FILE` | Optional config file path; Docker values should use the container path. |
 | Application | `APP_NAME` | Application name. |
 | Application | `APP_ENV` | Runtime environment: `dev`/`development` or `prod`/`production`; omitted values default to `prod`. |
 | HTTP service | `HTTP_PORT` | API/runtime port. |
 | HTTP service | `CORS_ALLOW_ORIGIN` | Allowed CORS origins, comma-separated. |
 | HTTP service | `TRUSTED_PROXIES` | Trusted proxy CIDR list. |
-| HTTP service | `PUBLIC_API_BASE_URL` | Public API URL for links, callbacks, and public URL generation. |
+| HTTP service | `PUBLIC_API_BASE_URL` | Public API URL for links, callbacks, and public URL generation. Required for third-party sign-in. |
 | HTTP service | `PUBLIC_WEB_BASE_URL` | Public Web URL for links, callbacks, and public URL generation. |
 | HTTP service | `FRONTEND_DIST_DIR` | Frontend static output directory. |
 | HTTP service | `HTTP_READ_HEADER_TIMEOUT_SECONDS` | HTTP read-header timeout. |
@@ -404,10 +445,12 @@ Static configuration environment variables:
 | HTTP service | `HTTP_IDLE_TIMEOUT_SECONDS` | HTTP keep-alive idle timeout. |
 | HTTP service | `HTTP_MAX_HEADER_BYTES` | Maximum HTTP request header size. |
 | Security | `JWT_SECRET` | JWT signing secret. |
-| Security | `DATA_ENCRYPTION_KEY` | Key material for upstream API keys, SSO secrets, MCP tokens, sensitive settings, and TOTP secrets. |
+| Security | `DATA_ENCRYPTION_KEY` | Key material for upstream API keys, users' own provider keys, SSO secrets, MCP tokens, sensitive settings, and TOTP secrets. Do not replace it in place; see `DATA_ENCRYPTION_KEYS_PREVIOUS`. |
+| Security | `DATA_ENCRYPTION_KEYS_PREVIOUS` | Comma-separated keys used before the current `DATA_ENCRYPTION_KEY`. Data encrypted with them stays readable, and while this is set the server re-encrypts that data with the current key in the background after each startup. Remove it once the log reports `data_encryption_key_rotation_completed`. |
 | Security | `SSRF_PROTECTION_ENABLED` | Enables outbound SSRF protection. |
 | Security | `SSRF_ALLOWED_HOSTS` | Exact hostnames for deployment-level integrations or trusted private redirect targets, comma-separated. |
 | Security | `SSRF_ALLOWED_CIDRS` | Trusted deployment-level integration or private redirect CIDRs, comma-separated. |
+| Network | `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` | Standard outbound proxy variables, honored with or without SSRF protection. `ALL_PROXY` is not supported. The startup log reports the active proxy (`outbound_proxy_enabled`). Changes require a restart. |
 | Security | `TURNSTILE_SITEVERIFY_URL` | Cloudflare Turnstile siteverify endpoint. |
 | Database | `DATABASE_DRIVER` | `postgres` or `sqlite`. |
 | PostgreSQL | `POSTGRES_DSN` | PostgreSQL DSN. |
@@ -458,15 +501,17 @@ Authentication, registration, conversation settings, model option policies, file
 
 When SSRF protection is enabled in production, administrator-saved model, MCP, Embedding, OIDC/OAuth2, and custom Turnstile endpoints are authorized locally by exact origin (`scheme + host + port`) and do not require entries in the global allowlist. Model, MCP, and Embedding redirects retain standard compatibility: public cross-origin targets are allowed, while private cross-origin targets must match `SSRF_ALLOWED_HOSTS` or `SSRF_ALLOWED_CIDRS`; OIDC/OAuth2 and Turnstile keep their stricter identity boundary. Generated media is downloaded, validated, and stored by the backend: a private artifact URL inherits trust only when it has the same origin as the selected model endpoint; public cross-origin artifact URLs remain subject to the strict public-network policy, and private cross-origin artifact URLs are blocked. The global allowlist also remains available for deployment-level integrations that cannot be tied to an administrator-saved endpoint, such as selected GeoIP or extraction deployments. Link-local, multicast, unspecified, and known metadata targets always remain blocked. Invalid allowlist entries stop backend startup, and global allowlist changes require a restart.
 
-### OAuth callbacks for Web, App, and Desktop (multi-platform clients not yet released)
+Outbound requests honor the standard `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY` environment variables, including when SSRF protection is enabled. The proxy address itself is treated as deployment-authorized; target URLs are still validated against the SSRF policy before a proxy is selected, so metadata and other blocked targets remain rejected, and requests that bypass the proxy (via `NO_PROXY` or loopback) keep the full DNS-validated dial path. When a request is sent through the proxy, the proxy resolves the target hostname. Before handing it over, the backend rejects numeric hostnames such as `127.1` or `2130706433` and resolves the hostname locally once, rejecting it if any resolved address is blocked by the policy; if local resolution fails, the request is left to the proxy. This does not protect against DNS rebinding at the proxy, so DNS-level egress control remains the responsibility of your proxy. There is no proxy setting in `config.yaml`: proxy addresses and credentials stay in the deployment environment. Go does not read `ALL_PROXY`, so for a SOCKS proxy set `HTTP_PROXY` and `HTTPS_PROXY` to a `socks5://` URL; if only `ALL_PROXY` is set, the backend logs `outbound_proxy_ignored` at startup and connects directly. Proxy environment changes require a restart. In the desktop app's local mode the app sets these variables for its bundled server from the proxy chosen in Settings › Network (by default the system proxy); see [apps/desktop/README.md](apps/desktop/README.md#network-proxy).
 
-Set `PUBLIC_API_BASE_URL` to the externally reachable API origin before enabling the provider auth bridge. For every OIDC/OAuth2 provider, register the server callback shown in the admin provider dialog:
+### OAuth callbacks for Web, App, and Desktop
+
+Third-party sign-in requires `PUBLIC_API_BASE_URL` to be the externally reachable API origin. For every OIDC/OAuth2 provider, register the single server callback shown in the admin provider dialog:
 
 ```text
 <PUBLIC_API_BASE_URL>/api/v1/auth/providers/<provider-slug>/callback
 ```
 
-Web, App, and Desktop clients then reuse that instance callback automatically. The external provider authorization code and client secret remain on the self-hosted server; public clients receive only a short-lived, one-time FireCortex grant bound to their PKCE verifier. Keep the legacy Web callback shown by the admin dialog registered when account identity binding or older Web clients are still in use.
+Sign-in, registration, and account identity binding on Web, App, and Desktop all use this callback. The external provider authorization code and client secret remain on the self-hosted server; public clients receive only a short-lived, one-time FireCortex grant bound to their PKCE verifier. While `PUBLIC_API_BASE_URL` is unset, provider sign-in is disabled and the admin console shows a notice.
 
 ## Feature Guides
 
@@ -479,7 +524,8 @@ Web, App, and Desktop clients then reuse that instance callback automatically. T
 - User passwords are hashed with bcrypt.
 - Production mode rejects unsafe default secrets, weak encryption keys, wildcard CORS, and non-HTTPS public URLs.
 - Refresh tokens and recovery-style secrets are stored as hashes.
-- Upstream API keys, SSO client secrets, MCP auth tokens, sensitive settings, and TOTP secrets are encrypted with AES-GCM using `DATA_ENCRYPTION_KEY`.
+- Upstream API keys, users' own provider keys, SSO client secrets, MCP auth tokens, sensitive settings, and TOTP secrets are encrypted with AES-256-GCM using `DATA_ENCRYPTION_KEY`. The server must decrypt these values to call providers, so anyone holding both the database and `DATA_ENCRYPTION_KEY` can read them.
+- To change `DATA_ENCRYPTION_KEY`, set the new value, move the old one to `DATA_ENCRYPTION_KEYS_PREVIOUS`, and restart. The server re-encrypts stored secrets with the new key in the background and logs `data_encryption_key_rotation_completed` when nothing depends on the old key; then remove `DATA_ENCRYPTION_KEYS_PREVIOUS` and restart again. If it logs `data_encryption_key_rotation_incomplete` instead, keep the old key and follow the listed reasons. Replacing the key outright makes every stored secret unreadable. The server also warns at startup when a key is a built-in or example placeholder.
 - Access tokens are short-lived and held client-side in memory; refresh tokens are issued through HttpOnly cookies.
 - User-supplied model options are filtered before provider requests. System-generated fields such as model, messages, tools, system prompts, headers, and previous-response identifiers are not user-overridable.
 
@@ -491,8 +537,8 @@ Web, App, and Desktop clients then reuse that instance callback automatically. T
 - [Admin Guide](https://github.com/lieyanc/FireCortex)
 - [Advanced Guide](https://github.com/lieyanc/FireCortex)
 - Backend guide: [backend/README.md](./backend/README.md)
-- Backend standards: [backend/docs/README.md](./backend/docs/README.md)
-- Frontend guide: [frontend/README.md](./frontend/README.md)
+- API documentation index: [backend/docs/README.md](./backend/docs/README.md)
+- Frontend guide: [apps/web/README.md](./apps/web/README.md)
 - API contract package: [packages/api-contract/README.md](./packages/api-contract/README.md)
 - Contributing: [CONTRIBUTING.md](./.github/CONTRIBUTING.md)
 - Security policy: [SECURITY.md](./.github/SECURITY.md)

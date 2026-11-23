@@ -21,7 +21,7 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/conv"
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/filetype"
-	"github.com/lieyanc/FireCortex/backend/internal/ports/objectstore"
+	"github.com/lieyanc/FireCortex/backend/internal/ports/objectstorage"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 	"github.com/google/uuid"
@@ -75,6 +75,9 @@ type UploadFileInput struct {
 	MimeType     string
 	DeclaredSize int64
 	Reader       io.Reader
+	// MaxBytes 非零时替代管理员配置的上传上限与按类型上限。
+	// 只用于平台生成的制品：上传上限约束的是用户提交的文件，不应限制模型输出。
+	MaxBytes int64
 }
 
 // FileOwnership 定义文件所属的存储账户。
@@ -118,7 +121,7 @@ type ListFilesInput struct {
 }
 
 type saveUploadedFileInput struct {
-	Store          objectstore.Store
+	Store          objectstorage.Store
 	Reader         io.Reader
 	UserPublicID   string
 	FileID         string
@@ -156,26 +159,17 @@ func (s *Service) SetObjectStoreProvider(provider appstorage.Provider) {
 	}
 }
 
-func (s *Service) openObjectStore(ctx context.Context) (objectstore.Store, error) {
+func (s *Service) openObjectStore(ctx context.Context) (objectstorage.Store, error) {
 	if s == nil || s.storeProvider == nil {
 		return nil, appstorage.ErrProviderNotConfigured
 	}
 	return s.storeProvider.Open(ctx)
 }
 
-const (
-	embeddingTimeoutStaleAfter = 6 * time.Minute
-)
-
 // ListFiles 分页查询用户文件。
+// 停滞的向量化任务由 embedding 服务的后台巡检统一回收，读路径不再写库。
 func (s *Service) ListFiles(ctx context.Context, input ListFilesInput) (*ListFilesResult, error) {
 	offset, limit := pagination.Offset(input.Page, input.PageSize)
-	_, _ = s.repo.MarkTimedOutFileEmbeddingsFailed(
-		ctx,
-		input.UserID,
-		time.Now().Add(-embeddingTimeoutStaleAfter),
-		"向量化超时，请检查向量化服务配置后重试",
-	)
 	items, total, err := s.repo.ListFileObjectsByUserWithFilter(ctx, repository.ListFileObjectsInput{
 		UserID:      input.UserID,
 		Offset:      offset,
@@ -225,6 +219,9 @@ func (s *Service) UploadFile(ctx context.Context, input UploadFileInput) (*Uploa
 	maxUploadBytes := cfg.MaxUploadFileBytes
 	if maxUploadBytes <= 0 {
 		maxUploadBytes = 20 * 1024 * 1024
+	}
+	if input.MaxBytes > 0 {
+		maxUploadBytes = input.MaxBytes
 	}
 	if input.DeclaredSize > 0 && input.DeclaredSize > maxUploadBytes {
 		return nil, s.errFileTooLarge()
@@ -281,7 +278,7 @@ func (s *Service) UploadFile(ctx context.Context, input UploadFileInput) (*Uploa
 		removeUploadedObject(relativePath)
 		return nil, s.errMIMEBlocked()
 	}
-	if typeLimit := maxBytesForCategory(category, cfg); typeLimit > 0 && sizeBytes > typeLimit {
+	if typeLimit := maxBytesForCategory(category, cfg); input.MaxBytes <= 0 && typeLimit > 0 && sizeBytes > typeLimit {
 		removeUploadedObject(relativePath)
 		return nil, s.errFileTooLarge()
 	}
@@ -313,7 +310,7 @@ func (s *Service) UploadFile(ctx context.Context, input UploadFileInput) (*Uploa
 		StoragePath:      relativePath,
 		Status:           "active",
 		ProcessingStatus: "uploaded",
-		ProcessingReady:  category == fileCategoryVideo || (category == fileCategoryImage && !cfg.ExtractImageOCREnabled),
+		ProcessingReady:  category == fileCategoryVideo || category == fileCategoryAudio || (category == fileCategoryImage && !cfg.ExtractImageOCREnabled),
 		ExtractStatus:    "none",
 		EmbedStatus:      "none",
 		ExtractorVersion: s.resolveExtractorVersion(),
@@ -405,7 +402,7 @@ func (s *Service) releaseUploadGate(key string, gate *uploadContentGate) {
 
 func (s *Service) tryReuseExistingFile(
 	ctx context.Context,
-	store objectstore.Store,
+	store objectstorage.Store,
 	userID uint,
 	shaValue string,
 	sizeBytes int64,
@@ -468,14 +465,14 @@ func (s *Service) tryReuseExistingFile(
 	}
 }
 
-func objectMatchesContent(ctx context.Context, store objectstore.Store, path string, expectedSHA256 string, expectedSize int64) (bool, error) {
+func objectMatchesContent(ctx context.Context, store objectstorage.Store, path string, expectedSHA256 string, expectedSize int64) (bool, error) {
 	normalizedPath := strings.TrimSpace(path)
 	if normalizedPath == "" {
 		return false, nil
 	}
 	reader, info, err := store.Open(ctx, normalizedPath)
 	if err != nil {
-		if errors.Is(err, objectstore.ErrNotFound) || errors.Is(err, objectstore.ErrInvalidKey) {
+		if errors.Is(err, objectstorage.ErrNotFound) || errors.Is(err, objectstorage.ErrInvalidKey) {
 			return false, nil
 		}
 		return false, err
@@ -498,6 +495,19 @@ func objectMatchesContent(ctx context.Context, store objectstore.Store, path str
 func (s *Service) DeleteFile(ctx context.Context, userID uint, fileID string) (*DeleteFileResult, error) {
 	result, _, err := s.deleteFile(ctx, userID, fileID, repository.DeleteFileObjectOptions{})
 	return result, err
+}
+
+// EnsureStorageAvailable 在产生新文件之前检查用户存储空间是否已满。
+// 此时新文件的大小还未知，只能拒绝已满的情况；剩余空间放不下时仍由保存时的配额事务拒绝。
+func (s *Service) EnsureStorageAvailable(ctx context.Context, userID uint) error {
+	quota, err := s.repo.GetOrInitUserStorageQuota(ctx, userID, s.snapshot().UserStorageQuotaBytes)
+	if err != nil {
+		return err
+	}
+	if quota.QuotaBytes > 0 && quota.UsedBytes+quota.ReservedBytes >= quota.QuotaBytes {
+		return s.errStorageQuotaExceeded()
+	}
+	return nil
 }
 
 // DeleteFileIfUnreferenced 仅在文件未被活跃会话引用时删除文件并回收配额。
@@ -626,7 +636,7 @@ func (s *Service) OpenFileContent(ctx context.Context, userID uint, fileID strin
 	}
 	reader, info, err := store.Open(ctx, item.StoragePath)
 	if err != nil {
-		if errors.Is(err, objectstore.ErrNotFound) {
+		if errors.Is(err, objectstorage.ErrNotFound) {
 			return nil, s.errFileNotFound()
 		}
 		return nil, err
@@ -664,6 +674,7 @@ func (s *Service) OpenFileContent(ctx context.Context, userID uint, fileID strin
 const (
 	fileCategoryImage        = "image"
 	fileCategoryVideo        = "video"
+	fileCategoryAudio        = "audio"
 	fileCategoryPDF          = "pdf"
 	fileCategoryWord         = "word"
 	fileCategoryPresentation = "presentation"
@@ -800,6 +811,24 @@ func normalizeDetectedMIME(detected string, fileName string) string {
 		return "video/mp4"
 	case "webm":
 		return "video/webm"
+	case "mov":
+		return "video/quicktime"
+	case "mpeg", "mpg":
+		return "video/mpeg"
+	case "mp3":
+		return "audio/mpeg"
+	case "wav":
+		return "audio/wav"
+	case "m4a":
+		return "audio/mp4"
+	case "aac":
+		return "audio/aac"
+	case "ogg", "oga":
+		return "audio/ogg"
+	case "flac":
+		return "audio/flac"
+	case "aif", "aiff":
+		return "audio/aiff"
 	}
 	if ext != "" && filetype.IsText("", "sample."+ext) {
 		return "text/plain"
@@ -868,6 +897,8 @@ func inferFileCategory(mimeType string, fileName string) string {
 		return fileCategoryImage
 	case strings.HasPrefix(mimeType, "video/"):
 		return fileCategoryVideo
+	case strings.HasPrefix(mimeType, "audio/"):
+		return fileCategoryAudio
 	case mimeType == "application/pdf" || ext == "pdf":
 		return fileCategoryPDF
 	case strings.Contains(mimeType, "wordprocessingml") || strings.Contains(mimeType, "msword") || ext == "docx" || ext == "doc":
@@ -904,7 +935,7 @@ func maxBytesForCategory(category string, cfg config.Config) int64 {
 	if category == fileCategoryImage {
 		return cfg.FileImageMaxBytes
 	}
-	if category == fileCategoryVideo {
+	if category == fileCategoryVideo || category == fileCategoryAudio {
 		return 0
 	}
 	return cfg.FileDocMaxBytes
@@ -959,7 +990,7 @@ func saveUploadedFile(ctx context.Context, input saveUploadedFileInput) (string,
 		return "", "", "", 0, err
 	}
 	defer tmpFile.Close() //nolint:errcheck
-	if _, err = input.Store.Put(ctx, relativePath, tmpFile, objectstore.PutOptions{
+	if _, err = input.Store.Put(ctx, relativePath, tmpFile, objectstorage.PutOptions{
 		SizeBytes:   staged.sizeBytes,
 		ContentType: staged.detectedMIME,
 	}); err != nil {

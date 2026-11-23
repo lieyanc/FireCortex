@@ -1,12 +1,14 @@
 package channel
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
 	"strconv"
 
 	appchannel "github.com/lieyanc/FireCortex/backend/internal/application/channel"
+	apppersonalprovider "github.com/lieyanc/FireCortex/backend/internal/application/personalprovider"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
@@ -15,7 +17,18 @@ import (
 
 // Handler 封装上游与模型管理 HTTP 处理。
 type Handler struct {
-	service *appchannel.Service
+	service        *appchannel.Service
+	personalModels personalModelSource
+}
+
+// personalModelSource 提供用户自带 Key 的模型；功能关闭时返回空列表。
+type personalModelSource interface {
+	ListActiveModels(ctx context.Context, userID uint) ([]apppersonalprovider.ModelEntry, error)
+}
+
+// SetPersonalModelSource 注入用户自带 Key 的模型来源，使其出现在用户模型目录中。
+func (h *Handler) SetPersonalModelSource(source personalModelSource) {
+	h.personalModels = source
 }
 
 func bindModelProbeRequest(c *gin.Context) (ModelProbeRequest, bool) {
@@ -53,15 +66,25 @@ func NewHandler(service *appchannel.Service) *Handler {
 // @Failure 500 {object} ErrorDoc
 // @Router /models [get]
 func (h *Handler) ListPublicModels(c *gin.Context) {
-	items, err := h.service.ListActiveModels(c.Request.Context(), middleware.MustUserID(c))
+	userID := middleware.MustUserID(c)
+	items, err := h.service.ListActiveModels(c.Request.Context(), userID)
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 
+	resolver := h.service.ModelCapabilityResolver()
 	views := make([]PublicModelResponse, 0, len(items))
 	for _, item := range items {
-		views = append(views, toPublicModelResponse(item))
+		views = append(views, toPublicModelResponse(item, resolver))
+	}
+	if h.personalModels != nil {
+		// 个人模型读取失败不影响平台模型目录。
+		if entries, err := h.personalModels.ListActiveModels(c.Request.Context(), userID); err == nil {
+			for _, entry := range entries {
+				views = append(views, toPersonalModelResponse(h.service, entry, resolver))
+			}
+		}
 	}
 	response.Success(c, views)
 }
@@ -77,8 +100,8 @@ func (h *Handler) ListPublicModels(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
+// @Param page query int false "页码（从 1 开始，默认 1）"
+// @Param page_size query int false "每页数量（1-1000，默认 20）"
 // @Param q query string false "搜索关键词"
 // @Param status query string false "状态：active/inactive/circuit"
 // @Param compatible query string false "兼容类型"
@@ -95,7 +118,7 @@ func (h *Handler) ListUpstreams(c *gin.Context) {
 		Sort:       c.Query("sort"),
 	})
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	results := make([]UpstreamResponse, 0, len(items))
@@ -155,7 +178,7 @@ func (h *Handler) CreateUpstream(c *gin.Context) {
 		case errors.Is(err, appchannel.ErrInvalidCompatible):
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -223,7 +246,7 @@ func (h *Handler) UpdateUpstream(c *gin.Context) {
 		case errors.Is(err, appchannel.ErrInvalidCompatible):
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -255,7 +278,7 @@ func (h *Handler) DeleteUpstream(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, errUpstreamNotFound)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, nil)
@@ -312,7 +335,7 @@ func (h *Handler) OpenUpstreamCircuit(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, errUpstreamNotFound)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, nil)
@@ -343,7 +366,7 @@ func (h *Handler) ResetUpstreamCircuit(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, errUpstreamNotFound)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, CircuitResetResponse{Reset: true})
@@ -361,8 +384,8 @@ func (h *Handler) ResetUpstreamCircuit(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "上游ID"
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
+// @Param page query int false "页码（从 1 开始，默认 1）"
+// @Param page_size query int false "每页数量（1-1000，默认 20）"
 // @Param q query string false "搜索关键词"
 // @Param route_status query string false "路由状态：bound/active/inactive"
 // @Param upstream_status query string false "上游模型状态：active/inactive"
@@ -393,7 +416,7 @@ func (h *Handler) ListUpstreamModels(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, errUpstreamNotFound)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	results := make([]UpstreamModelResponse, 0, len(items))
@@ -469,7 +492,7 @@ func (h *Handler) UpsertUpstreamModel(c *gin.Context) {
 		case errors.Is(err, appchannel.ErrProtocolRequired):
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -507,7 +530,7 @@ func (h *Handler) DeleteUpstreamModel(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, errUpstreamModelNotFound)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, nil)
@@ -543,7 +566,7 @@ func (h *Handler) DisableUpstreamModel(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, errUpstreamModelNotFound)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, nil)
@@ -579,7 +602,7 @@ func (h *Handler) EnableUpstreamModel(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, errUpstreamModelNotFound)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, nil)
@@ -649,7 +672,7 @@ func (h *Handler) OpenUpstreamModelCircuit(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, errUpstreamModelNotFound)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, nil)
@@ -686,7 +709,7 @@ func (h *Handler) ResetUpstreamModelCircuit(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, errUpstreamModelNotFound)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, CircuitResetResponse{Reset: true})
@@ -735,7 +758,7 @@ func (h *Handler) TestUpstreamModelRoute(c *gin.Context) {
 		case errors.Is(err, appchannel.ErrModelNotFound):
 			response.ErrorFrom(c, http.StatusNotFound, errModelNotFound)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -776,8 +799,10 @@ func (h *Handler) ListRemoteModels(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 		case errors.Is(err, appchannel.ErrRemoteModelsUnavailable):
 			response.ErrorFrom(c, http.StatusBadGateway, err)
+		case errors.Is(err, appchannel.ErrProtocolRequired):
+			response.ErrorFrom(c, http.StatusBadRequest, err)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -824,8 +849,10 @@ func (h *Handler) SyncUpstreamModels(c *gin.Context) {
 			response.ErrorWithCode(c, http.StatusConflict, "llm.remote_models_empty_confirmation_required")
 		case errors.Is(err, appchannel.ErrRemoteModelsSnapshotChanged):
 			response.ErrorWithCode(c, http.StatusConflict, "llm.remote_models_snapshot_changed")
+		case errors.Is(err, appchannel.ErrProtocolRequired):
+			response.ErrorFrom(c, http.StatusBadRequest, err)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -894,7 +921,7 @@ func (h *Handler) ImportUpstreamModels(c *gin.Context) {
 		case errors.Is(err, appchannel.ErrRemoteModelsUnavailable):
 			response.ErrorFrom(c, http.StatusBadGateway, err)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -912,8 +939,8 @@ func (h *Handler) ImportUpstreamModels(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
+// @Param page query int false "页码（从 1 开始，默认 1）"
+// @Param page_size query int false "每页数量（1-1000，默认 20）"
 // @Param only_active query bool false "仅查询启用模型"
 // @Param only_available query bool false "仅查询公开且可路由模型"
 // @Param q query string false "搜索关键词"
@@ -946,7 +973,7 @@ func (h *Handler) ListModels(c *gin.Context) {
 		Sort:          c.Query("sort"),
 	})
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	results := make([]ModelResponse, 0, len(items))
@@ -998,7 +1025,13 @@ func (h *Handler) CreateModel(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusConflict, errPlatformModelNameAlreadyExists)
 		case errors.Is(err, appchannel.ErrInvalidJSONConfig):
 			response.ErrorFrom(c, http.StatusBadRequest, err)
-		case errors.Is(err, appchannel.ErrInvalidModelCapsConfig):
+		case errors.Is(err, appchannel.ErrInvalidModelCapsConfig),
+			errors.Is(err, appchannel.ErrInvalidReasoningFormat),
+			errors.Is(err, appchannel.ErrInvalidReasoningLevels),
+			errors.Is(err, appchannel.ErrInvalidReasoningDefault),
+			errors.Is(err, appchannel.ErrInvalidReasoningBudgets),
+			errors.Is(err, appchannel.ErrInvalidModelControls),
+			errors.Is(err, appchannel.ErrModelControlForbiddenPath):
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 		case errors.Is(err, appchannel.ErrInvalidKinds):
 			response.ErrorFrom(c, http.StatusBadRequest, err)
@@ -1018,7 +1051,7 @@ func (h *Handler) CreateModel(c *gin.Context) {
 			errors.Is(err, appchannel.ErrModelIconAssetNotFound):
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -1074,7 +1107,13 @@ func (h *Handler) UpdateModel(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, errModelNotFound)
 		case errors.Is(err, appchannel.ErrInvalidJSONConfig):
 			response.ErrorFrom(c, http.StatusBadRequest, err)
-		case errors.Is(err, appchannel.ErrInvalidModelCapsConfig):
+		case errors.Is(err, appchannel.ErrInvalidModelCapsConfig),
+			errors.Is(err, appchannel.ErrInvalidReasoningFormat),
+			errors.Is(err, appchannel.ErrInvalidReasoningLevels),
+			errors.Is(err, appchannel.ErrInvalidReasoningDefault),
+			errors.Is(err, appchannel.ErrInvalidReasoningBudgets),
+			errors.Is(err, appchannel.ErrInvalidModelControls),
+			errors.Is(err, appchannel.ErrModelControlForbiddenPath):
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 		case errors.Is(err, appchannel.ErrInvalidKinds):
 			response.ErrorFrom(c, http.StatusBadRequest, err)
@@ -1094,7 +1133,7 @@ func (h *Handler) UpdateModel(c *gin.Context) {
 			errors.Is(err, appchannel.ErrModelIconAssetNotFound):
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -1152,7 +1191,7 @@ func (h *Handler) SetModelProtocols(c *gin.Context) {
 		case errors.Is(err, appchannel.ErrProtocolRequired):
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -1186,7 +1225,7 @@ func (h *Handler) ReorderModels(c *gin.Context) {
 		case errors.Is(err, appchannel.ErrModelNotFound):
 			response.ErrorFrom(c, http.StatusNotFound, errModelNotFound)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -1218,7 +1257,7 @@ func (h *Handler) DeleteModel(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, errModelNotFound)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, nil)
@@ -1278,7 +1317,7 @@ func (h *Handler) TestModel(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, errModelNotFound)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, toModelProbeResponse(*result))
@@ -1317,7 +1356,7 @@ func (h *Handler) TestModelAll(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, errModelNotFound)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, toModelProbeBatchResponse(*result))
@@ -1331,8 +1370,8 @@ func (h *Handler) TestModelAll(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "模型ID"
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
+// @Param page query int false "页码（从 1 开始，默认 1）"
+// @Param page_size query int false "每页数量（1-1000，默认 20）"
 // @Success 200 {object} ModelUpstreamSourceListResponseDoc
 // @Failure 400 {object} ErrorDoc
 // @Failure 404 {object} ErrorDoc
@@ -1352,7 +1391,7 @@ func (h *Handler) ListModelUpstreamSources(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, errModelNotFound)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	results := make([]ModelUpstreamSourceResponse, 0, len(items))
@@ -1420,7 +1459,7 @@ func (h *Handler) BindModelUpstreamSource(c *gin.Context) {
 		case errors.Is(err, appchannel.ErrUpstreamModelConflict):
 			response.ErrorFrom(c, http.StatusConflict, errTargetModelAlreadyBoundOnThisUpstream)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -1484,7 +1523,7 @@ func (h *Handler) UpdateModelUpstreamSource(c *gin.Context) {
 		case errors.Is(err, appchannel.ErrUpstreamModelConflict):
 			response.ErrorFrom(c, http.StatusConflict, errTargetModelAlreadyBoundOnThisUpstream)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}
@@ -1508,7 +1547,7 @@ func (h *Handler) UpdateModelUpstreamSource(c *gin.Context) {
 func (h *Handler) ListLLMSettings(c *gin.Context) {
 	items, err := h.service.ListLLMSettings(c.Request.Context())
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	results := make([]LLMSettingResponse, 0, len(items))
@@ -1555,7 +1594,7 @@ func (h *Handler) UpdateLLMSetting(c *gin.Context) {
 		case errors.Is(err, appchannel.ErrInvalidJSONConfig):
 			response.ErrorFrom(c, http.StatusBadRequest, err)
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 		}
 		return
 	}

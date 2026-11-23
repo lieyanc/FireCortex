@@ -11,7 +11,6 @@ import (
 
 	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
-	"github.com/lieyanc/FireCortex/backend/internal/pkg/secretbox"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/requestmeta"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
@@ -23,7 +22,7 @@ func boolPtr(value bool) *bool {
 
 func TestResolveProviderUserLoginAutoRegistersWhenProviderRegistrationEnabled(t *testing.T) {
 	repo := &providerLoginRepo{}
-	service := newTestService(config.Config{JWTSecret: "test-secret"}, repo, nil)
+	service := newTestService(config.Config{JWTSecret: "test-secret", DataEncryptionKey: "test-data-encryption-key"}, repo, nil)
 	provider := domainuser.IdentityProvider{
 		ID:                  10,
 		Type:                domainuser.IdentityProviderTypeOIDC,
@@ -60,7 +59,7 @@ func TestResolveProviderUserLoginAutoRegistersWhenProviderRegistrationEnabled(t 
 }
 
 func TestNormalizeProviderInputAllowsAdminDefaultRole(t *testing.T) {
-	service := newTestService(config.Config{JWTSecret: "test-secret"}, &providerLoginRepo{}, nil)
+	service := newTestService(config.Config{JWTSecret: "test-secret", DataEncryptionKey: "test-data-encryption-key"}, &providerLoginRepo{}, nil)
 
 	provider, err := service.normalizeProviderInput(UpsertIdentityProviderInput{
 		ActorRole:           domainuser.RoleAdmin,
@@ -81,7 +80,7 @@ func TestNormalizeProviderInputAllowsAdminDefaultRole(t *testing.T) {
 }
 
 func TestNormalizeProviderInputProtectsSuperAdminDefaultRole(t *testing.T) {
-	service := newTestService(config.Config{JWTSecret: "test-secret"}, &providerLoginRepo{}, nil)
+	service := newTestService(config.Config{JWTSecret: "test-secret", DataEncryptionKey: "test-data-encryption-key"}, &providerLoginRepo{}, nil)
 
 	_, err := service.normalizeProviderInput(UpsertIdentityProviderInput{
 		ActorRole:           domainuser.RoleAdmin,
@@ -99,7 +98,7 @@ func TestNormalizeProviderInputProtectsSuperAdminDefaultRole(t *testing.T) {
 }
 
 func TestNormalizeProviderInputValidatesLogoURL(t *testing.T) {
-	service := newTestService(config.Config{JWTSecret: "test-secret"}, &providerLoginRepo{}, nil)
+	service := newTestService(config.Config{JWTSecret: "test-secret", DataEncryptionKey: "test-data-encryption-key"}, &providerLoginRepo{}, nil)
 
 	cases := []struct {
 		name    string
@@ -141,7 +140,7 @@ func TestNormalizeProviderInputValidatesLogoURL(t *testing.T) {
 }
 
 func TestNormalizeProviderInputValidatesServerEndpoints(t *testing.T) {
-	service := newTestService(config.Config{JWTSecret: "test-secret"}, &providerLoginRepo{}, nil)
+	service := newTestService(config.Config{JWTSecret: "test-secret", DataEncryptionKey: "test-data-encryption-key"}, &providerLoginRepo{}, nil)
 
 	for _, endpoint := range []string{
 		"file:///etc/passwd",
@@ -222,7 +221,7 @@ func TestExchangeProviderCodeRejectsUnconfiguredPrivateDiscoveryOrigin(t *testin
 	defer server.Close()
 
 	const dataKey = "test-data-key"
-	clientSecret, err := secretbox.EncryptString(dataKey, "client-secret")
+	clientSecret, err := sealForTest(t, dataKey, "client-secret")
 	if err != nil {
 		t.Fatalf("encrypt client secret: %v", err)
 	}
@@ -272,7 +271,7 @@ func serverURLFromRequest(request *http.Request) string {
 
 func TestResolveProviderUserAutoRegistrationAddsUsernameSuffixOnCollision(t *testing.T) {
 	repo := &providerLoginRepo{duplicateUsernameAttempts: 1}
-	service := newTestService(config.Config{JWTSecret: "test-secret"}, repo, nil)
+	service := newTestService(config.Config{JWTSecret: "test-secret", DataEncryptionKey: "test-data-encryption-key"}, repo, nil)
 	provider := domainuser.IdentityProvider{
 		ID:                  10,
 		Type:                domainuser.IdentityProviderTypeOIDC,
@@ -304,7 +303,7 @@ func TestResolveProviderUserAutoRegistrationAddsUsernameSuffixOnCollision(t *tes
 
 func TestResolveProviderUserLoginRequiresRegistrationEnabledForNewAccount(t *testing.T) {
 	repo := &providerLoginRepo{}
-	service := newTestService(config.Config{JWTSecret: "test-secret"}, repo, nil)
+	service := newTestService(config.Config{JWTSecret: "test-secret", DataEncryptionKey: "test-data-encryption-key"}, repo, nil)
 	provider := domainuser.IdentityProvider{
 		ID:                  10,
 		Type:                domainuser.IdentityProviderTypeOIDC,
@@ -444,9 +443,9 @@ func TestResolveProviderEmailVerifiedDoesNotUseGenericVerifiedField(t *testing.T
 	}
 }
 
-func TestCompleteProviderBindAllowsSameAccountWithoutProviderEmailVerification(t *testing.T) {
+func TestBindProviderIdentityAllowsSameAccountWithoutProviderEmailVerification(t *testing.T) {
 	dataKey := "test-data-key"
-	clientSecret, err := secretbox.EncryptString(dataKey, "client-secret")
+	clientSecret, err := sealForTest(t, dataKey, "client-secret")
 	if err != nil {
 		t.Fatalf("encrypt client secret: %v", err)
 	}
@@ -498,29 +497,11 @@ func TestCompleteProviderBindAllowsSameAccountWithoutProviderEmailVerification(t
 		DataEncryptionKey:      dataKey,
 		ThirdPartyLoginEnabled: true,
 	}, repo, nil)
-	redirectURI := "http://localhost/auth/callback?provider=acme"
-	codeVerifier := strings.Repeat("a", 43)
-	state, err := service.signProviderState(providerOAuthState{
-		Provider:      "acme",
-		RedirectURI:   redirectURI,
-		Intent:        providerIntentBind,
-		CodeChallenge: providerCodeChallenge(codeVerifier),
-		ExpiresAt:     time.Now().Add(time.Minute).Unix(),
-	})
+	claims, err := service.fetchProviderProfileClaims(context.Background(), *provider, "code", "https://api.example.com/api/v1/auth/providers/acme/callback", strings.Repeat("a", 43))
 	if err != nil {
-		t.Fatalf("sign provider state: %v", err)
+		t.Fatalf("fetch provider profile: %v", err)
 	}
-
-	identity, err := service.CompleteProviderBind(context.Background(), CompleteProviderBindInput{
-		UserID:       42,
-		Slug:         "acme",
-		Code:         "code",
-		State:        state,
-		RedirectURI:  redirectURI,
-		CodeVerifier: codeVerifier,
-		RequestID:    "request-id",
-		AuditContext: requestmeta.SessionAuditContext{},
-	})
+	identity, err := service.bindProviderIdentity(context.Background(), 42, *provider, *claims, "request-id", requestmeta.SessionAuditContext{})
 	if err != nil {
 		t.Fatalf("expected manual bind to succeed without provider email verification claim, got %v", err)
 	}
@@ -532,9 +513,9 @@ func TestCompleteProviderBindAllowsSameAccountWithoutProviderEmailVerification(t
 	}
 }
 
-func TestCompleteProviderLoginAutoLinksGitHubVerifiedPrimaryEmail(t *testing.T) {
+func TestResolveProviderLoginCodeAutoLinksGitHubVerifiedPrimaryEmail(t *testing.T) {
 	dataKey := "test-data-key"
-	clientSecret, err := secretbox.EncryptString(dataKey, "client-secret")
+	clientSecret, err := sealForTest(t, dataKey, "client-secret")
 	if err != nil {
 		t.Fatalf("encrypt client secret: %v", err)
 	}
@@ -598,33 +579,18 @@ func TestCompleteProviderLoginAutoLinksGitHubVerifiedPrimaryEmail(t *testing.T) 
 		ThirdPartyLoginEnabled: true,
 		AutoLinkVerifiedEmail:  true,
 	}, repo, nil)
-	redirectURI := "http://localhost/auth/callback?provider=github"
-	codeVerifier := strings.Repeat("a", 43)
-	state, err := service.signProviderState(providerOAuthState{
-		Provider:      "github",
-		RedirectURI:   redirectURI,
-		Intent:        providerIntentLogin,
-		CodeChallenge: providerCodeChallenge(codeVerifier),
-		ExpiresAt:     time.Now().Add(time.Minute).Unix(),
-	})
-	if err != nil {
-		t.Fatalf("sign provider state: %v", err)
-	}
-
-	result, err := service.CompleteProviderLogin(context.Background(), CompleteProviderLoginInput{
-		Slug:         "github",
-		Code:         "code",
-		State:        state,
-		RedirectURI:  redirectURI,
-		CodeVerifier: codeVerifier,
-		Intent:       providerIntentLogin,
-		RequestID:    "request-id",
-		AuditContext: requestmeta.SessionAuditContext{},
-	})
+	userItem, subject, err := service.resolveProviderLoginCode(context.Background(), *provider, "code", "https://api.example.com/api/v1/auth/providers/github/callback", strings.Repeat("a", 43))
 	if err != nil {
 		t.Fatalf("expected github login to auto-link existing email, got %v", err)
 	}
-	if result.User.ID != existing.ID || result.User.Email != existing.Email {
+	if userItem.ID != existing.ID || userItem.Email != existing.Email || subject == "" {
+		t.Fatalf("expected existing user, got %#v subject=%q", userItem, subject)
+	}
+	result, err := service.completeProviderLoginForUser(context.Background(), userItem, provider.Slug, subject, "request-id", requestmeta.SessionAuditContext{})
+	if err != nil {
+		t.Fatalf("complete provider login: %v", err)
+	}
+	if result.User.ID != existing.ID {
 		t.Fatalf("expected existing user login result, got %#v", result.User)
 	}
 	if repo.createUserCount != 0 {
@@ -638,9 +604,9 @@ func TestCompleteProviderLoginAutoLinksGitHubVerifiedPrimaryEmail(t *testing.T) 
 	}
 }
 
-func TestCompleteProviderLoginReturnsErrorWhenGitHubEmailsUnavailable(t *testing.T) {
+func TestResolveProviderLoginCodeReturnsErrorWhenGitHubEmailsUnavailable(t *testing.T) {
 	dataKey := "test-data-key"
-	clientSecret, err := secretbox.EncryptString(dataKey, "client-secret")
+	clientSecret, err := sealForTest(t, dataKey, "client-secret")
 	if err != nil {
 		t.Fatalf("encrypt client secret: %v", err)
 	}
@@ -686,29 +652,7 @@ func TestCompleteProviderLoginReturnsErrorWhenGitHubEmailsUnavailable(t *testing
 		ThirdPartyLoginEnabled: true,
 		AutoLinkVerifiedEmail:  true,
 	}, repo, nil)
-	redirectURI := "http://localhost/auth/callback?provider=github"
-	codeVerifier := strings.Repeat("a", 43)
-	state, err := service.signProviderState(providerOAuthState{
-		Provider:      "github",
-		RedirectURI:   redirectURI,
-		Intent:        providerIntentLogin,
-		CodeChallenge: providerCodeChallenge(codeVerifier),
-		ExpiresAt:     time.Now().Add(time.Minute).Unix(),
-	})
-	if err != nil {
-		t.Fatalf("sign provider state: %v", err)
-	}
-
-	_, err = service.CompleteProviderLogin(context.Background(), CompleteProviderLoginInput{
-		Slug:         "github",
-		Code:         "code",
-		State:        state,
-		RedirectURI:  redirectURI,
-		CodeVerifier: codeVerifier,
-		Intent:       providerIntentLogin,
-		RequestID:    "request-id",
-		AuditContext: requestmeta.SessionAuditContext{},
-	})
+	_, _, err = service.resolveProviderLoginCode(context.Background(), *provider, "code", "https://api.example.com/api/v1/auth/providers/github/callback", strings.Repeat("a", 43))
 	if err == nil || !strings.Contains(err.Error(), "github provider emails failed") {
 		t.Fatalf("expected github email lookup error, got %v", err)
 	}
@@ -764,7 +708,7 @@ func TestResolveProviderUserRejectsInactiveBoundUserWithoutUpdatingIdentity(t *t
 			{ID: 7, UserID: 42, ProviderID: 10, ProviderSubject: "sub-1"},
 		},
 	}
-	service := newTestService(config.Config{JWTSecret: "test-secret"}, repo, nil)
+	service := newTestService(config.Config{JWTSecret: "test-secret", DataEncryptionKey: "test-data-encryption-key"}, repo, nil)
 	provider := domainuser.IdentityProvider{
 		ID:                  10,
 		Type:                domainuser.IdentityProviderTypeOIDC,
@@ -829,7 +773,7 @@ func TestResolveProviderUserRejectsInactiveAutoLinkUserWithoutBinding(t *testing
 
 func TestResolveProviderUserReturnsIdentityCreateErrorWithoutCleanupCompensation(t *testing.T) {
 	repo := &providerLoginRepo{createIdentityErr: errors.New("duplicate identity")}
-	service := newTestService(config.Config{JWTSecret: "test-secret"}, repo, nil)
+	service := newTestService(config.Config{JWTSecret: "test-secret", DataEncryptionKey: "test-data-encryption-key"}, repo, nil)
 	provider := domainuser.IdentityProvider{
 		ID:                  10,
 		Type:                domainuser.IdentityProviderTypeOIDC,
@@ -868,7 +812,7 @@ func TestUnlinkCurrentUserIdentityRejectsLastPasswordlessLoginMethod(t *testing.
 			{ID: 7, UserID: 42, ProviderID: 10, ProviderSubject: "sub-1"},
 		},
 	}
-	service := newTestService(config.Config{JWTSecret: "test-secret"}, repo, nil)
+	service := newTestService(config.Config{JWTSecret: "test-secret", DataEncryptionKey: "test-data-encryption-key"}, repo, nil)
 
 	err := service.UnlinkCurrentUserIdentity(context.Background(), 42, 7)
 	if !errors.Is(err, ErrLastLoginMethodNotAllowed) {
@@ -888,7 +832,7 @@ func TestUnlinkCurrentUserIdentityAllowsLastIdentityWhenPasswordEnabled(t *testi
 			{ID: 7, UserID: 42, ProviderID: 10, ProviderSubject: "sub-1"},
 		},
 	}
-	service := newTestService(config.Config{JWTSecret: "test-secret"}, repo, nil)
+	service := newTestService(config.Config{JWTSecret: "test-secret", DataEncryptionKey: "test-data-encryption-key"}, repo, nil)
 
 	if err := service.UnlinkCurrentUserIdentity(context.Background(), 42, 7); err != nil {
 		t.Fatalf("expected unlink to succeed, got %v", err)
@@ -908,7 +852,7 @@ func TestUnlinkCurrentUserIdentityAllowsOneOfMultiplePasswordlessLoginMethods(t 
 			{ID: 8, UserID: 42, ProviderID: 11, ProviderSubject: "sub-2"},
 		},
 	}
-	service := newTestService(config.Config{JWTSecret: "test-secret"}, repo, nil)
+	service := newTestService(config.Config{JWTSecret: "test-secret", DataEncryptionKey: "test-data-encryption-key"}, repo, nil)
 
 	if err := service.UnlinkCurrentUserIdentity(context.Background(), 42, 7); err != nil {
 		t.Fatalf("expected unlink to succeed, got %v", err)

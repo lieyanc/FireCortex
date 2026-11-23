@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,6 +13,7 @@ import (
 
 	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
 	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
+	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
@@ -49,6 +51,44 @@ func sanitizeMessageOptions(options map[string]any) map[string]any {
 	return sanitized
 }
 
+const (
+	maxMessageControls        = 64
+	maxMessageControlKeyRunes = 64
+	maxMessageControlValue    = 128
+)
+
+// sanitizeMessageControls 只保留形如 {id: 字符串/布尔/数值} 的控件选择，并限制数量与长度；
+// 取值是否有效由应用层按模型控件校验。
+func sanitizeMessageControls(controls map[string]any) map[string]any {
+	if len(controls) == 0 {
+		return nil
+	}
+	sanitized := make(map[string]any, len(controls))
+	for key, value := range controls {
+		key = strings.TrimSpace(key)
+		if key == "" || len([]rune(key)) > maxMessageControlKeyRunes || len(sanitized) >= maxMessageControls {
+			continue
+		}
+		switch typed := value.(type) {
+		case string:
+			if len(typed) <= maxMessageControlValue {
+				sanitized[key] = typed
+			}
+		case bool, float64:
+			sanitized[key] = typed
+		}
+	}
+	if len(sanitized) == 0 {
+		return nil
+	}
+	return sanitized
+}
+
+// requestAllowsRawOptions 判断请求者能否提交高级参数 JSON（仅管理员）。
+func requestAllowsRawOptions(c *gin.Context) bool {
+	return domainuser.IsAdminRole(middleware.MustUserRole(c))
+}
+
 // parseSendMessageInput 解析消息发送请求的公共参数。
 func (h *Handler) parseSendMessageInput(c *gin.Context) (appconversation.SendMessageInput, *model.Conversation, *SendMessageRequest, error) {
 	userID := middleware.MustUserID(c)
@@ -65,6 +105,7 @@ func (h *Handler) parseSendMessageInput(c *gin.Context) (appconversation.SendMes
 	}
 	req.ClientRunID = appconversation.EnsureMessageGenerationRunID(req.ClientRunID)
 	req.Options = sanitizeMessageOptions(req.Options)
+	req.Controls = sanitizeMessageControls(req.Controls)
 	// 流式接口写入响应头前先拦截明显超限请求，避免后续只能用 NDJSON error 表达 400。
 	if err = h.service.ValidateSelectedToolIDs(req.SelectedToolIDs); err != nil {
 		handleSendMessageError(c, err)
@@ -77,7 +118,7 @@ func (h *Handler) parseSendMessageInput(c *gin.Context) (appconversation.SendMes
 			response.ErrorFrom(c, http.StatusNotFound, err)
 			return appconversation.SendMessageInput{}, nil, nil, err
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return appconversation.SendMessageInput{}, nil, nil, err
 	}
 
@@ -89,6 +130,8 @@ func (h *Handler) parseSendMessageInput(c *gin.Context) (appconversation.SendMes
 		Content:                 req.Content,
 		PlatformModelName:       req.Model,
 		Options:                 req.Options,
+		Controls:                req.Controls,
+		AllowRawOptions:         requestAllowsRawOptions(c),
 		ClientRunID:             req.ClientRunID,
 		FileIDs:                 req.FileIDs,
 		SelectedToolIDs:         req.SelectedToolIDs,
@@ -96,6 +139,8 @@ func (h *Handler) parseSendMessageInput(c *gin.Context) (appconversation.SendMes
 		KnowledgeBaseIDs:        req.KnowledgeBaseIDs,
 		HTMLVisualPromptEnabled: req.HTMLVisualPromptEnabled,
 		UIComponentIDs:          req.UIComponentIDs,
+		UIBlockVersion:          req.UIBlockVersion,
+		UIStates:                toMessageUIStateInputs(req.UIStates),
 		ParentMessagePublicID:   req.ParentMessagePublicID,
 		SourceMessagePublicID:   req.SourceMessagePublicID,
 		BranchReason:            req.BranchReason,
@@ -187,8 +232,25 @@ func (h *Handler) recordSendMessageAuditCtx(ctx context.Context, input appconver
 	h.service.RecordSendMessageAudit(ctx, input)
 }
 
+// streamResumeInterruptedPayload 构造续传流发现生成已失联时的终态错误。
+// 续传是新的 HTTP 请求：事件里的错误 ID 改为引用发起生成的原始请求（根因记录在它的访问日志里），
+// 本次续传请求的访问日志则记录两者的关联，管理员从任一 ID 都能找到对方。
+func streamResumeInterruptedPayload(c *gin.Context, runID string, originalRequestID string) map[string]any {
+	cause := appconversation.ErrMessageGenerationInterrupted
+	payload := streamErrorPayload(c, cause)
+	if originalRequestID = strings.TrimSpace(originalRequestID); originalRequestID != "" {
+		payload["requestId"] = originalRequestID
+		response.RecordError(c, fmt.Errorf("resume run %s: generation lost, original request %s: %w", runID, originalRequestID, cause))
+	}
+	return payload
+}
+
+// errGenerationLifecycleUnavailable 是生成租约拿不到时（进程排空关停中）记入访问日志的内部原因，不对外暴露。
+var errGenerationLifecycleUnavailable = errors.New("message generation lifecycle unavailable: server is draining")
+
 // handleSendMessageError 把消息发送 / 生成 / 计费路径上的错误写成 HTTP 错误响应，映射规则见 describeSendMessageError。
 func handleSendMessageError(c *gin.Context, err error) {
+	response.RecordError(c, err)
 	response.ErrorDescribed(c, describeSendMessageError(err))
 }
 
@@ -236,7 +298,7 @@ func (h *Handler) SendMessage(c *gin.Context) {
 		return
 	}
 	h.recordSendMessageAudit(c, conversation, req, result, "send_message")
-	response.Success(c, toSendMessageResponse(result))
+	response.Success(c, toSendMessageResponse(result, middleware.MustRequestID(c)))
 }
 
 // StreamMessage godoc
@@ -274,6 +336,7 @@ func (h *Handler) StreamMessage(c *gin.Context) {
 	)
 	if !ok {
 		_ = session.Finish(c.Request.Context(), nil)
+		response.RecordError(c, errGenerationLifecycleUnavailable)
 		response.ErrorWithCode(c, http.StatusServiceUnavailable, response.CodeServiceUnavailable)
 		return
 	}
@@ -331,7 +394,7 @@ func (h *Handler) StreamMessage(c *gin.Context) {
 	})
 
 	if err == nil && result != nil && result.IsModerationBlocked() {
-		// Guarantee a terminal event even if live OnEvent path missed emit.
+		// 即使实时 OnEvent 路径漏发，也要确保发送终止事件。
 		if !result.ModerationTerminalEmitted() {
 			_, _ = flushStreamEvent(moderationBlockedStreamPayload(result, session.Authorization()))
 		}
@@ -341,14 +404,14 @@ func (h *Handler) StreamMessage(c *gin.Context) {
 		return
 	}
 	if billingErr := session.Finish(c.Request.Context(), result); billingErr != nil {
-		payload := streamErrorPayloadWithResult(billingErr, result)
+		payload := streamErrorPayloadWithResult(c, billingErr, result)
 		if owned, _ := flushStreamEvent(payload); !owned {
 			_ = writeStreamEvent(payload)
 		}
 		return
 	}
 	if err != nil {
-		payload := streamErrorPayloadWithResult(err, result)
+		payload := streamErrorPayloadWithResult(c, err, result)
 		if owned, _ := flushStreamEvent(payload); !owned {
 			_ = writeStreamEvent(payload)
 		}
@@ -359,7 +422,7 @@ func (h *Handler) StreamMessage(c *gin.Context) {
 	}
 	_, _ = flushStreamEvent(map[string]any{
 		"type": "completed",
-		"data": toSendMessageResponse(result),
+		"data": toSendMessageResponse(result, middleware.MustRequestID(c)),
 	})
 	h.recordStreamSendMessageAuditAsync(c, conversation, req, result, "stream_message")
 }
@@ -385,8 +448,8 @@ func (h *Handler) CancelMessageGeneration(c *gin.Context) {
 }
 
 // StreamActiveMessageGenerations godoc
-// @Summary Stream active conversation generations
-// @Description Sends an authoritative snapshot followed by live user-scoped run state events; the snapshot is re-sent periodically for client-side reconciliation
+// @Summary 订阅进行中的会话生成
+// @Description 先推送当前用户进行中运行的权威快照，再持续推送该用户范围内的运行状态事件；快照会定期重发，供客户端对账
 // @Tags chat
 // @Produce text/event-stream
 // @Security BearerAuth
@@ -400,7 +463,7 @@ func (h *Handler) StreamActiveMessageGenerations(c *gin.Context) {
 		userID,
 	)
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	defer unsubscribe()
@@ -557,9 +620,13 @@ func (h *Handler) ResumeMessageGenerationStream(c *gin.Context) {
 	isActive := func() bool {
 		return h.service.HasActiveMessageGeneration(c.Request.Context(), runID)
 	}
+	resumeInterruptedPayload := func() map[string]any {
+		originalRequestID := h.service.MessageGenerationRequestID(c.Request.Context(), userID, runID)
+		return streamResumeInterruptedPayload(c, runID, originalRequestID)
+	}
 	if !isActive() {
 		h.service.MarkMessageGenerationInterrupted(c.Request.Context(), userID, runID)
-		_ = writeEvent(streamErrorPayload(appconversation.ErrMessageGenerationInterrupted))
+		_ = writeEvent(resumeInterruptedPayload())
 		return
 	}
 	activeTicker := time.NewTicker(resumeActiveCheckInterval)
@@ -577,14 +644,14 @@ func (h *Handler) ResumeMessageGenerationStream(c *gin.Context) {
 		case <-activeTicker.C:
 			if !isActive() {
 				h.service.MarkMessageGenerationInterrupted(c.Request.Context(), userID, runID)
-				_ = writeEvent(streamErrorPayload(appconversation.ErrMessageGenerationInterrupted))
+				_ = writeEvent(resumeInterruptedPayload())
 				return
 			}
 		case event, ok := <-events:
 			if !ok {
 				if !terminalWritten && !isActive() {
 					h.service.MarkMessageGenerationInterrupted(c.Request.Context(), userID, runID)
-					_ = writeEvent(streamErrorPayload(appconversation.ErrMessageGenerationInterrupted))
+					_ = writeEvent(resumeInterruptedPayload())
 				}
 				return
 			}

@@ -12,7 +12,7 @@ import (
 
 // GetOpenRouterOfficialPricing godoc
 // @Summary 管理员获取 OpenRouter 官方模型目录
-// @Description 从 storage 缓存读取 OpenRouter 模型标识、基础定价、输入 token 阶梯覆盖和上下文限制；无法映射到当前 token 计费模型的附加字段会在 unsupportedFields 中标记，快速配置会忽略这些字段并继续导入可识别的 token 价格。由原生工具计费负责的按次字段（例如 web_search）会被忽略。
+// @Description 从 storage 缓存读取 OpenRouter 模型标识（缓存缺失或远端不可达时使用随版本发布的内置快照，origin 为 builtin）、基础定价、输入 token 阶梯覆盖和上下文限制；无法映射到当前 token 计费模型的附加字段会在 unsupportedFields 中标记，快速配置会忽略这些字段并继续导入可识别的 token 价格。由原生工具计费负责的按次字段（例如 web_search）会被忽略。
 // @Tags admin-billing
 // @Accept json
 // @Produce json
@@ -25,7 +25,7 @@ import (
 func (h *Handler) GetOpenRouterOfficialPricing(c *gin.Context) {
 	refresh := strings.EqualFold(strings.TrimSpace(c.Query("refresh")), "true")
 	if h.officialPricing == nil {
-		response.InternalError(c)
+		response.InternalError(c, errors.New("official pricing service is not configured"))
 		return
 	}
 	result, err := h.officialPricing.GetOpenRouterOfficialPricing(c.Request.Context(), refresh)
@@ -33,7 +33,7 @@ func (h *Handler) GetOpenRouterOfficialPricing(c *gin.Context) {
 		if errors.Is(err, appbilling.ErrOfficialPricingCacheUnavailable) ||
 			errors.Is(err, appbilling.ErrOfficialPricingCacheReadFailed) ||
 			errors.Is(err, appbilling.ErrOfficialPricingCacheWriteFailed) {
-			response.InternalError(c)
+			response.InternalError(c, err)
 		} else {
 			response.ErrorFrom(c, http.StatusBadGateway, errUpstreamServiceUnavailable)
 		}
@@ -43,6 +43,7 @@ func (h *Handler) GetOpenRouterOfficialPricing(c *gin.Context) {
 		FetchedAt: result.FetchedAt,
 		Cached:    result.Cached,
 		Stale:     result.Stale,
+		Origin:    result.Origin,
 		Items:     toOpenRouterOfficialPricingResponses(result.Items),
 	})
 }

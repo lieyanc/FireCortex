@@ -81,7 +81,7 @@ func (h *Handler) UploadFile(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusBadRequest, errInvalidFile)
 			return
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 			return
 		}
 	}
@@ -124,8 +124,8 @@ func (h *Handler) maxUploadRequestBytes() int64 {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param page query int false "页码"
-// @Param page_size query int false "每页数量"
+// @Param page query int false "页码（从 1 开始，默认 1）"
+// @Param page_size query int false "每页数量（1-1000，默认 20）"
 // @Param q query string false "搜索关键词"
 // @Param kind query string false "筛选，支持单值或逗号分隔多值: image,document,spreadsheet,presentation,code,pdf,audio,video"
 // @Param sort query string false "排序: created|name|size|last_used"
@@ -149,7 +149,7 @@ func (h *Handler) ListFiles(c *gin.Context) {
 		SortBy:      sortBy,
 	})
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	results := make([]FileObjectResponse, 0, len(result.Items))
@@ -165,6 +165,18 @@ func (h *Handler) ListFiles(c *gin.Context) {
 }
 
 // GetFileProcessingStatus 查询文件处理状态。
+// @Summary 查询文件处理状态
+// @Description 查询当前用户单个文件的文本提取与向量化处理状态
+// @Tags chat
+// @Produce json
+// @Security BearerAuth
+// @Param file_id path string true "文件ID"
+// @Success 200 {object} FileProcessingStatusResponseDoc
+// @Failure 400 {object} ErrorDoc
+// @Failure 401 {object} ErrorDoc
+// @Failure 404 {object} ErrorDoc
+// @Failure 500 {object} ErrorDoc
+// @Router /files/{file_id}/processing [get]
 func (h *Handler) GetFileProcessingStatus(c *gin.Context) {
 	userID := middleware.MustUserID(c)
 	fileID := c.Param("file_id")
@@ -178,7 +190,7 @@ func (h *Handler) GetFileProcessingStatus(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, err)
 			return
 		}
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, toFileProcessingStatusResponse(result))
@@ -209,7 +221,7 @@ func (h *Handler) GetFileProcessingStatuses(c *gin.Context) {
 		req.FileIDs,
 	)
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	statuses := make([]FileProcessingStatusResponse, 0, len(result))
@@ -240,6 +252,7 @@ func (h *Handler) SubmitFileEmbeddings(c *gin.Context) {
 	}
 	result, err := h.processing.SubmitFileEmbeddings(c.Request.Context(), middleware.MustUserID(c), req.FileIDs)
 	if err != nil {
+		response.RecordError(c, err)
 		switch {
 		case errors.Is(err, appembedding.ErrTooManyTargetedFiles):
 			response.ErrorWithCode(c, http.StatusBadRequest, "embedding.too_many_files")
@@ -261,6 +274,19 @@ func (h *Handler) SubmitFileEmbeddings(c *gin.Context) {
 }
 
 // GetFileExtract 获取文件提取文本。
+// @Summary 获取文件提取文本
+// @Description 返回当前用户文件已完成提取的文本内容；提取尚未就绪时返回 409
+// @Tags chat
+// @Produce json
+// @Security BearerAuth
+// @Param file_id path string true "文件ID"
+// @Success 200 {object} FileExtractResponseDoc
+// @Failure 400 {object} ErrorDoc
+// @Failure 401 {object} ErrorDoc
+// @Failure 404 {object} ErrorDoc
+// @Failure 409 {object} ErrorDoc
+// @Failure 500 {object} ErrorDoc
+// @Router /files/{file_id}/extract [get]
 func (h *Handler) GetFileExtract(c *gin.Context) {
 	userID := middleware.MustUserID(c)
 	fileID := c.Param("file_id")
@@ -281,7 +307,7 @@ func (h *Handler) GetFileExtract(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusConflict, errFileExtractNotReady)
 			return
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 			return
 		}
 	}
@@ -289,11 +315,20 @@ func (h *Handler) GetFileExtract(c *gin.Context) {
 }
 
 // GetChatFilePolicy 返回聊天文件策略。
+// @Summary 获取聊天文件策略
+// @Description 返回当前用户在聊天中上传与使用文件的运行时策略（大小、数量、类型与处理模式等）
+// @Tags chat
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} ChatFilePolicyResponseDoc
+// @Failure 401 {object} ErrorDoc
+// @Failure 500 {object} ErrorDoc
+// @Router /runtime/chat-file-policy [get]
 func (h *Handler) GetChatFilePolicy(c *gin.Context) {
 	userID := middleware.MustUserID(c)
 	result, err := h.service.GetChatFilePolicy(c.Request.Context(), userID)
 	if err != nil {
-		response.InternalError(c)
+		response.InternalError(c, err)
 		return
 	}
 	response.Success(c, toChatFilePolicyResponse(result))
@@ -347,7 +382,7 @@ func (h *Handler) UpdateFile(c *gin.Context) {
 			case errors.Is(err, appconversation.ErrFileNotFound):
 				response.ErrorFrom(c, http.StatusNotFound, appconversation.ErrFileNotFound)
 			default:
-				response.InternalError(c)
+				response.InternalError(c, err)
 			}
 			return
 		}
@@ -362,7 +397,7 @@ func (h *Handler) UpdateFile(c *gin.Context) {
 			case errors.Is(err, appconversation.ErrFileNotFound):
 				response.ErrorFrom(c, http.StatusNotFound, appconversation.ErrFileNotFound)
 			default:
-				response.InternalError(c)
+				response.InternalError(c, err)
 			}
 			return
 		}
@@ -423,7 +458,7 @@ func (h *Handler) DeleteFile(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusConflict, err)
 			return
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 			return
 		}
 	}
@@ -469,7 +504,7 @@ func (h *Handler) GetFileContent(c *gin.Context) {
 			response.ErrorFrom(c, http.StatusNotFound, appconversation.ErrFileNotFound)
 			return
 		default:
-			response.InternalError(c)
+			response.InternalError(c, err)
 			return
 		}
 	}

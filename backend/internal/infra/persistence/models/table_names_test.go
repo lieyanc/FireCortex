@@ -1,4 +1,4 @@
-package model
+package models
 
 import (
 	"sync"
@@ -42,6 +42,7 @@ func TestTableNamesUseRestructuredDomains(t *testing.T) {
 		ConversationShare{},
 		Message{},
 		ConversationMessageFeedback{},
+		ConversationMessageUIState{},
 		Attachment{},
 		ConversationRun{},
 		ChatRunEvent{},
@@ -54,7 +55,7 @@ func TestTableNamesUseRestructuredDomains(t *testing.T) {
 		MCPTool{},
 		UserMemory{},
 		AuditLog{},
-		SystemEvent{},
+		ErrorLog{},
 		Announcement{},
 		AnnouncementUserState{},
 		SystemSetting{},
