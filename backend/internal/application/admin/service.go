@@ -92,6 +92,9 @@ type Service struct {
 	authSecurityService                        authSecurityService
 	subscriptionResolver                       subscriptionResolver
 	openWebUIRowLoader                         openWebUIRowLoader
+	openWebUIChatLoader                        openWebUIChatLoader
+	conversationImportRepo                     repository.ConversationImportRepository
+	localMode                                  bool
 	permissionGroupRepo                        permissionGroupRepo
 	permissionGroupModelLookup                 permissionGroupModelLookup
 	permissionGroupBillingPlanReferenceChecker permissionGroupBillingPlanReferenceChecker
@@ -197,6 +200,21 @@ func NewService(userService userService, auditService auditService) *Service {
 // SetOpenWebUIRowLoader 注入 OpenWebUI 外部数据读取能力。
 func (s *Service) SetOpenWebUIRowLoader(loader openWebUIRowLoader) {
 	s.openWebUIRowLoader = loader
+}
+
+// SetOpenWebUIChatLoader 注入 OpenWebUI 外部对话读取能力。
+func (s *Service) SetOpenWebUIChatLoader(loader openWebUIChatLoader) {
+	s.openWebUIChatLoader = loader
+}
+
+// SetConversationImportRepo 注入会话历史导入持久化能力。
+func (s *Service) SetConversationImportRepo(repo repository.ConversationImportRepository) {
+	s.conversationImportRepo = repo
+}
+
+// SetLocalMode 设置当前是否处于单用户本地模式。
+func (s *Service) SetLocalMode(localMode bool) {
+	s.localMode = localMode
 }
 
 // SetAuthSecurityService 注入认证安全校验能力。

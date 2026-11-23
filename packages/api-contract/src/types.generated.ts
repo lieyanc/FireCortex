@@ -1943,6 +1943,34 @@ export interface IdentityProviderResponseDoc {
   errorMsg: string;
 }
 
+export interface ImportOpenWebUIConversationsRequest {
+  dryRun?: boolean;
+  /** @maxLength 2048 */
+  dsn: string;
+  recentDays?: number;
+}
+
+export interface ImportOpenWebUIConversationsResponse {
+  cutoffAt?: string;
+  dedupeField: string;
+  dedupeRule: string;
+  imported: number;
+  importedMessages: number;
+  recentDays?: number;
+  scanned: number;
+  skippedEmptyConversation: number;
+  skippedExistingConversation: number;
+  skippedInvalidRow: number;
+  skippedOutsideTimeRange: number;
+  skippedUnmatchedUser: number;
+  source: string;
+}
+
+export interface ImportOpenWebUIConversationsResponseDoc {
+  data: ImportOpenWebUIConversationsResponse;
+  errorMsg: string;
+}
+
 export interface ImportOpenWebUIUsersRequest {
   creditMultiplier: number;
   dryRun?: boolean;
@@ -6233,6 +6261,22 @@ export namespace Admin {
     export type RequestBody = never;
     export type RequestHeaders = {};
     export type ResponseBody = string;
+  }
+
+  /**
+   * @description 从 OpenWebUI SQLite 或 PostgreSQL 数据库读取对话历史并按源会话去重导入，可选仅导入近 X 天活跃的对话
+   * @tags admin
+   * @name ConversationsImportOpenwebuiCreate
+   * @summary 管理员导入 OpenWebUI 对话历史
+   * @request POST:/admin/conversations/import/openwebui
+   * @secure
+   */
+  export namespace ConversationsImportOpenwebuiCreate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = ImportOpenWebUIConversationsRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = ImportOpenWebUIConversationsResponseDoc;
   }
 
   /**

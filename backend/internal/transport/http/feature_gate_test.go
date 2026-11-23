@@ -120,6 +120,7 @@ var openRoutes = []struct{ method, path string }{
 	{"GET", "/admin/usage-statistics"},
 	{"GET", "/admin/audit-logs"},
 	{"GET", "/admin/call-logs"},
+	{"POST", "/admin/conversations/import/openwebui"},
 	{"GET", "/conversations"},
 }
 

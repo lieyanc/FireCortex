@@ -1967,6 +1967,63 @@
                 }
             }
         },
+        "/admin/conversations/import/openwebui": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "从 OpenWebUI SQLite 或 PostgreSQL 数据库读取对话历史并按源会话去重导入，可选仅导入近 X 天活跃的对话",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "管理员导入 OpenWebUI 对话历史",
+                "parameters": [
+                    {
+                        "description": "OpenWebUI 对话导入参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ImportOpenWebUIConversationsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ImportOpenWebUIConversationsResponseDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/AdminErrorDoc"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/AdminErrorDoc"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/AdminErrorDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/error-logs": {
             "get": {
                 "security": [
@@ -24542,6 +24599,96 @@
             "properties": {
                 "data": {
                     "$ref": "#/definitions/IdentityProviderResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ImportOpenWebUIConversationsRequest": {
+            "type": "object",
+            "required": [
+                "dsn"
+            ],
+            "properties": {
+                "dryRun": {
+                    "type": "boolean"
+                },
+                "dsn": {
+                    "type": "string",
+                    "maxLength": 2048
+                },
+                "recentDays": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ImportOpenWebUIConversationsResponse": {
+            "type": "object",
+            "required": [
+                "dedupeField",
+                "dedupeRule",
+                "imported",
+                "importedMessages",
+                "scanned",
+                "skippedEmptyConversation",
+                "skippedExistingConversation",
+                "skippedInvalidRow",
+                "skippedOutsideTimeRange",
+                "skippedUnmatchedUser",
+                "source"
+            ],
+            "properties": {
+                "cutoffAt": {
+                    "type": "string"
+                },
+                "dedupeField": {
+                    "type": "string"
+                },
+                "dedupeRule": {
+                    "type": "string"
+                },
+                "imported": {
+                    "type": "integer"
+                },
+                "importedMessages": {
+                    "type": "integer"
+                },
+                "recentDays": {
+                    "type": "integer"
+                },
+                "scanned": {
+                    "type": "integer"
+                },
+                "skippedEmptyConversation": {
+                    "type": "integer"
+                },
+                "skippedExistingConversation": {
+                    "type": "integer"
+                },
+                "skippedInvalidRow": {
+                    "type": "integer"
+                },
+                "skippedOutsideTimeRange": {
+                    "type": "integer"
+                },
+                "skippedUnmatchedUser": {
+                    "type": "integer"
+                },
+                "source": {
+                    "type": "string"
+                }
+            }
+        },
+        "ImportOpenWebUIConversationsResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ImportOpenWebUIConversationsResponse"
                 },
                 "errorMsg": {
                     "type": "string"

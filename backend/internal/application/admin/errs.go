@@ -41,6 +41,8 @@ var (
 	ErrInvalidImportDSN = apperr.New("request.invalid_import_dsn", "invalid import dsn")
 	// ErrInvalidImportMultiplier 表示导入积分转换比例不合法。
 	ErrInvalidImportMultiplier = apperr.New("request.invalid_import_credit_multiplier", "invalid import credit multiplier")
+	// ErrInvalidImportRecentDays 表示导入最近天数范围不合法。
+	ErrInvalidImportRecentDays = apperr.New("request.invalid_import_recent_days", "invalid import recent days")
 	// ErrOpenWebUIImportFailed 表示 OpenWebUI 导入失败。
 	ErrOpenWebUIImportFailed = apperr.NewMasked("internal.error", "internal server error", "openwebui import failed")
 	// ErrPermissionGroupRepoUnavailable 表示权限组仓储未注入。

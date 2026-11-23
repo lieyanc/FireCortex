@@ -228,6 +228,65 @@ func (h *Handler) ImportOpenWebUIUsers(c *gin.Context) {
 	response.Success(c, toImportOpenWebUIUsersResponse(result))
 }
 
+// ImportOpenWebUIConversations godoc
+// @Summary 管理员导入 OpenWebUI 对话历史
+// @Description 从 OpenWebUI SQLite 或 PostgreSQL 数据库读取对话历史并按源会话去重导入，可选仅导入近 X 天活跃的对话
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param body body ImportOpenWebUIConversationsRequest true "OpenWebUI 对话导入参数"
+// @Success 200 {object} ImportOpenWebUIConversationsResponseDoc
+// @Failure 400 {object} ErrorDoc
+// @Failure 403 {object} ErrorDoc
+// @Failure 500 {object} ErrorDoc
+// @Router /admin/conversations/import/openwebui [post]
+func (h *Handler) ImportOpenWebUIConversations(c *gin.Context) {
+	actorUserID := middleware.MustUserID(c)
+
+	var req ImportOpenWebUIConversationsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.InvalidRequestBody(c, err)
+		return
+	}
+	if req.RecentDays != nil && (*req.RecentDays <= 0 || *req.RecentDays > 36500) {
+		response.ErrorFrom(c, http.StatusBadRequest, appadmin.ErrInvalidImportRecentDays)
+		return
+	}
+
+	result, err := h.service.ImportOpenWebUIConversations(
+		c.Request.Context(),
+		middleware.MustRequestID(c),
+		actorUserID,
+		appadmin.OpenWebUIConversationImportInput{
+			DSN:        req.DSN,
+			RecentDays: req.RecentDays,
+			DryRun:     req.DryRun,
+		},
+		c.ClientIP(),
+		c.Request.UserAgent(),
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, appadmin.ErrInvalidImportDSN),
+			errors.Is(err, appadmin.ErrInvalidImportRecentDays):
+			response.ErrorFrom(c, http.StatusBadRequest, err)
+			return
+		case errors.Is(err, appadmin.ErrAdminPermissionRequired):
+			response.ErrorFrom(c, http.StatusForbidden, err)
+			return
+		case errors.Is(err, appadmin.ErrOpenWebUIImportFailed):
+			response.InternalError(c, err)
+			return
+		default:
+			response.InternalError(c, err)
+			return
+		}
+	}
+
+	response.Success(c, toImportOpenWebUIConversationsResponse(result))
+}
+
 // PatchUser godoc
 // @Summary 管理员更新用户可编辑字段
 // @Description 管理员统一维护角色、状态、时区等可编辑字段

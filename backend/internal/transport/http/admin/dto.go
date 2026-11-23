@@ -65,6 +65,13 @@ type ImportOpenWebUIUsersRequest struct {
 	DryRun           bool     `json:"dryRun,omitempty"`
 }
 
+// ImportOpenWebUIConversationsRequest 从 OpenWebUI 数据库导入对话历史请求。
+type ImportOpenWebUIConversationsRequest struct {
+	DSN        string `json:"dsn" binding:"required,max=2048"`
+	RecentDays *int   `json:"recentDays,omitempty"`
+	DryRun     bool   `json:"dryRun,omitempty"`
+}
+
 // CleanupLogsRequest 管理员日志清理请求。
 type CleanupLogsRequest struct {
 	Type   string `json:"type" binding:"required"`
@@ -197,6 +204,23 @@ type ImportOpenWebUIUsersResponse struct {
 	SkippedDuplicateSourceEmail int    `json:"skippedDuplicateSourceEmail"`
 	SkippedInvalidEmail         int    `json:"skippedInvalidEmail"`
 	SkippedInvalidRow           int    `json:"skippedInvalidRow"`
+}
+
+// ImportOpenWebUIConversationsResponse 从 OpenWebUI 导入对话历史响应。
+type ImportOpenWebUIConversationsResponse struct {
+	Source                      string     `json:"source"`
+	DedupeField                 string     `json:"dedupeField"`
+	DedupeRule                  string     `json:"dedupeRule"`
+	RecentDays                  *int       `json:"recentDays,omitempty"`
+	CutoffAt                    *time.Time `json:"cutoffAt,omitempty"`
+	Scanned                     int        `json:"scanned"`
+	Imported                    int        `json:"imported"`
+	ImportedMessages            int        `json:"importedMessages"`
+	SkippedOutsideTimeRange     int        `json:"skippedOutsideTimeRange"`
+	SkippedExistingConversation int        `json:"skippedExistingConversation"`
+	SkippedUnmatchedUser        int        `json:"skippedUnmatchedUser"`
+	SkippedEmptyConversation    int        `json:"skippedEmptyConversation"`
+	SkippedInvalidRow           int        `json:"skippedInvalidRow"`
 }
 
 // AuthEventResponse 认证事件响应。
@@ -593,6 +617,12 @@ type ImportOpenWebUIUsersResponseDoc struct {
 	Data     ImportOpenWebUIUsersResponse `json:"data"`
 }
 
+// ImportOpenWebUIConversationsResponseDoc 从 OpenWebUI 导入对话历史响应。
+type ImportOpenWebUIConversationsResponseDoc struct {
+	ErrorMsg string                               `json:"errorMsg"`
+	Data     ImportOpenWebUIConversationsResponse `json:"data"`
+}
+
 // UserAuthEventListResponseDoc 用户认证事件分页响应。
 type UserAuthEventListResponseDoc struct {
 	ErrorMsg string `json:"errorMsg"`
@@ -766,6 +796,27 @@ func toImportOpenWebUIUsersResponse(result *appadmin.OpenWebUIImportResult) Impo
 		SkippedExistingEmail:        result.SkippedExistingEmail,
 		SkippedDuplicateSourceEmail: result.SkippedDuplicateSourceEmail,
 		SkippedInvalidEmail:         result.SkippedInvalidEmail,
+		SkippedInvalidRow:           result.SkippedInvalidRow,
+	}
+}
+
+func toImportOpenWebUIConversationsResponse(result *appadmin.OpenWebUIConversationImportResult) ImportOpenWebUIConversationsResponse {
+	if result == nil {
+		return ImportOpenWebUIConversationsResponse{}
+	}
+	return ImportOpenWebUIConversationsResponse{
+		Source:                      result.Source,
+		DedupeField:                 result.DedupeField,
+		DedupeRule:                  result.DedupeRule,
+		RecentDays:                  result.RecentDays,
+		CutoffAt:                    result.CutoffAt,
+		Scanned:                     result.Scanned,
+		Imported:                    result.Imported,
+		ImportedMessages:            result.ImportedMessages,
+		SkippedOutsideTimeRange:     result.SkippedOutsideTimeRange,
+		SkippedExistingConversation: result.SkippedExistingConversation,
+		SkippedUnmatchedUser:        result.SkippedUnmatchedUser,
+		SkippedEmptyConversation:    result.SkippedEmptyConversation,
 		SkippedInvalidRow:           result.SkippedInvalidRow,
 	}
 }

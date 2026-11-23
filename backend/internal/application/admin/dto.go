@@ -51,6 +51,30 @@ type OpenWebUIImportResult struct {
 	SkippedInvalidRow           int
 }
 
+// OpenWebUIConversationImportInput 描述 OpenWebUI 对话历史导入参数。
+type OpenWebUIConversationImportInput struct {
+	DSN        string
+	RecentDays *int
+	DryRun     bool
+}
+
+// OpenWebUIConversationImportResult 描述 OpenWebUI 对话历史导入结果。
+type OpenWebUIConversationImportResult struct {
+	Source                      string
+	DedupeField                 string
+	DedupeRule                  string
+	RecentDays                  *int
+	CutoffAt                    *time.Time
+	Scanned                     int
+	Imported                    int
+	ImportedMessages            int
+	SkippedOutsideTimeRange     int
+	SkippedExistingConversation int
+	SkippedUnmatchedUser        int
+	SkippedEmptyConversation    int
+	SkippedInvalidRow           int
+}
+
 // UserResult 用户响应数据（内部传输，不携带序列化标记）。
 type UserResult struct {
 	User userview.UserView
