@@ -1,55 +1,105 @@
 # Syncing with Upstream
 
-FireCortex is derived from [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat), forked at v0.4.3. The fork renames the product everywhere (Go module path, npm scope, identifiers, storage keys, template variables, Docker names), yet it still merges upstream releases with conflicts limited to lines both projects actually changed.
+FireCortex is derived from [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat), forked at v0.4.3 and currently synced through v0.4.6. The fork renames the product everywhere (Go module path, npm scope, identifiers, storage keys, template variables, Docker names), yet it can still merge full upstream releases or selectively port individual features with minimal conflicts.
 
 This file is excluded from `scripts/rebrand.sh`, so upstream names in it stay verbatim.
 
 ## How it works
 
-- `scripts/rebrand.sh` is the single source of truth for every mechanical rename. It is idempotent, and `--check` fails if any upstream brand token remains.
-- The `upstream-rebranded` branch holds upstream snapshots with the rebrand script applied and nothing else: no fork code, no hand edits.
-- `scripts/sync-upstream.sh <ref>` rebrands a raw upstream ref in a temporary worktree and commits it on top of `upstream-rebranded`. The raw upstream commit is the second parent, so upstream history stays reachable.
-- `dev` merges `upstream-rebranded`. The merge base is the previous rebranded snapshot, so a line that upstream left alone never conflicts, even if FireCortex rewrote it by hand.
+- `scripts/rebrand.sh` is the single source of truth for every mechanical rename. It is idempotent, and `--check` (also enforced by CI in `.github/workflows/ci.yml`) fails if any upstream brand token remains.
+- The `upstream-rebranded` branch holds upstream snapshots with the rebrand script applied and nothing else: no fork code, no hand edits, never rebased.
+- `scripts/sync-upstream.sh <ref>` fetches upstream branches and isolated tags (`refs/upstream-tags/*`, never polluting `refs/tags/*`), rebrands the raw upstream ref in a temporary worktree, and commits it on top of `upstream-rebranded` with the raw upstream commit as second parent.
+- `dev` either merges `upstream-rebranded` (full release sync) or extracts already-rebranded diffs between snapshots (selective feature porting).
 
-```
-upstream   v0.4.3 ─────────────── v0.4.4 ─────────── v0.4.5
+```text
+upstream   v0.4.3 ─────────────── v0.4.6 ─────────── v0.5.0
               │                     │                  │
-rebranded  R(v0.4.3) ───────────── R(v0.4.4) ──────── R(v0.4.5)
-              │                        \                  \
-dev           └── fork work ─────────── merge ── fork ──── merge
+rebranded  R(v0.4.3) ───────────── R(v0.4.6) ──────── R(v0.5.0)
+              │                        \                ┊ (full merge OR selective diff)
+dev           └── fork work ─────────── merge ── fork ──┴── merge / cherry-pick
 ```
 
 ## One-time setup
 
+Run the idempotent setup script on any fresh clone (also available via `make setup-git`):
+
 ```bash
-git remote add upstream https://github.com/DEEIX-AI/DEEIX-Chat.git
-git fetch upstream --tags
-git branch upstream-rebranded <commit "chore: rebrand DEEIX Chat v0.4.3 as FireCortex">
+bash scripts/setup-git.sh
 ```
 
-The initial rebrand commit on `dev` contains only the output of `scripts/rebrand.sh` applied to v0.4.3, which makes it the first rebranded snapshot.
+This configures:
 
-## Syncing a release
+- `remote.upstream` pointing to `https://github.com/DEEIX-AI/DEEIX-Chat.git` with `pushurl = DISABLED` so upstream can never be pushed to accidentally.
+- `remote.upstream.tagOpt = --no-tags` and fetch refspec `+refs/tags/*:refs/upstream-tags/*` so upstream tags stay out of `refs/tags/*`.
+- `merge.ours.driver = true` (activates `.gitattributes` `merge=ours` rules for fork-exclusive docs, policy, and release files) and `rerere.enabled = true` / `rerere.autoupdate = true`.
+
+If an existing local clone already fetched upstream tags into `refs/tags/*`, migrate them cleanly into `refs/upstream-tags/*`:
 
 ```bash
-git switch dev
-scripts/sync-upstream.sh v0.4.4        # or upstream/dev for unreleased changes
+bash scripts/setup-git.sh --migrate-upstream-tags
+```
+
+## Tag & versioning policy
+
+- `refs/upstream-tags/*` holds raw upstream tags (`v0.4.3`, `v0.4.6`, ...). Never run `git fetch upstream --tags` into `refs/tags/*` and never `git push origin --tags`.
+- `refs/tags/*` is reserved exclusively for FireCortex's own releases (`dev-latest` rolling prereleases and FireCortex `v*.*.*` release tags consumed by `.github/workflows/release.yml`).
+- When FireCortex begins cutting its own independent releases, use an independent version series (for example `v1.0.0` or `v0.4.6-fc.1`) in `VERSION` and record the upstream sync baseline in this document.
+
+## Syncing a stable release
+
+Always update `upstream-rebranded` from an upstream **stable release tag** first and publish it to `origin`:
+
+```bash
+bash scripts/sync-upstream.sh v0.4.7
+git push origin upstream-rebranded
+```
+
+Then choose the sync mode that fits the current divergence level:
+
+### Mode A: Full release merge (standard while divergence is manageable)
+
+```bash
+git switch -c sync/upstream-v0.4.7 dev
 git merge --no-ff upstream-rebranded
 ```
 
-After resolving conflicts:
+After resolving conflicts (never squash or rebase across the merge commit):
 
 ```bash
-scripts/rebrand.sh --check             # no upstream brand tokens slipped in
-pnpm install                           # lockfile and workspace names
-pnpm api:generate                      # if backend Swagger annotations changed
-pnpm verify
+bash scripts/rebrand.sh --check        # no upstream brand tokens slipped in
+pnpm install                           # regenerate lockfile and workspace names
+pnpm api:generate                      # regenerate Swagger docs and TS API contract
+cd backend && CGO_ENABLED=0 go build ./... && go build -tags sqlite ./... && go test ./...
+cd .. && pnpm --filter @firecortex/web lint && pnpm --filter @firecortex/web typecheck
 ```
+
+Then merge `sync/upstream-v0.4.7` into `dev` with `git merge --no-ff`.
+
+### Mode B: Selective feature porting (recommended once customization deepens)
+
+If an upstream release introduces heavy UI/architecture churn that conflicts with FireCortex's customizations, skip the full merge and port only the desired features using the already-rebranded snapshots on `upstream-rebranded`:
+
+```bash
+# Inspect commits and changed files between the previous and new rebranded snapshots
+git log --first-parent <prev-rebranded>..<new-rebranded> --oneline
+git diff --stat <prev-rebranded>..<new-rebranded>
+
+# Extract and 3-way apply a specific subsystem or feature
+git diff <prev-rebranded>..<new-rebranded> -- backend/internal/infra/llm/ | git apply -3
+```
+
+Because `upstream-rebranded` has already rewritten Go module paths, npm scopes, and identifiers to FireCortex, extracted patches apply cleanly without manual package renaming.
+
+## Fork-exclusive files (`.gitattributes`)
+
+Pure FireCortex documentation, policy, and release files (`AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/README.zh-CN.md`, `docs/UPSTREAM.md`, `deploy/README.md`, `deploy/firecortex.service`, `.github/CODE_OF_CONDUCT.md`, `.github/SECURITY.md`, `.github/workflows/release.yml`) are marked `merge=ours` in `.gitattributes`. During merges from `upstream-rebranded`, FireCortex's version is preserved automatically; inspect `git diff <prev>..<curr> -- <file>` when checking whether upstream added anything worth porting by hand.
+
+Generated files (`pnpm-lock.yaml`, `backend/docs/*`, `packages/api-contract/src/types.generated.ts`) are intentionally **not** marked `merge=ours`—resolve conflicts in them by taking one side and regenerating via `pnpm install && pnpm api:generate`.
 
 ## Rules for fork changes
 
 - Rename logic belongs in `scripts/rebrand.sh`, never in hand edits. When a new upstream token appears (reported by `--check`), add a rule, rerun the script on `dev`, and commit the result on its own. The next sync applies the same rule to upstream.
-- Upstream attribution that must keep the DEEIX name lives in excluded files (`NOTICE`, `LICENSE`, this file, `apps/web/shared/config/upstream.ts`) or on lines ending with a `rebrand:keep` marker (for example `<!-- rebrand:keep -->` in Markdown or `// rebrand:keep` in code).
+- Upstream attribution that must keep the DEEIX name lives in excluded files (`AGENTS.md`, `LICENSE`, `NOTICE`, this file, `apps/web/shared/config/upstream.ts`, `scripts/{rebrand,setup-git,sync-upstream}.sh`) or on lines ending with a `rebrand:keep` marker (for example `<!-- rebrand:keep -->` in Markdown or `// rebrand:keep` in code).
 - Keep hand edits to upstream files small and prefer new files for FireCortex-only features. Every line changed in an upstream file is a potential conflict on the next sync.
 - Upstream contact addresses (`support@deeix.com`) are skipped by the script and must be rewritten by hand when they appear.
 
