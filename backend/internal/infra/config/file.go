@@ -142,6 +142,36 @@ type fileConfig struct {
 		Repo                 string `json:"repo" yaml:"repo"`
 		DownloadDir          string `json:"download_dir" yaml:"download_dir"`
 	} `json:"update" yaml:"update"`
+	Bootstrap struct {
+		Completed bool `json:"completed" yaml:"completed"`
+	} `json:"bootstrap" yaml:"bootstrap"`
+	Managed struct {
+		DockerHost     string `json:"docker_host" yaml:"docker_host"`
+		Network        string `json:"network" yaml:"network"`
+		DataDir        string `json:"data_dir" yaml:"data_dir"`
+		RegistryMirror string `json:"registry_mirror" yaml:"registry_mirror"`
+		ComposeSync    bool   `json:"compose_sync" yaml:"compose_sync"`
+		Postgres       struct {
+			Enabled       bool   `json:"enabled" yaml:"enabled"`
+			Image         string `json:"image" yaml:"image"`
+			Port          int    `json:"port" yaml:"port"`
+			DataDir       string `json:"data_dir" yaml:"data_dir"`
+			MemoryLimitMB int    `json:"memory_limit_mb" yaml:"memory_limit_mb"`
+		} `json:"postgres" yaml:"postgres"`
+		Redis struct {
+			Enabled       bool   `json:"enabled" yaml:"enabled"`
+			Image         string `json:"image" yaml:"image"`
+			Port          int    `json:"port" yaml:"port"`
+			DataDir       string `json:"data_dir" yaml:"data_dir"`
+			MemoryLimitMB int    `json:"memory_limit_mb" yaml:"memory_limit_mb"`
+		} `json:"redis" yaml:"redis"`
+		Backup struct {
+			Enabled        bool   `json:"enabled" yaml:"enabled"`
+			Dir            string `json:"dir" yaml:"dir"`
+			Schedule       string `json:"schedule" yaml:"schedule"`
+			RetentionCount int    `json:"retention_count" yaml:"retention_count"`
+		} `json:"backup" yaml:"backup"`
+	} `json:"managed" yaml:"managed"`
 }
 
 // templateConfig 返回内置模板解析出的默认配置。

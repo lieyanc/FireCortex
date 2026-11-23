@@ -28,6 +28,7 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/application/extraction"
 	appknowledgebase "github.com/lieyanc/FireCortex/backend/internal/application/knowledgebase"
 	applogcleanup "github.com/lieyanc/FireCortex/backend/internal/application/logcleanup"
+	"github.com/lieyanc/FireCortex/backend/internal/application/managedinfra"
 	appmcp "github.com/lieyanc/FireCortex/backend/internal/application/mcp"
 	"github.com/lieyanc/FireCortex/backend/internal/application/memory"
 	appstorage "github.com/lieyanc/FireCortex/backend/internal/application/objectstorage"
@@ -47,6 +48,7 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/infra/catalogdata"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	moderationclient "github.com/lieyanc/FireCortex/backend/internal/infra/contentmoderation"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/dockermgr"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/embedding"
 	extractionengines "github.com/lieyanc/FireCortex/backend/internal/infra/extraction/engines"
 	extractionprobe "github.com/lieyanc/FireCortex/backend/internal/infra/extraction/probe"
@@ -96,6 +98,7 @@ import (
 	channelhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/channel"
 	contentmoderationhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/contentmoderation"
 	conversationhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/conversation"
+	infrahttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/infra"
 	knowledgebasehttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/knowledgebase"
 	mcphttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/mcp"
 	memoryhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/memory"
@@ -245,6 +248,15 @@ func NewAppWithOptions(opts Options) (*App, error) {
 		log.Warn("security_config_warning", zap.String("detail", warning))
 	}
 	logOutboundProxy(log, sharedsecurity.DescribeOutboundProxy(), cfg.TrustedOutboundPolicy().Enforced())
+
+	if cfg.HasManagedCoreServices() {
+		ensureCtx, ensureCancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		ensureErr := managedinfra.EnsureStartupCoreServices(ensureCtx, cfg, dockermgr.NewHostOps(), log)
+		ensureCancel()
+		if ensureErr != nil {
+			return nil, fmt.Errorf("ensure managed core services: %w", ensureErr)
+		}
+	}
 
 	db, err := persistence.Open(cfg)
 	if err != nil {
@@ -551,6 +563,12 @@ func NewAppWithOptions(opts Options) (*App, error) {
 	restart := newRestartCoordinator(httpTimeoutSeconds(cfg.HTTPShutdownTimeoutSeconds, 10), log)
 	selfUpdater := newSelfUpdater(runtimeCfg.Snapshot(), log, restart, conversationService.HasActiveGenerations)
 	systemModule := systemhttp.NewModule(systemhttp.NewUpdateHandler(selfUpdater))
+	var infraManager *managedinfra.Manager
+	var infraModule *infrahttp.Module
+	if !cfg.LocalMode {
+		infraManager = newInfraManager(runtimeCfg, userRepo, auditService, settingsService, runtimeSettings, restart, log)
+		infraModule = infrahttp.NewModule(infrahttp.NewHandler(infraManager))
+	}
 
 	hc := newHealthChecker(db, cacheBackend)
 	rateLimiter := cacheBackend.RateLimiter()
@@ -576,6 +594,7 @@ func NewAppWithOptions(opts Options) (*App, error) {
 		UserSettings:      userSettingsModule,
 		User:              userModule,
 		System:            systemModule,
+		Infra:             infraModule,
 		PersonalProvider:  personalProviderModule,
 		Shutdown:          shutdownSignal,
 		ErrorRecorder:     errorLogService,
@@ -603,6 +622,9 @@ func NewAppWithOptions(opts Options) (*App, error) {
 	channelService.StartModelIconAssetCleanup(backgroundCtx)
 	if !cfg.LocalMode {
 		selfUpdater.StartBackground(backgroundCtx)
+		if infraManager != nil {
+			infraManager.StartBackupScheduler(backgroundCtx)
+		}
 	}
 	channelService.LoadModelCatalog(backgroundCtx)
 

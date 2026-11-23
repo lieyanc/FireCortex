@@ -602,6 +602,113 @@ definitions:
     required:
     - updatedAt
     type: object
+  ApplyRequest:
+    properties:
+      adminDisplayName:
+        type: string
+      adminPassword:
+        type: string
+      adminUsername:
+        type: string
+      adoptExistingPGData:
+        type: boolean
+      backupDir:
+        type: string
+      cacheMode:
+        description: managed_redis | external_redis | memory
+        type: string
+      composeSync:
+        type: boolean
+      corsAllowOrigin:
+        type: string
+      dataDir:
+        type: string
+      databaseMode:
+        description: managed | external
+        type: string
+      dockerHost:
+        type: string
+      env:
+        type: string
+      existingDataEncryptionKey:
+        type: string
+      existingPGDatabase:
+        type: string
+      existingPGPassword:
+        type: string
+      existingPGUser:
+        type: string
+      existingRedisPassword:
+        type: string
+      externalPostgresDSN:
+        type: string
+      externalRedisAddr:
+        type: string
+      externalRedisDB:
+        type: integer
+      externalRedisPass:
+        type: string
+      externalRedisSkipTLS:
+        type: boolean
+      externalRedisTLS:
+        type: boolean
+      externalRedisUser:
+        type: string
+      postgresDataDir:
+        type: string
+      postgresImage:
+        type: string
+      postgresMemoryLimitMB:
+        type: integer
+      postgresPort:
+        type: integer
+      publicBaseURL:
+        type: string
+      redisDataDir:
+        type: string
+      redisImage:
+        type: string
+      redisMemoryLimitMB:
+        type: integer
+      redisPort:
+        type: integer
+      registryMirror:
+        type: string
+    required:
+    - adminDisplayName
+    - adminPassword
+    - adminUsername
+    - adoptExistingPGData
+    - backupDir
+    - cacheMode
+    - composeSync
+    - corsAllowOrigin
+    - dataDir
+    - databaseMode
+    - dockerHost
+    - env
+    - existingPGDatabase
+    - existingPGPassword
+    - existingPGUser
+    - existingRedisPassword
+    - externalPostgresDSN
+    - externalRedisAddr
+    - externalRedisDB
+    - externalRedisPass
+    - externalRedisSkipTLS
+    - externalRedisTLS
+    - externalRedisUser
+    - postgresDataDir
+    - postgresImage
+    - postgresMemoryLimitMB
+    - postgresPort
+    - publicBaseURL
+    - redisDataDir
+    - redisImage
+    - redisMemoryLimitMB
+    - redisPort
+    - registryMirror
+    type: object
   AuditLogListResponseDoc:
     properties:
       data:
@@ -892,6 +999,60 @@ definitions:
     - updatedAt
     - username
     - usernameChangedAt
+    type: object
+  BackupListResponse:
+    properties:
+      backups:
+        items:
+          $ref: '#/definitions/BackupRecordDTO'
+        type: array
+    required:
+    - backups
+    type: object
+  BackupListResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/BackupListResponse'
+      errorMsg:
+        type: string
+    required:
+    - data
+    - errorMsg
+    type: object
+  BackupRecordDTO:
+    properties:
+      createdAt:
+        type: string
+      fileName:
+        type: string
+      id:
+        type: string
+      sha256:
+        type: string
+      sizeBytes:
+        type: integer
+      trigger:
+        type: string
+      verified:
+        type: boolean
+    required:
+    - createdAt
+    - fileName
+    - id
+    - sha256
+    - sizeBytes
+    - trigger
+    - verified
+    type: object
+  BackupRecordResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/BackupRecordDTO'
+      errorMsg:
+        type: string
+    required:
+    - data
+    - errorMsg
     type: object
   BatchDeleteRedemptionCodeDataResponse:
     properties:
@@ -1724,6 +1885,23 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/CleanupLogsResponse'
+      errorMsg:
+        type: string
+    required:
+    - data
+    - errorMsg
+    type: object
+  ComposePreviewResponse:
+    properties:
+      content:
+        type: string
+    required:
+    - content
+    type: object
+  ComposePreviewResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/ComposePreviewResponse'
       errorMsg:
         type: string
     required:
@@ -3320,6 +3498,137 @@ definitions:
     - data
     - errorMsg
     type: object
+  DaemonInfoDTO:
+    properties:
+      apiVersion:
+        type: string
+      architecture:
+        type: string
+      available:
+        type: boolean
+      containersRunning:
+        type: integer
+      host:
+        type: string
+      memTotalBytes:
+        type: integer
+      osType:
+        type: string
+      serverVersion:
+        type: string
+    required:
+    - apiVersion
+    - architecture
+    - available
+    - containersRunning
+    - host
+    - memTotalBytes
+    - osType
+    - serverVersion
+    type: object
+  DangerRecreateContainerRequest:
+    properties:
+      confirmText:
+        type: string
+      currentPassword:
+        type: string
+      serviceID:
+        type: string
+    required:
+    - confirmText
+    - currentPassword
+    - serviceID
+    type: object
+  DangerRestoreBackupRequest:
+    properties:
+      backupID:
+        type: string
+      confirmText:
+        type: string
+      currentPassword:
+        type: string
+    required:
+    - backupID
+    - confirmText
+    - currentPassword
+    type: object
+  DangerRestoreBackupResponse:
+    properties:
+      preRestoreBackup:
+        type: string
+      restartScheduled:
+        type: boolean
+      restoredBackupID:
+        type: string
+    required:
+    - preRestoreBackup
+    - restartScheduled
+    - restoredBackupID
+    type: object
+  DangerRestoreBackupResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/DangerRestoreBackupResponse'
+      errorMsg:
+        type: string
+    required:
+    - data
+    - errorMsg
+    type: object
+  DangerSwitchDatabaseRequest:
+    properties:
+      cacheMode:
+        type: string
+      confirmText:
+        type: string
+      currentPassword:
+        type: string
+      databaseMode:
+        type: string
+      externalPostgresDSN:
+        type: string
+      externalRedisAddr:
+        type: string
+      externalRedisDB:
+        type: integer
+      externalRedisPassword:
+        type: string
+      externalRedisSkipTLS:
+        type: boolean
+      externalRedisTLS:
+        type: boolean
+      externalRedisUsername:
+        type: string
+    required:
+    - cacheMode
+    - confirmText
+    - currentPassword
+    - databaseMode
+    - externalPostgresDSN
+    - externalRedisAddr
+    - externalRedisDB
+    - externalRedisPassword
+    - externalRedisSkipTLS
+    - externalRedisTLS
+    - externalRedisUsername
+    type: object
+  DangerSwitchDatabaseResponse:
+    properties:
+      restartScheduled:
+        type: boolean
+    required:
+    - restartScheduled
+    type: object
+  DangerSwitchDatabaseResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/DangerSwitchDatabaseResponse'
+      errorMsg:
+        type: string
+    required:
+    - data
+    - errorMsg
+    type: object
   DeleteAccountRequest:
     properties:
       code:
@@ -3445,6 +3754,48 @@ definitions:
     required:
     - data
     - errorMsg
+    type: object
+  DirInspectionDTO:
+    properties:
+      backupDir:
+        type: string
+      diskFreeBytes:
+        type: integer
+      diskTotalBytes:
+        type: integer
+      hasExistingCompose:
+        type: boolean
+      hasManagedMarker:
+        type: boolean
+      pgVersion:
+        type: string
+      postgresDataDir:
+        type: string
+      reason:
+        type: string
+      redisDataDir:
+        type: string
+      resolvedRoot:
+        type: string
+      status:
+        type: string
+      valid:
+        type: boolean
+      warnings:
+        items:
+          type: string
+        type: array
+    required:
+    - backupDir
+    - diskFreeBytes
+    - diskTotalBytes
+    - hasExistingCompose
+    - hasManagedMarker
+    - postgresDataDir
+    - redisDataDir
+    - resolvedRoot
+    - status
+    - valid
     type: object
   EmailBootstrapCompleteRequest:
     properties:
@@ -4611,6 +4962,379 @@ definitions:
     - data
     - errorMsg
     type: object
+  InfraConfigResponse:
+    properties:
+      configFile:
+        type: string
+      corsAllowOrigin:
+        type: string
+      env:
+        type: string
+      httpPort:
+        type: string
+      managedBackupEnabled:
+        type: boolean
+      managedBackupRetentionCount:
+        type: integer
+      managedBackupSchedule:
+        type: string
+      managedComposeSync:
+        type: boolean
+      managedDataDir:
+        type: string
+      managedPostgresEnabled:
+        type: boolean
+      managedPostgresMemoryLimitMB:
+        type: integer
+      managedRedisEnabled:
+        type: boolean
+      managedRedisMemoryLimitMB:
+        type: integer
+      managedRegistryMirror:
+        type: string
+      publicAPIBaseURL:
+        type: string
+      publicWebBaseURL:
+        type: string
+      ssrfAllowedCIDRs:
+        type: string
+      ssrfAllowedHosts:
+        type: string
+      ssrfProtectionEnabled:
+        type: boolean
+      storageBackend:
+        type: string
+      storageRootDir:
+        type: string
+      storageS3AccessKeyID:
+        type: string
+      storageS3Bucket:
+        type: string
+      storageS3Endpoint:
+        type: string
+      storageS3ForcePathStyle:
+        type: boolean
+      storageS3Prefix:
+        type: string
+      storageS3Region:
+        type: string
+      storageS3SecretConfigured:
+        type: boolean
+      trustedProxies:
+        type: string
+      updateChannel:
+        type: string
+      updateCheckIntervalSeconds:
+        type: integer
+      updateEnabled:
+        type: boolean
+      updateProxyBaseURL:
+        type: string
+      updateSource:
+        type: string
+    required:
+    - configFile
+    - corsAllowOrigin
+    - env
+    - httpPort
+    - managedBackupEnabled
+    - managedBackupRetentionCount
+    - managedBackupSchedule
+    - managedComposeSync
+    - managedDataDir
+    - managedPostgresEnabled
+    - managedPostgresMemoryLimitMB
+    - managedRedisEnabled
+    - managedRedisMemoryLimitMB
+    - managedRegistryMirror
+    - publicAPIBaseURL
+    - publicWebBaseURL
+    - ssrfAllowedCIDRs
+    - ssrfAllowedHosts
+    - ssrfProtectionEnabled
+    - storageBackend
+    - storageRootDir
+    - storageS3AccessKeyID
+    - storageS3Bucket
+    - storageS3Endpoint
+    - storageS3ForcePathStyle
+    - storageS3Prefix
+    - storageS3Region
+    - storageS3SecretConfigured
+    - trustedProxies
+    - updateChannel
+    - updateCheckIntervalSeconds
+    - updateEnabled
+    - updateProxyBaseURL
+    - updateSource
+    type: object
+  InfraConfigResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/InfraConfigResponse'
+      errorMsg:
+        type: string
+    required:
+    - data
+    - errorMsg
+    type: object
+  InfraDaemonInfoDTO:
+    properties:
+      apiVersion:
+        type: string
+      architecture:
+        type: string
+      available:
+        type: boolean
+      containersRunning:
+        type: integer
+      host:
+        type: string
+      memTotalBytes:
+        type: integer
+      osType:
+        type: string
+      serverVersion:
+        type: string
+    required:
+    - apiVersion
+    - architecture
+    - available
+    - containersRunning
+    - host
+    - memTotalBytes
+    - osType
+    - serverVersion
+    type: object
+  InfraDirInfoDTO:
+    properties:
+      backupDir:
+        type: string
+      diskFreeBytes:
+        type: integer
+      diskTotalBytes:
+        type: integer
+      hasExistingCompose:
+        type: boolean
+      hasManagedMarker:
+        type: boolean
+      pgVersion:
+        type: string
+      postgresDataDir:
+        type: string
+      reason:
+        type: string
+      redisDataDir:
+        type: string
+      resolvedRoot:
+        type: string
+      status:
+        type: string
+      valid:
+        type: boolean
+      warnings:
+        items:
+          type: string
+        type: array
+    required:
+    - backupDir
+    - diskFreeBytes
+    - diskTotalBytes
+    - hasExistingCompose
+    - hasManagedMarker
+    - postgresDataDir
+    - redisDataDir
+    - resolvedRoot
+    - status
+    - valid
+    type: object
+  InfraJobEventDTO:
+    properties:
+      action:
+        type: string
+      jobID:
+        type: string
+      message:
+        type: string
+      percent:
+        type: integer
+      serviceID:
+        type: string
+      status:
+        type: string
+      step:
+        type: string
+      timestamp:
+        type: string
+    required:
+    - action
+    - jobID
+    - message
+    - percent
+    - serviceID
+    - status
+    - step
+    - timestamp
+    type: object
+  InfraJobSnapshotResponse:
+    properties:
+      action:
+        type: string
+      error:
+        type: string
+      events:
+        items:
+          $ref: '#/definitions/InfraJobEventDTO'
+        type: array
+      jobID:
+        type: string
+      serviceID:
+        type: string
+      state:
+        type: string
+    required:
+    - action
+    - events
+    - jobID
+    - serviceID
+    - state
+    type: object
+  InfraJobSnapshotResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/InfraJobSnapshotResponse'
+      errorMsg:
+        type: string
+    required:
+    - data
+    - errorMsg
+    type: object
+  InfraOverviewResponse:
+    properties:
+      backupEnabled:
+        type: boolean
+      backupRetention:
+        type: integer
+      backupSchedule:
+        type: string
+      composeSync:
+        type: boolean
+      dataDir:
+        $ref: '#/definitions/InfraDirInfoDTO'
+      docker:
+        $ref: '#/definitions/InfraDaemonInfoDTO'
+      dockerError:
+        type: string
+      registryMirror:
+        type: string
+      services:
+        items:
+          $ref: '#/definitions/ManagedServiceDTO'
+        type: array
+    required:
+    - backupEnabled
+    - backupRetention
+    - backupSchedule
+    - composeSync
+    - dataDir
+    - docker
+    - registryMirror
+    - services
+    type: object
+  InfraOverviewResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/InfraOverviewResponse'
+      errorMsg:
+        type: string
+    required:
+    - data
+    - errorMsg
+    type: object
+  InspectDirRequest:
+    properties:
+      backupDir:
+        type: string
+      dataDir:
+        type: string
+      postgresDataDir:
+        type: string
+      redisDataDir:
+        type: string
+    required:
+    - backupDir
+    - dataDir
+    - postgresDataDir
+    - redisDataDir
+    type: object
+  InspectDirResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/DirInspectionDTO'
+      errorMsg:
+        type: string
+    required:
+    - data
+    - errorMsg
+    type: object
+  JobEventResponse:
+    properties:
+      jobID:
+        type: string
+      message:
+        type: string
+      percent:
+        type: integer
+      service:
+        type: string
+      status:
+        type: string
+      step:
+        type: string
+      timestamp:
+        type: string
+    required:
+    - jobID
+    - message
+    - percent
+    - status
+    - step
+    - timestamp
+    type: object
+  JobSnapshotResponse:
+    properties:
+      adoptedDB:
+        type: boolean
+      composePath:
+        type: string
+      configPath:
+        type: string
+      error:
+        type: string
+      events:
+        items:
+          $ref: '#/definitions/JobEventResponse'
+        type: array
+      jobID:
+        type: string
+      state:
+        type: string
+    required:
+    - adoptedDB
+    - events
+    - jobID
+    - state
+    type: object
+  JobSnapshotResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/JobSnapshotResponse'
+      errorMsg:
+        type: string
+    required:
+    - data
+    - errorMsg
+    type: object
   KnowledgeBaseDataResponse:
     properties:
       knowledgeBase:
@@ -5044,6 +5768,71 @@ definitions:
     required:
     - data
     - errorMsg
+    type: object
+  ManagedServiceDTO:
+    properties:
+      canPull:
+        type: boolean
+      canRestart:
+        type: boolean
+      canStart:
+        type: boolean
+      canStop:
+        type: boolean
+      category:
+        description: core | optional
+        type: string
+      containerName:
+        type: string
+      cpuPercent:
+        type: number
+      dataDir:
+        type: string
+      description:
+        type: string
+      endpointURL:
+        type: string
+      health:
+        type: string
+      id:
+        type: string
+      image:
+        type: string
+      memoryLimitBytes:
+        type: integer
+      memoryUsageBytes:
+        type: integer
+      message:
+        type: string
+      mode:
+        description: managed | external | memory | disabled
+        type: string
+      name:
+        type: string
+      port:
+        type: integer
+      reachable:
+        type: boolean
+      status:
+        type: string
+    required:
+    - canPull
+    - canRestart
+    - canStart
+    - canStop
+    - category
+    - containerName
+    - cpuPercent
+    - description
+    - id
+    - image
+    - memoryLimitBytes
+    - memoryUsageBytes
+    - mode
+    - name
+    - port
+    - reachable
+    - status
     type: object
   McpErrorDoc:
     properties:
@@ -7213,6 +8002,120 @@ definitions:
         - general
         type: string
     type: object
+  PatchInfraConfigRequest:
+    properties:
+      corsAllowOrigin:
+        type: string
+      env:
+        type: string
+      managedBackupEnabled:
+        type: boolean
+      managedBackupRetentionCount:
+        type: integer
+      managedBackupSchedule:
+        type: string
+      managedComposeSync:
+        type: boolean
+      managedPostgresMemoryLimitMB:
+        type: integer
+      managedRedisMemoryLimitMB:
+        type: integer
+      managedRegistryMirror:
+        type: string
+      publicAPIBaseURL:
+        type: string
+      publicWebBaseURL:
+        type: string
+      restartNow:
+        type: boolean
+      ssrfAllowedCIDRs:
+        type: string
+      ssrfAllowedHosts:
+        type: string
+      ssrfProtectionEnabled:
+        type: boolean
+      storageBackend:
+        type: string
+      storageRootDir:
+        type: string
+      storageS3AccessKeyID:
+        type: string
+      storageS3Bucket:
+        type: string
+      storageS3Endpoint:
+        type: string
+      storageS3ForcePathStyle:
+        type: boolean
+      storageS3Prefix:
+        type: string
+      storageS3Region:
+        type: string
+      storageS3SecretAccessKey:
+        type: string
+      trustedProxies:
+        type: string
+      updateChannel:
+        type: string
+      updateCheckIntervalSeconds:
+        type: integer
+      updateEnabled:
+        type: boolean
+      updateProxyBaseURL:
+        type: string
+      updateSource:
+        type: string
+    required:
+    - corsAllowOrigin
+    - env
+    - managedBackupEnabled
+    - managedBackupRetentionCount
+    - managedBackupSchedule
+    - managedComposeSync
+    - managedPostgresMemoryLimitMB
+    - managedRedisMemoryLimitMB
+    - managedRegistryMirror
+    - publicAPIBaseURL
+    - publicWebBaseURL
+    - restartNow
+    - ssrfAllowedCIDRs
+    - ssrfAllowedHosts
+    - ssrfProtectionEnabled
+    - storageBackend
+    - storageRootDir
+    - storageS3AccessKeyID
+    - storageS3Bucket
+    - storageS3Endpoint
+    - storageS3ForcePathStyle
+    - storageS3Prefix
+    - storageS3Region
+    - storageS3SecretAccessKey
+    - trustedProxies
+    - updateChannel
+    - updateCheckIntervalSeconds
+    - updateEnabled
+    - updateProxyBaseURL
+    - updateSource
+    type: object
+  PatchInfraConfigResponse:
+    properties:
+      config:
+        $ref: '#/definitions/InfraConfigResponse'
+      restartScheduled:
+        type: boolean
+    required:
+    - config
+    - restartScheduled
+    type: object
+  PatchInfraConfigResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/PatchInfraConfigResponse'
+      errorMsg:
+        type: string
+    required:
+    - data
+    - errorMsg
+    type: object
   PatchItem:
     properties:
       clear:
@@ -7915,6 +8818,41 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/PlatformFileDeleteDataResponse'
+      errorMsg:
+        type: string
+    required:
+    - data
+    - errorMsg
+    type: object
+  PreflightResponse:
+    properties:
+      defaultDir:
+        $ref: '#/definitions/DirInspectionDTO'
+      defaults:
+        $ref: '#/definitions/SetupDefaultsDTO'
+      docker:
+        $ref: '#/definitions/DaemonInfoDTO'
+      dockerError:
+        type: string
+      postgresPortAvailable:
+        type: boolean
+      postgresPortMessage:
+        type: string
+      redisPortAvailable:
+        type: boolean
+      redisPortMessage:
+        type: string
+    required:
+    - defaultDir
+    - defaults
+    - docker
+    - postgresPortAvailable
+    - redisPortAvailable
+    type: object
+  PreflightResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/PreflightResponse'
       errorMsg:
         type: string
     required:
@@ -9481,6 +10419,39 @@ definitions:
     - server
     - tools
     type: object
+  ServiceActionRequest:
+    properties:
+      memoryLimitMB:
+        type: integer
+      port:
+        type: integer
+      tesseractLang:
+        type: string
+    required:
+    - memoryLimitMB
+    - port
+    - tesseractLang
+    type: object
+  ServiceLogsResponse:
+    properties:
+      logs:
+        type: string
+      serviceID:
+        type: string
+    required:
+    - logs
+    - serviceID
+    type: object
+  ServiceLogsResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/ServiceLogsResponse'
+      errorMsg:
+        type: string
+    required:
+    - data
+    - errorMsg
+    type: object
   SetConversationArchiveRequest:
     properties:
       archived:
@@ -9594,6 +10565,65 @@ definitions:
         type: array
     required:
     - items
+    type: object
+  SetupDefaultsDTO:
+    properties:
+      dataDir:
+        type: string
+      dockerHost:
+        type: string
+      httpPort:
+        type: string
+      network:
+        type: string
+      postgresImage:
+        type: string
+      postgresPort:
+        type: integer
+      redisImage:
+        type: string
+      redisPort:
+        type: integer
+      registryMirror:
+        type: string
+    required:
+    - dataDir
+    - dockerHost
+    - httpPort
+    - network
+    - postgresImage
+    - postgresPort
+    - redisImage
+    - redisPort
+    - registryMirror
+    type: object
+  SetupStatusResponse:
+    properties:
+      authenticated:
+        type: boolean
+      defaults:
+        $ref: '#/definitions/SetupDefaultsDTO'
+      jobState:
+        type: string
+      needsSetup:
+        type: boolean
+      version:
+        type: string
+    required:
+    - authenticated
+    - jobState
+    - needsSetup
+    - version
+    type: object
+  SetupStatusResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/SetupStatusResponse'
+      errorMsg:
+        type: string
+    required:
+    - data
+    - errorMsg
     type: object
   SkillDataResponse:
     properties:
@@ -10067,6 +11097,69 @@ definitions:
     required:
     - blockID
     - messageIndex
+    type: object
+  TestExternalRequest:
+    properties:
+      cacheDriver:
+        type: string
+      postgresDSN:
+        type: string
+      redisAddr:
+        type: string
+      redisDB:
+        type: integer
+      redisPassword:
+        type: string
+      redisTLSEnabled:
+        type: boolean
+      redisTLSInsecureSkip:
+        type: boolean
+      redisUsername:
+        type: string
+    required:
+    - cacheDriver
+    - postgresDSN
+    - redisAddr
+    - redisDB
+    - redisPassword
+    - redisTLSEnabled
+    - redisTLSInsecureSkip
+    - redisUsername
+    type: object
+  TestExternalResponse:
+    properties:
+      postgresError:
+        type: string
+      postgresOK:
+        type: boolean
+      postgresVectorAvailable:
+        type: boolean
+      postgresVectorInstalled:
+        type: boolean
+      postgresVersion:
+        type: string
+      redisChecked:
+        type: boolean
+      redisError:
+        type: string
+      redisOK:
+        type: boolean
+    required:
+    - postgresOK
+    - postgresVectorAvailable
+    - postgresVectorInstalled
+    - redisChecked
+    - redisOK
+    type: object
+  TestExternalResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/TestExternalResponse'
+      errorMsg:
+        type: string
+    required:
+    - data
+    - errorMsg
     type: object
   ToolListResponse:
     properties:
@@ -12395,6 +13488,33 @@ definitions:
     - data
     - errorMsg
     type: object
+  VerifyTokenRequest:
+    properties:
+      token:
+        type: string
+    required:
+    - token
+    type: object
+  VerifyTokenResponse:
+    properties:
+      authenticated:
+        type: boolean
+      defaults:
+        $ref: '#/definitions/SetupDefaultsDTO'
+    required:
+    - authenticated
+    - defaults
+    type: object
+  VerifyTokenResponseDoc:
+    properties:
+      data:
+        $ref: '#/definitions/VerifyTokenResponse'
+      errorMsg:
+        type: string
+    required:
+    - data
+    - errorMsg
+    type: object
   WriteKnowledgeBaseRequest:
     properties:
       description:
@@ -13860,6 +14980,302 @@ paths:
       summary: 管理员查询错误日志
       tags:
       - admin
+  /admin/infra/backups:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/BackupListResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: 列出托管 PostgreSQL 历史逻辑备份
+      tags:
+      - admin/infra
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/BackupRecordResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: 立即执行一次手动 PostgreSQL 逻辑备份
+      tags:
+      - admin/infra
+  /admin/infra/backups/{id}:
+    delete:
+      parameters:
+      - description: 备份文件名 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SuccessDoc'
+      security:
+      - BearerAuth: []
+      summary: 删除单份过期备份文件（绝不触碰数据库目录）
+      tags:
+      - admin/infra
+  /admin/infra/backups/{id}/download:
+    get:
+      parameters:
+      - description: 备份文件名 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/gzip
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      security:
+      - BearerAuth: []
+      summary: 流式下载单份 PostgreSQL 逻辑备份归档
+      tags:
+      - admin/infra
+  /admin/infra/compose:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ComposePreviewResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: 查看落盘的 docker-compose.yml（不含明文密码）
+      tags:
+      - admin/infra
+  /admin/infra/config:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/InfraConfigResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: 读取常用基础设施 config.json 脱敏视图
+      tags:
+      - admin/infra
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: 基础设施配置补丁
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/PatchInfraConfigRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PatchInfraConfigResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: 校验并保存常用基础设施配置到 config.json，可选平滑重启
+      tags:
+      - admin/infra
+  /admin/infra/danger/recreate-container:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 高危重建请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/DangerRecreateContainerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/InfraJobSnapshotResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: 高危操作：强制重建核心托管容器（严格保留宿主机数据目录）
+      tags:
+      - admin/infra
+  /admin/infra/danger/restore-backup:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 高危恢复请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/DangerRestoreBackupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/DangerRestoreBackupResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: 高危操作：校验并从历史备份一键恢复 PostgreSQL（先自动留存保护快照）
+      tags:
+      - admin/infra
+  /admin/infra/danger/switch-database:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 高危切库请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/DangerSwitchDatabaseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/DangerSwitchDatabaseResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: 高危操作：连通测试后切换托管/外部数据库及缓存模式并平滑重启
+      tags:
+      - admin/infra
+  /admin/infra/jobs/{jobId}:
+    get:
+      parameters:
+      - description: 任务 ID
+        in: path
+        name: jobId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/InfraJobSnapshotResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: 查询异步基础设施任务快照
+      tags:
+      - admin/infra
+  /admin/infra/jobs/{jobId}/events:
+    get:
+      parameters:
+      - description: 任务 ID
+        in: path
+        name: jobId
+        required: true
+        type: string
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: SSE event stream
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: 通过 SSE 实时订阅异步基础设施任务进度
+      tags:
+      - admin/infra
+  /admin/infra/overview:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/InfraOverviewResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: 查询 Docker 宿主机与托管服务总览
+      tags:
+      - admin/infra
+  /admin/infra/services/{id}/{action}:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 服务 ID (postgres/redis/tika/docling/tesseract/rapidocr)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 操作 (start/stop/restart/pull)
+        in: path
+        name: action
+        required: true
+        type: string
+      - description: 可选受控参数
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/ServiceActionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/InfraJobSnapshotResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: 触发托管服务的启停、重启或拉取升级任务
+      tags:
+      - admin/infra
+  /admin/infra/services/{id}/logs:
+    get:
+      parameters:
+      - description: 服务 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 读取行数（默认 200）
+        in: query
+        name: tail
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ServiceLogsResponseDoc'
+      security:
+      - BearerAuth: []
+      summary: 读取托管容器最近日志
+      tags:
+      - admin/infra
   /admin/knowledge-bases:
     get:
       parameters:
@@ -23579,6 +24995,143 @@ paths:
       summary: 查询模型 options 透传策略
       tags:
       - settings
+  /setup/apply:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 初始化配置
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ApplyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/JobSnapshotResponseDoc'
+      summary: 启动异步初始化与容器编排任务
+      tags:
+      - setup
+  /setup/events:
+    get:
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: SSE event stream
+          schema:
+            type: string
+      summary: 通过 SSE 实时订阅初始化进度事件
+      tags:
+      - setup
+  /setup/inspect-dir:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 目录参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/InspectDirRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/InspectDirResponseDoc'
+      summary: 校验托管数据目录安全性与已有 PostgreSQL 数据
+      tags:
+      - setup
+  /setup/job:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/JobSnapshotResponseDoc'
+      summary: 查询当前初始化任务快照
+      tags:
+      - setup
+  /setup/preflight:
+    get:
+      parameters:
+      - description: 可选 Docker Engine 地址
+        in: query
+        name: dockerHost
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PreflightResponseDoc'
+      summary: 宿主机 Docker、目录与端口环境体检
+      tags:
+      - setup
+  /setup/status:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SetupStatusResponseDoc'
+      summary: 查询引导模式状态
+      tags:
+      - setup
+  /setup/test-external:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 外部连接参数
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/TestExternalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/TestExternalResponseDoc'
+      summary: 只读测试外部 PostgreSQL（含 pgvector）与 Redis 连通性
+      tags:
+      - setup
+  /setup/verify:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Setup Token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/VerifyTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/VerifyTokenResponseDoc'
+      summary: 验证一次性 Setup Token 并签发引导会话
+      tags:
+      - setup
   /shared-conversations/{share_id}:
     get:
       consumes:

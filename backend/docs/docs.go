@@ -2141,6 +2141,496 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/infra/backups": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/infra"
+                ],
+                "summary": "列出托管 PostgreSQL 历史逻辑备份",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/BackupListResponseDoc"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/infra"
+                ],
+                "summary": "立即执行一次手动 PostgreSQL 逻辑备份",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/BackupRecordResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/infra/backups/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/infra"
+                ],
+                "summary": "删除单份过期备份文件（绝不触碰数据库目录）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "备份文件名 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/SuccessDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/infra/backups/{id}/download": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/gzip"
+                ],
+                "tags": [
+                    "admin/infra"
+                ],
+                "summary": "流式下载单份 PostgreSQL 逻辑备份归档",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "备份文件名 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/infra/compose": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/infra"
+                ],
+                "summary": "查看落盘的 docker-compose.yml（不含明文密码）",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ComposePreviewResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/infra/config": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/infra"
+                ],
+                "summary": "读取常用基础设施 config.json 脱敏视图",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/InfraConfigResponseDoc"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/infra"
+                ],
+                "summary": "校验并保存常用基础设施配置到 config.json，可选平滑重启",
+                "parameters": [
+                    {
+                        "description": "基础设施配置补丁",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/PatchInfraConfigRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/PatchInfraConfigResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/infra/danger/recreate-container": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/infra"
+                ],
+                "summary": "高危操作：强制重建核心托管容器（严格保留宿主机数据目录）",
+                "parameters": [
+                    {
+                        "description": "高危重建请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/DangerRecreateContainerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/InfraJobSnapshotResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/infra/danger/restore-backup": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/infra"
+                ],
+                "summary": "高危操作：校验并从历史备份一键恢复 PostgreSQL（先自动留存保护快照）",
+                "parameters": [
+                    {
+                        "description": "高危恢复请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/DangerRestoreBackupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/DangerRestoreBackupResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/infra/danger/switch-database": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/infra"
+                ],
+                "summary": "高危操作：连通测试后切换托管/外部数据库及缓存模式并平滑重启",
+                "parameters": [
+                    {
+                        "description": "高危切库请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/DangerSwitchDatabaseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/DangerSwitchDatabaseResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/infra/jobs/{jobId}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/infra"
+                ],
+                "summary": "查询异步基础设施任务快照",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "任务 ID",
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/InfraJobSnapshotResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/infra/jobs/{jobId}/events": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "admin/infra"
+                ],
+                "summary": "通过 SSE 实时订阅异步基础设施任务进度",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "任务 ID",
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SSE event stream",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/infra/overview": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/infra"
+                ],
+                "summary": "查询 Docker 宿主机与托管服务总览",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/InfraOverviewResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/infra/services/{id}/logs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/infra"
+                ],
+                "summary": "读取托管容器最近日志",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "服务 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "读取行数（默认 200）",
+                        "name": "tail",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ServiceLogsResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/infra/services/{id}/{action}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin/infra"
+                ],
+                "summary": "触发托管服务的启停、重启或拉取升级任务",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "服务 ID (postgres/redis/tika/docling/tesseract/rapidocr)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "操作 (start/stop/restart/pull)",
+                        "name": "action",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "可选受控参数",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ServiceActionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/InfraJobSnapshotResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/knowledge-bases": {
             "get": {
                 "security": [
@@ -17436,6 +17926,222 @@ const docTemplate = `{
                 }
             }
         },
+        "/setup/apply": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "setup"
+                ],
+                "summary": "启动异步初始化与容器编排任务",
+                "parameters": [
+                    {
+                        "description": "初始化配置",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ApplyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/JobSnapshotResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/setup/events": {
+            "get": {
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "setup"
+                ],
+                "summary": "通过 SSE 实时订阅初始化进度事件",
+                "responses": {
+                    "200": {
+                        "description": "SSE event stream",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/setup/inspect-dir": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "setup"
+                ],
+                "summary": "校验托管数据目录安全性与已有 PostgreSQL 数据",
+                "parameters": [
+                    {
+                        "description": "目录参数",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/InspectDirRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/InspectDirResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/setup/job": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "setup"
+                ],
+                "summary": "查询当前初始化任务快照",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/JobSnapshotResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/setup/preflight": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "setup"
+                ],
+                "summary": "宿主机 Docker、目录与端口环境体检",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "可选 Docker Engine 地址",
+                        "name": "dockerHost",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/PreflightResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/setup/status": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "setup"
+                ],
+                "summary": "查询引导模式状态",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/SetupStatusResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/setup/test-external": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "setup"
+                ],
+                "summary": "只读测试外部 PostgreSQL（含 pgvector）与 Redis 连通性",
+                "parameters": [
+                    {
+                        "description": "外部连接参数",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/TestExternalRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/TestExternalResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
+        "/setup/verify": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "setup"
+                ],
+                "summary": "验证一次性 Setup Token 并签发引导会话",
+                "parameters": [
+                    {
+                        "description": "Setup Token",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/VerifyTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/VerifyTokenResponseDoc"
+                        }
+                    }
+                }
+            }
+        },
         "/shared-conversations/{share_id}": {
             "get": {
                 "description": "公开读取会话分享快照",
@@ -19319,6 +20025,150 @@ const docTemplate = `{
                 }
             }
         },
+        "ApplyRequest": {
+            "type": "object",
+            "required": [
+                "adminDisplayName",
+                "adminPassword",
+                "adminUsername",
+                "adoptExistingPGData",
+                "backupDir",
+                "cacheMode",
+                "composeSync",
+                "corsAllowOrigin",
+                "dataDir",
+                "databaseMode",
+                "dockerHost",
+                "env",
+                "existingPGDatabase",
+                "existingPGPassword",
+                "existingPGUser",
+                "existingRedisPassword",
+                "externalPostgresDSN",
+                "externalRedisAddr",
+                "externalRedisDB",
+                "externalRedisPass",
+                "externalRedisSkipTLS",
+                "externalRedisTLS",
+                "externalRedisUser",
+                "postgresDataDir",
+                "postgresImage",
+                "postgresMemoryLimitMB",
+                "postgresPort",
+                "publicBaseURL",
+                "redisDataDir",
+                "redisImage",
+                "redisMemoryLimitMB",
+                "redisPort",
+                "registryMirror"
+            ],
+            "properties": {
+                "adminDisplayName": {
+                    "type": "string"
+                },
+                "adminPassword": {
+                    "type": "string"
+                },
+                "adminUsername": {
+                    "type": "string"
+                },
+                "adoptExistingPGData": {
+                    "type": "boolean"
+                },
+                "backupDir": {
+                    "type": "string"
+                },
+                "cacheMode": {
+                    "description": "managed_redis | external_redis | memory",
+                    "type": "string"
+                },
+                "composeSync": {
+                    "type": "boolean"
+                },
+                "corsAllowOrigin": {
+                    "type": "string"
+                },
+                "dataDir": {
+                    "type": "string"
+                },
+                "databaseMode": {
+                    "description": "managed | external",
+                    "type": "string"
+                },
+                "dockerHost": {
+                    "type": "string"
+                },
+                "env": {
+                    "type": "string"
+                },
+                "existingDataEncryptionKey": {
+                    "type": "string"
+                },
+                "existingPGDatabase": {
+                    "type": "string"
+                },
+                "existingPGPassword": {
+                    "type": "string"
+                },
+                "existingPGUser": {
+                    "type": "string"
+                },
+                "existingRedisPassword": {
+                    "type": "string"
+                },
+                "externalPostgresDSN": {
+                    "type": "string"
+                },
+                "externalRedisAddr": {
+                    "type": "string"
+                },
+                "externalRedisDB": {
+                    "type": "integer"
+                },
+                "externalRedisPass": {
+                    "type": "string"
+                },
+                "externalRedisSkipTLS": {
+                    "type": "boolean"
+                },
+                "externalRedisTLS": {
+                    "type": "boolean"
+                },
+                "externalRedisUser": {
+                    "type": "string"
+                },
+                "postgresDataDir": {
+                    "type": "string"
+                },
+                "postgresImage": {
+                    "type": "string"
+                },
+                "postgresMemoryLimitMB": {
+                    "type": "integer"
+                },
+                "postgresPort": {
+                    "type": "integer"
+                },
+                "publicBaseURL": {
+                    "type": "string"
+                },
+                "redisDataDir": {
+                    "type": "string"
+                },
+                "redisImage": {
+                    "type": "string"
+                },
+                "redisMemoryLimitMB": {
+                    "type": "integer"
+                },
+                "redisPort": {
+                    "type": "integer"
+                },
+                "registryMirror": {
+                    "type": "string"
+                }
+            }
+        },
         "AuditLogListResponseDoc": {
             "type": "object",
             "required": [
@@ -19709,6 +20559,85 @@ const docTemplate = `{
                     "type": "string",
                     "x-nullable": true,
                     "x-omitempty": false
+                }
+            }
+        },
+        "BackupListResponse": {
+            "type": "object",
+            "required": [
+                "backups"
+            ],
+            "properties": {
+                "backups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/BackupRecordDTO"
+                    }
+                }
+            }
+        },
+        "BackupListResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/BackupListResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "BackupRecordDTO": {
+            "type": "object",
+            "required": [
+                "createdAt",
+                "fileName",
+                "id",
+                "sha256",
+                "sizeBytes",
+                "trigger",
+                "verified"
+            ],
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "fileName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "sha256": {
+                    "type": "string"
+                },
+                "sizeBytes": {
+                    "type": "integer"
+                },
+                "trigger": {
+                    "type": "string"
+                },
+                "verified": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "BackupRecordResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/BackupRecordDTO"
+                },
+                "errorMsg": {
+                    "type": "string"
                 }
             }
         },
@@ -20903,6 +21832,32 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/CleanupLogsResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ComposePreviewResponse": {
+            "type": "object",
+            "required": [
+                "content"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                }
+            }
+        },
+        "ComposePreviewResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ComposePreviewResponse"
                 },
                 "errorMsg": {
                     "type": "string"
@@ -23153,6 +24108,194 @@ const docTemplate = `{
                 }
             }
         },
+        "DaemonInfoDTO": {
+            "type": "object",
+            "required": [
+                "apiVersion",
+                "architecture",
+                "available",
+                "containersRunning",
+                "host",
+                "memTotalBytes",
+                "osType",
+                "serverVersion"
+            ],
+            "properties": {
+                "apiVersion": {
+                    "type": "string"
+                },
+                "architecture": {
+                    "type": "string"
+                },
+                "available": {
+                    "type": "boolean"
+                },
+                "containersRunning": {
+                    "type": "integer"
+                },
+                "host": {
+                    "type": "string"
+                },
+                "memTotalBytes": {
+                    "type": "integer"
+                },
+                "osType": {
+                    "type": "string"
+                },
+                "serverVersion": {
+                    "type": "string"
+                }
+            }
+        },
+        "DangerRecreateContainerRequest": {
+            "type": "object",
+            "required": [
+                "confirmText",
+                "currentPassword",
+                "serviceID"
+            ],
+            "properties": {
+                "confirmText": {
+                    "type": "string"
+                },
+                "currentPassword": {
+                    "type": "string"
+                },
+                "serviceID": {
+                    "type": "string"
+                }
+            }
+        },
+        "DangerRestoreBackupRequest": {
+            "type": "object",
+            "required": [
+                "backupID",
+                "confirmText",
+                "currentPassword"
+            ],
+            "properties": {
+                "backupID": {
+                    "type": "string"
+                },
+                "confirmText": {
+                    "type": "string"
+                },
+                "currentPassword": {
+                    "type": "string"
+                }
+            }
+        },
+        "DangerRestoreBackupResponse": {
+            "type": "object",
+            "required": [
+                "preRestoreBackup",
+                "restartScheduled",
+                "restoredBackupID"
+            ],
+            "properties": {
+                "preRestoreBackup": {
+                    "type": "string"
+                },
+                "restartScheduled": {
+                    "type": "boolean"
+                },
+                "restoredBackupID": {
+                    "type": "string"
+                }
+            }
+        },
+        "DangerRestoreBackupResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/DangerRestoreBackupResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "DangerSwitchDatabaseRequest": {
+            "type": "object",
+            "required": [
+                "cacheMode",
+                "confirmText",
+                "currentPassword",
+                "databaseMode",
+                "externalPostgresDSN",
+                "externalRedisAddr",
+                "externalRedisDB",
+                "externalRedisPassword",
+                "externalRedisSkipTLS",
+                "externalRedisTLS",
+                "externalRedisUsername"
+            ],
+            "properties": {
+                "cacheMode": {
+                    "type": "string"
+                },
+                "confirmText": {
+                    "type": "string"
+                },
+                "currentPassword": {
+                    "type": "string"
+                },
+                "databaseMode": {
+                    "type": "string"
+                },
+                "externalPostgresDSN": {
+                    "type": "string"
+                },
+                "externalRedisAddr": {
+                    "type": "string"
+                },
+                "externalRedisDB": {
+                    "type": "integer"
+                },
+                "externalRedisPassword": {
+                    "type": "string"
+                },
+                "externalRedisSkipTLS": {
+                    "type": "boolean"
+                },
+                "externalRedisTLS": {
+                    "type": "boolean"
+                },
+                "externalRedisUsername": {
+                    "type": "string"
+                }
+            }
+        },
+        "DangerSwitchDatabaseResponse": {
+            "type": "object",
+            "required": [
+                "restartScheduled"
+            ],
+            "properties": {
+                "restartScheduled": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "DangerSwitchDatabaseResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/DangerSwitchDatabaseResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
         "DeleteAccountRequest": {
             "type": "object",
             "required": [
@@ -23339,6 +24482,65 @@ const docTemplate = `{
                 },
                 "errorMsg": {
                     "type": "string"
+                }
+            }
+        },
+        "DirInspectionDTO": {
+            "type": "object",
+            "required": [
+                "backupDir",
+                "diskFreeBytes",
+                "diskTotalBytes",
+                "hasExistingCompose",
+                "hasManagedMarker",
+                "postgresDataDir",
+                "redisDataDir",
+                "resolvedRoot",
+                "status",
+                "valid"
+            ],
+            "properties": {
+                "backupDir": {
+                    "type": "string"
+                },
+                "diskFreeBytes": {
+                    "type": "integer"
+                },
+                "diskTotalBytes": {
+                    "type": "integer"
+                },
+                "hasExistingCompose": {
+                    "type": "boolean"
+                },
+                "hasManagedMarker": {
+                    "type": "boolean"
+                },
+                "pgVersion": {
+                    "type": "string"
+                },
+                "postgresDataDir": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "redisDataDir": {
+                    "type": "string"
+                },
+                "resolvedRoot": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "valid": {
+                    "type": "boolean"
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -25002,6 +26204,531 @@ const docTemplate = `{
                 }
             }
         },
+        "InfraConfigResponse": {
+            "type": "object",
+            "required": [
+                "configFile",
+                "corsAllowOrigin",
+                "env",
+                "httpPort",
+                "managedBackupEnabled",
+                "managedBackupRetentionCount",
+                "managedBackupSchedule",
+                "managedComposeSync",
+                "managedDataDir",
+                "managedPostgresEnabled",
+                "managedPostgresMemoryLimitMB",
+                "managedRedisEnabled",
+                "managedRedisMemoryLimitMB",
+                "managedRegistryMirror",
+                "publicAPIBaseURL",
+                "publicWebBaseURL",
+                "ssrfAllowedCIDRs",
+                "ssrfAllowedHosts",
+                "ssrfProtectionEnabled",
+                "storageBackend",
+                "storageRootDir",
+                "storageS3AccessKeyID",
+                "storageS3Bucket",
+                "storageS3Endpoint",
+                "storageS3ForcePathStyle",
+                "storageS3Prefix",
+                "storageS3Region",
+                "storageS3SecretConfigured",
+                "trustedProxies",
+                "updateChannel",
+                "updateCheckIntervalSeconds",
+                "updateEnabled",
+                "updateProxyBaseURL",
+                "updateSource"
+            ],
+            "properties": {
+                "configFile": {
+                    "type": "string"
+                },
+                "corsAllowOrigin": {
+                    "type": "string"
+                },
+                "env": {
+                    "type": "string"
+                },
+                "httpPort": {
+                    "type": "string"
+                },
+                "managedBackupEnabled": {
+                    "type": "boolean"
+                },
+                "managedBackupRetentionCount": {
+                    "type": "integer"
+                },
+                "managedBackupSchedule": {
+                    "type": "string"
+                },
+                "managedComposeSync": {
+                    "type": "boolean"
+                },
+                "managedDataDir": {
+                    "type": "string"
+                },
+                "managedPostgresEnabled": {
+                    "type": "boolean"
+                },
+                "managedPostgresMemoryLimitMB": {
+                    "type": "integer"
+                },
+                "managedRedisEnabled": {
+                    "type": "boolean"
+                },
+                "managedRedisMemoryLimitMB": {
+                    "type": "integer"
+                },
+                "managedRegistryMirror": {
+                    "type": "string"
+                },
+                "publicAPIBaseURL": {
+                    "type": "string"
+                },
+                "publicWebBaseURL": {
+                    "type": "string"
+                },
+                "ssrfAllowedCIDRs": {
+                    "type": "string"
+                },
+                "ssrfAllowedHosts": {
+                    "type": "string"
+                },
+                "ssrfProtectionEnabled": {
+                    "type": "boolean"
+                },
+                "storageBackend": {
+                    "type": "string"
+                },
+                "storageRootDir": {
+                    "type": "string"
+                },
+                "storageS3AccessKeyID": {
+                    "type": "string"
+                },
+                "storageS3Bucket": {
+                    "type": "string"
+                },
+                "storageS3Endpoint": {
+                    "type": "string"
+                },
+                "storageS3ForcePathStyle": {
+                    "type": "boolean"
+                },
+                "storageS3Prefix": {
+                    "type": "string"
+                },
+                "storageS3Region": {
+                    "type": "string"
+                },
+                "storageS3SecretConfigured": {
+                    "type": "boolean"
+                },
+                "trustedProxies": {
+                    "type": "string"
+                },
+                "updateChannel": {
+                    "type": "string"
+                },
+                "updateCheckIntervalSeconds": {
+                    "type": "integer"
+                },
+                "updateEnabled": {
+                    "type": "boolean"
+                },
+                "updateProxyBaseURL": {
+                    "type": "string"
+                },
+                "updateSource": {
+                    "type": "string"
+                }
+            }
+        },
+        "InfraConfigResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/InfraConfigResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "InfraDaemonInfoDTO": {
+            "type": "object",
+            "required": [
+                "apiVersion",
+                "architecture",
+                "available",
+                "containersRunning",
+                "host",
+                "memTotalBytes",
+                "osType",
+                "serverVersion"
+            ],
+            "properties": {
+                "apiVersion": {
+                    "type": "string"
+                },
+                "architecture": {
+                    "type": "string"
+                },
+                "available": {
+                    "type": "boolean"
+                },
+                "containersRunning": {
+                    "type": "integer"
+                },
+                "host": {
+                    "type": "string"
+                },
+                "memTotalBytes": {
+                    "type": "integer"
+                },
+                "osType": {
+                    "type": "string"
+                },
+                "serverVersion": {
+                    "type": "string"
+                }
+            }
+        },
+        "InfraDirInfoDTO": {
+            "type": "object",
+            "required": [
+                "backupDir",
+                "diskFreeBytes",
+                "diskTotalBytes",
+                "hasExistingCompose",
+                "hasManagedMarker",
+                "postgresDataDir",
+                "redisDataDir",
+                "resolvedRoot",
+                "status",
+                "valid"
+            ],
+            "properties": {
+                "backupDir": {
+                    "type": "string"
+                },
+                "diskFreeBytes": {
+                    "type": "integer"
+                },
+                "diskTotalBytes": {
+                    "type": "integer"
+                },
+                "hasExistingCompose": {
+                    "type": "boolean"
+                },
+                "hasManagedMarker": {
+                    "type": "boolean"
+                },
+                "pgVersion": {
+                    "type": "string"
+                },
+                "postgresDataDir": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "redisDataDir": {
+                    "type": "string"
+                },
+                "resolvedRoot": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "valid": {
+                    "type": "boolean"
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "InfraJobEventDTO": {
+            "type": "object",
+            "required": [
+                "action",
+                "jobID",
+                "message",
+                "percent",
+                "serviceID",
+                "status",
+                "step",
+                "timestamp"
+            ],
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "jobID": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "percent": {
+                    "type": "integer"
+                },
+                "serviceID": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "step": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "InfraJobSnapshotResponse": {
+            "type": "object",
+            "required": [
+                "action",
+                "events",
+                "jobID",
+                "serviceID",
+                "state"
+            ],
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/InfraJobEventDTO"
+                    }
+                },
+                "jobID": {
+                    "type": "string"
+                },
+                "serviceID": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                }
+            }
+        },
+        "InfraJobSnapshotResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/InfraJobSnapshotResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "InfraOverviewResponse": {
+            "type": "object",
+            "required": [
+                "backupEnabled",
+                "backupRetention",
+                "backupSchedule",
+                "composeSync",
+                "dataDir",
+                "docker",
+                "registryMirror",
+                "services"
+            ],
+            "properties": {
+                "backupEnabled": {
+                    "type": "boolean"
+                },
+                "backupRetention": {
+                    "type": "integer"
+                },
+                "backupSchedule": {
+                    "type": "string"
+                },
+                "composeSync": {
+                    "type": "boolean"
+                },
+                "dataDir": {
+                    "$ref": "#/definitions/InfraDirInfoDTO"
+                },
+                "docker": {
+                    "$ref": "#/definitions/InfraDaemonInfoDTO"
+                },
+                "dockerError": {
+                    "type": "string"
+                },
+                "registryMirror": {
+                    "type": "string"
+                },
+                "services": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ManagedServiceDTO"
+                    }
+                }
+            }
+        },
+        "InfraOverviewResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/InfraOverviewResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "InspectDirRequest": {
+            "type": "object",
+            "required": [
+                "backupDir",
+                "dataDir",
+                "postgresDataDir",
+                "redisDataDir"
+            ],
+            "properties": {
+                "backupDir": {
+                    "type": "string"
+                },
+                "dataDir": {
+                    "type": "string"
+                },
+                "postgresDataDir": {
+                    "type": "string"
+                },
+                "redisDataDir": {
+                    "type": "string"
+                }
+            }
+        },
+        "InspectDirResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/DirInspectionDTO"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "JobEventResponse": {
+            "type": "object",
+            "required": [
+                "jobID",
+                "message",
+                "percent",
+                "status",
+                "step",
+                "timestamp"
+            ],
+            "properties": {
+                "jobID": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "percent": {
+                    "type": "integer"
+                },
+                "service": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "step": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "JobSnapshotResponse": {
+            "type": "object",
+            "required": [
+                "adoptedDB",
+                "events",
+                "jobID",
+                "state"
+            ],
+            "properties": {
+                "adoptedDB": {
+                    "type": "boolean"
+                },
+                "composePath": {
+                    "type": "string"
+                },
+                "configPath": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/JobEventResponse"
+                    }
+                },
+                "jobID": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                }
+            }
+        },
+        "JobSnapshotResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/JobSnapshotResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
         "KnowledgeBaseDataResponse": {
             "type": "object",
             "required": [
@@ -25622,6 +27349,95 @@ const docTemplate = `{
                     "$ref": "#/definitions/LogoutResponse"
                 },
                 "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "ManagedServiceDTO": {
+            "type": "object",
+            "required": [
+                "canPull",
+                "canRestart",
+                "canStart",
+                "canStop",
+                "category",
+                "containerName",
+                "cpuPercent",
+                "description",
+                "id",
+                "image",
+                "memoryLimitBytes",
+                "memoryUsageBytes",
+                "mode",
+                "name",
+                "port",
+                "reachable",
+                "status"
+            ],
+            "properties": {
+                "canPull": {
+                    "type": "boolean"
+                },
+                "canRestart": {
+                    "type": "boolean"
+                },
+                "canStart": {
+                    "type": "boolean"
+                },
+                "canStop": {
+                    "type": "boolean"
+                },
+                "category": {
+                    "description": "core | optional",
+                    "type": "string"
+                },
+                "containerName": {
+                    "type": "string"
+                },
+                "cpuPercent": {
+                    "type": "number"
+                },
+                "dataDir": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "endpointURL": {
+                    "type": "string"
+                },
+                "health": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "memoryLimitBytes": {
+                    "type": "integer"
+                },
+                "memoryUsageBytes": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "mode": {
+                    "description": "managed | external | memory | disabled",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "reachable": {
+                    "type": "boolean"
+                },
+                "status": {
                     "type": "string"
                 }
             }
@@ -28681,6 +30497,163 @@ const docTemplate = `{
                 }
             }
         },
+        "PatchInfraConfigRequest": {
+            "type": "object",
+            "required": [
+                "corsAllowOrigin",
+                "env",
+                "managedBackupEnabled",
+                "managedBackupRetentionCount",
+                "managedBackupSchedule",
+                "managedComposeSync",
+                "managedPostgresMemoryLimitMB",
+                "managedRedisMemoryLimitMB",
+                "managedRegistryMirror",
+                "publicAPIBaseURL",
+                "publicWebBaseURL",
+                "restartNow",
+                "ssrfAllowedCIDRs",
+                "ssrfAllowedHosts",
+                "ssrfProtectionEnabled",
+                "storageBackend",
+                "storageRootDir",
+                "storageS3AccessKeyID",
+                "storageS3Bucket",
+                "storageS3Endpoint",
+                "storageS3ForcePathStyle",
+                "storageS3Prefix",
+                "storageS3Region",
+                "storageS3SecretAccessKey",
+                "trustedProxies",
+                "updateChannel",
+                "updateCheckIntervalSeconds",
+                "updateEnabled",
+                "updateProxyBaseURL",
+                "updateSource"
+            ],
+            "properties": {
+                "corsAllowOrigin": {
+                    "type": "string"
+                },
+                "env": {
+                    "type": "string"
+                },
+                "managedBackupEnabled": {
+                    "type": "boolean"
+                },
+                "managedBackupRetentionCount": {
+                    "type": "integer"
+                },
+                "managedBackupSchedule": {
+                    "type": "string"
+                },
+                "managedComposeSync": {
+                    "type": "boolean"
+                },
+                "managedPostgresMemoryLimitMB": {
+                    "type": "integer"
+                },
+                "managedRedisMemoryLimitMB": {
+                    "type": "integer"
+                },
+                "managedRegistryMirror": {
+                    "type": "string"
+                },
+                "publicAPIBaseURL": {
+                    "type": "string"
+                },
+                "publicWebBaseURL": {
+                    "type": "string"
+                },
+                "restartNow": {
+                    "type": "boolean"
+                },
+                "ssrfAllowedCIDRs": {
+                    "type": "string"
+                },
+                "ssrfAllowedHosts": {
+                    "type": "string"
+                },
+                "ssrfProtectionEnabled": {
+                    "type": "boolean"
+                },
+                "storageBackend": {
+                    "type": "string"
+                },
+                "storageRootDir": {
+                    "type": "string"
+                },
+                "storageS3AccessKeyID": {
+                    "type": "string"
+                },
+                "storageS3Bucket": {
+                    "type": "string"
+                },
+                "storageS3Endpoint": {
+                    "type": "string"
+                },
+                "storageS3ForcePathStyle": {
+                    "type": "boolean"
+                },
+                "storageS3Prefix": {
+                    "type": "string"
+                },
+                "storageS3Region": {
+                    "type": "string"
+                },
+                "storageS3SecretAccessKey": {
+                    "type": "string"
+                },
+                "trustedProxies": {
+                    "type": "string"
+                },
+                "updateChannel": {
+                    "type": "string"
+                },
+                "updateCheckIntervalSeconds": {
+                    "type": "integer"
+                },
+                "updateEnabled": {
+                    "type": "boolean"
+                },
+                "updateProxyBaseURL": {
+                    "type": "string"
+                },
+                "updateSource": {
+                    "type": "string"
+                }
+            }
+        },
+        "PatchInfraConfigResponse": {
+            "type": "object",
+            "required": [
+                "config",
+                "restartScheduled"
+            ],
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/InfraConfigResponse"
+                },
+                "restartScheduled": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "PatchInfraConfigResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/PatchInfraConfigResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
         "PatchItem": {
             "type": "object",
             "required": [
@@ -29686,6 +31659,57 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/PlatformFileDeleteDataResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "PreflightResponse": {
+            "type": "object",
+            "required": [
+                "defaultDir",
+                "defaults",
+                "docker",
+                "postgresPortAvailable",
+                "redisPortAvailable"
+            ],
+            "properties": {
+                "defaultDir": {
+                    "$ref": "#/definitions/DirInspectionDTO"
+                },
+                "defaults": {
+                    "$ref": "#/definitions/SetupDefaultsDTO"
+                },
+                "docker": {
+                    "$ref": "#/definitions/DaemonInfoDTO"
+                },
+                "dockerError": {
+                    "type": "string"
+                },
+                "postgresPortAvailable": {
+                    "type": "boolean"
+                },
+                "postgresPortMessage": {
+                    "type": "string"
+                },
+                "redisPortAvailable": {
+                    "type": "boolean"
+                },
+                "redisPortMessage": {
+                    "type": "string"
+                }
+            }
+        },
+        "PreflightResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/PreflightResponse"
                 },
                 "errorMsg": {
                     "type": "string"
@@ -31849,6 +33873,55 @@ const docTemplate = `{
                 }
             }
         },
+        "ServiceActionRequest": {
+            "type": "object",
+            "required": [
+                "memoryLimitMB",
+                "port",
+                "tesseractLang"
+            ],
+            "properties": {
+                "memoryLimitMB": {
+                    "type": "integer"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "tesseractLang": {
+                    "type": "string"
+                }
+            }
+        },
+        "ServiceLogsResponse": {
+            "type": "object",
+            "required": [
+                "logs",
+                "serviceID"
+            ],
+            "properties": {
+                "logs": {
+                    "type": "string"
+                },
+                "serviceID": {
+                    "type": "string"
+                }
+            }
+        },
+        "ServiceLogsResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/ServiceLogsResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
         "SetConversationArchiveRequest": {
             "type": "object",
             "required": [
@@ -32013,6 +34086,90 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/PatchItem"
                     }
+                }
+            }
+        },
+        "SetupDefaultsDTO": {
+            "type": "object",
+            "required": [
+                "dataDir",
+                "dockerHost",
+                "httpPort",
+                "network",
+                "postgresImage",
+                "postgresPort",
+                "redisImage",
+                "redisPort",
+                "registryMirror"
+            ],
+            "properties": {
+                "dataDir": {
+                    "type": "string"
+                },
+                "dockerHost": {
+                    "type": "string"
+                },
+                "httpPort": {
+                    "type": "string"
+                },
+                "network": {
+                    "type": "string"
+                },
+                "postgresImage": {
+                    "type": "string"
+                },
+                "postgresPort": {
+                    "type": "integer"
+                },
+                "redisImage": {
+                    "type": "string"
+                },
+                "redisPort": {
+                    "type": "integer"
+                },
+                "registryMirror": {
+                    "type": "string"
+                }
+            }
+        },
+        "SetupStatusResponse": {
+            "type": "object",
+            "required": [
+                "authenticated",
+                "jobState",
+                "needsSetup",
+                "version"
+            ],
+            "properties": {
+                "authenticated": {
+                    "type": "boolean"
+                },
+                "defaults": {
+                    "$ref": "#/definitions/SetupDefaultsDTO"
+                },
+                "jobState": {
+                    "type": "string"
+                },
+                "needsSetup": {
+                    "type": "boolean"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "SetupStatusResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/SetupStatusResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
                 }
             }
         },
@@ -32680,6 +34837,96 @@ const docTemplate = `{
                 "title": {
                     "type": "string",
                     "maxLength": 200
+                }
+            }
+        },
+        "TestExternalRequest": {
+            "type": "object",
+            "required": [
+                "cacheDriver",
+                "postgresDSN",
+                "redisAddr",
+                "redisDB",
+                "redisPassword",
+                "redisTLSEnabled",
+                "redisTLSInsecureSkip",
+                "redisUsername"
+            ],
+            "properties": {
+                "cacheDriver": {
+                    "type": "string"
+                },
+                "postgresDSN": {
+                    "type": "string"
+                },
+                "redisAddr": {
+                    "type": "string"
+                },
+                "redisDB": {
+                    "type": "integer"
+                },
+                "redisPassword": {
+                    "type": "string"
+                },
+                "redisTLSEnabled": {
+                    "type": "boolean"
+                },
+                "redisTLSInsecureSkip": {
+                    "type": "boolean"
+                },
+                "redisUsername": {
+                    "type": "string"
+                }
+            }
+        },
+        "TestExternalResponse": {
+            "type": "object",
+            "required": [
+                "postgresOK",
+                "postgresVectorAvailable",
+                "postgresVectorInstalled",
+                "redisChecked",
+                "redisOK"
+            ],
+            "properties": {
+                "postgresError": {
+                    "type": "string"
+                },
+                "postgresOK": {
+                    "type": "boolean"
+                },
+                "postgresVectorAvailable": {
+                    "type": "boolean"
+                },
+                "postgresVectorInstalled": {
+                    "type": "boolean"
+                },
+                "postgresVersion": {
+                    "type": "string"
+                },
+                "redisChecked": {
+                    "type": "boolean"
+                },
+                "redisError": {
+                    "type": "string"
+                },
+                "redisOK": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "TestExternalResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/TestExternalResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
                 }
             }
         },
@@ -35948,6 +38195,47 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/UserSettingsResponse"
+                },
+                "errorMsg": {
+                    "type": "string"
+                }
+            }
+        },
+        "VerifyTokenRequest": {
+            "type": "object",
+            "required": [
+                "token"
+            ],
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "VerifyTokenResponse": {
+            "type": "object",
+            "required": [
+                "authenticated",
+                "defaults"
+            ],
+            "properties": {
+                "authenticated": {
+                    "type": "boolean"
+                },
+                "defaults": {
+                    "$ref": "#/definitions/SetupDefaultsDTO"
+                }
+            }
+        },
+        "VerifyTokenResponseDoc": {
+            "type": "object",
+            "required": [
+                "data",
+                "errorMsg"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/VerifyTokenResponse"
                 },
                 "errorMsg": {
                     "type": "string"

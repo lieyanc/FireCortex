@@ -111,5 +111,35 @@
     "proxy_base_url": "",
     "repo": "",
     "download_dir": "./data/updates"
+  },
+  "bootstrap": {
+    "completed": true
+  },
+  "managed": {
+    "docker_host": "",
+    "network": "firecortex-network",
+    "data_dir": "./data/managed",
+    "registry_mirror": "",
+    "compose_sync": true,
+    "postgres": {
+      "enabled": false,
+      "image": "pgvector/pgvector:pg16",
+      "port": 5432,
+      "data_dir": "",
+      "memory_limit_mb": 0
+    },
+    "redis": {
+      "enabled": false,
+      "image": "redis:7-alpine",
+      "port": 6379,
+      "data_dir": "",
+      "memory_limit_mb": 0
+    },
+    "backup": {
+      "enabled": true,
+      "dir": "",
+      "schedule": "0 3 * * *",
+      "retention_count": 7
+    }
   }
 }

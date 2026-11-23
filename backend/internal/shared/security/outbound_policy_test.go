@@ -39,6 +39,7 @@ func TestOutboundHTTPCallSitesAreExplicit(t *testing.T) {
 		"&http.Client{": {
 			reason: "direct HTTP clients must be reviewed for external-vs-internal trust boundaries",
 			files: allowFiles(
+				"internal/infra/dockermgr/client.go",
 				"internal/infra/embedding/client.go",
 				"internal/infra/extraction/ocr/client.go",
 				"internal/infra/extraction/mineru/client.go",

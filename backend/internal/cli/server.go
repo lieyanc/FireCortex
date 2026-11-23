@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/lieyanc/FireCortex/backend/internal/app"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/buildinfo"
 )
 
@@ -38,10 +39,20 @@ func Run() error {
 }
 
 func run(args []string, handoffOut io.Writer) error {
+	if len(args) > 0 {
+		switch args[0] {
+		case "install-service":
+			return runInstallService(args[1:], handoffOut)
+		case "uninstall-service":
+			return runUninstallService(args[1:], handoffOut)
+		}
+	}
+
 	fs := flag.NewFlagSet("firecortex", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	local := fs.Bool("local", false, "run as a desktop sidecar: SQLite + local storage, loopback only")
 	dataDir := fs.String("data-dir", "", "data directory for --local (required with --local)")
+	skipSetup := fs.Bool("skip-setup", false, "skip first-run Setup Mode and load config directly")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -49,6 +60,19 @@ func run(args []string, handoffOut io.Writer) error {
 	if !*local {
 		if *dataDir != "" {
 			return errors.New("--data-dir requires --local")
+		}
+		if !*skipSetup {
+			needsSetup, cfgPath, err := config.NeedsSetup()
+			if err != nil {
+				return err
+			}
+			if needsSetup {
+				setupCfg, err := config.LoadForSetup()
+				if err != nil {
+					return err
+				}
+				return app.RunSetupMode(setupCfg, cfgPath)
+			}
 		}
 		instance, err := app.NewApp()
 		if err != nil {

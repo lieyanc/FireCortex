@@ -335,6 +335,27 @@ type Config struct {
 	UpdateProxyBaseURL         string
 	UpdateRepo                 string
 	UpdateDownloadDir          string
+	// 首次引导与 Docker 托管基础设施
+	BootstrapCompleted           bool
+	ManagedDockerHost            string
+	ManagedNetwork               string
+	ManagedDataDir               string
+	ManagedRegistryMirror        string
+	ManagedComposeSync           bool
+	ManagedPostgresEnabled       bool
+	ManagedPostgresImage         string
+	ManagedPostgresPort          int
+	ManagedPostgresDataDir       string
+	ManagedPostgresMemoryLimitMB int
+	ManagedRedisEnabled          bool
+	ManagedRedisImage            string
+	ManagedRedisPort             int
+	ManagedRedisDataDir          string
+	ManagedRedisMemoryLimitMB    int
+	ManagedBackupEnabled         bool
+	ManagedBackupDir             string
+	ManagedBackupSchedule        string
+	ManagedBackupRetentionCount  int
 
 	// ── 动态配置（由 DB 种子初始化默认值，settings.RuntimeSettings.ApplyTo 覆盖） ──
 	// 认证配置
@@ -521,6 +542,10 @@ func loadPath(path string) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	return buildConfig(path, fc), nil
+}
+
+func buildConfig(path string, fc fileConfig) Config {
 	def := templateConfig()
 	sourceDir := ""
 	if absolutePath, absErr := filepath.Abs(path); absErr == nil {
@@ -617,6 +642,26 @@ func loadPath(path string) (Config, error) {
 		UpdateProxyBaseURL:           envOr("UPDATE_PROXY_BASE_URL", fc.Update.ProxyBaseURL, def.Update.ProxyBaseURL),
 		UpdateRepo:                   envOr("UPDATE_REPO", fc.Update.Repo, def.Update.Repo),
 		UpdateDownloadDir:            envOrPath("UPDATE_DOWNLOAD_DIR", fc.Update.DownloadDir, def.Update.DownloadDir, sourceDir),
+		BootstrapCompleted:           envOrBool("BOOTSTRAP_COMPLETED", fc.Bootstrap.Completed),
+		ManagedDockerHost:            envOr("MANAGED_DOCKER_HOST", fc.Managed.DockerHost, def.Managed.DockerHost),
+		ManagedNetwork:               envOr("MANAGED_NETWORK", fc.Managed.Network, def.Managed.Network),
+		ManagedDataDir:               envOrPath("MANAGED_DATA_DIR", fc.Managed.DataDir, def.Managed.DataDir, sourceDir),
+		ManagedRegistryMirror:        envOr("MANAGED_REGISTRY_MIRROR", fc.Managed.RegistryMirror, def.Managed.RegistryMirror),
+		ManagedComposeSync:           envOrBool("MANAGED_COMPOSE_SYNC", fc.Managed.ComposeSync),
+		ManagedPostgresEnabled:       envOrBool("MANAGED_POSTGRES_ENABLED", fc.Managed.Postgres.Enabled),
+		ManagedPostgresImage:         envOr("MANAGED_POSTGRES_IMAGE", fc.Managed.Postgres.Image, def.Managed.Postgres.Image),
+		ManagedPostgresPort:          envOrInt("MANAGED_POSTGRES_PORT", fc.Managed.Postgres.Port, def.Managed.Postgres.Port),
+		ManagedPostgresDataDir:       envOrPath("MANAGED_POSTGRES_DATA_DIR", fc.Managed.Postgres.DataDir, def.Managed.Postgres.DataDir, sourceDir),
+		ManagedPostgresMemoryLimitMB: envOrInt("MANAGED_POSTGRES_MEMORY_LIMIT_MB", fc.Managed.Postgres.MemoryLimitMB, def.Managed.Postgres.MemoryLimitMB),
+		ManagedRedisEnabled:          envOrBool("MANAGED_REDIS_ENABLED", fc.Managed.Redis.Enabled),
+		ManagedRedisImage:            envOr("MANAGED_REDIS_IMAGE", fc.Managed.Redis.Image, def.Managed.Redis.Image),
+		ManagedRedisPort:             envOrInt("MANAGED_REDIS_PORT", fc.Managed.Redis.Port, def.Managed.Redis.Port),
+		ManagedRedisDataDir:          envOrPath("MANAGED_REDIS_DATA_DIR", fc.Managed.Redis.DataDir, def.Managed.Redis.DataDir, sourceDir),
+		ManagedRedisMemoryLimitMB:    envOrInt("MANAGED_REDIS_MEMORY_LIMIT_MB", fc.Managed.Redis.MemoryLimitMB, def.Managed.Redis.MemoryLimitMB),
+		ManagedBackupEnabled:         envOrBool("MANAGED_BACKUP_ENABLED", fc.Managed.Backup.Enabled),
+		ManagedBackupDir:             envOrPath("MANAGED_BACKUP_DIR", fc.Managed.Backup.Dir, def.Managed.Backup.Dir, sourceDir),
+		ManagedBackupSchedule:        envOr("MANAGED_BACKUP_SCHEDULE", fc.Managed.Backup.Schedule, def.Managed.Backup.Schedule),
+		ManagedBackupRetentionCount:  envOrInt("MANAGED_BACKUP_RETENTION_COUNT", fc.Managed.Backup.RetentionCount, def.Managed.Backup.RetentionCount),
 
 		// 动态配置默认值（会被 DB 覆盖）
 		TokenTTLHours:                     24,
@@ -757,7 +802,7 @@ func loadPath(path string) (Config, error) {
 		MCPMaxLLMCallsPerRun:              5,
 		MCPMaxToolCallsPerRun:             8,
 		MCPToolPrompt:                     "",
-	}, nil
+	}
 }
 
 // Validate 检查关键配置是否合法。

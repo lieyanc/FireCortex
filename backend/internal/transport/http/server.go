@@ -27,6 +27,7 @@ import (
 	channelhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/channel"
 	contentmoderationhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/contentmoderation"
 	conversationhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/conversation"
+	infrahttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/infra"
 	knowledgebasehttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/knowledgebase"
 	mcphttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/mcp"
 	memoryhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/memory"
@@ -77,6 +78,7 @@ type Modules struct {
 	User              *userhttp.Module
 	UserSettings      *usersettingshttp.Module
 	System            *systemhttp.Module
+	Infra             *infrahttp.Module
 	PersonalProvider  *personalproviderhttp.Module
 	StartupLog        func(*zap.Logger)
 	// Shutdown 是进程关停排空信号；排空期间就绪探针返回 503，引导负载均衡摘除流量。
@@ -99,7 +101,7 @@ func (m Modules) hasAdminRoutes() bool {
 		m.UIComponent != nil ||
 		m.KnowledgeBase != nil ||
 		m.ContentModeration != nil ||
-		m.PersonalProvider != nil || m.System != nil
+		m.PersonalProvider != nil || m.System != nil || m.Infra != nil
 }
 
 // NewEngine 创建并注册 API 路由。
@@ -301,6 +303,9 @@ func NewEngine(cfg *config.Runtime, log *zap.Logger, modules Modules, hc HealthC
 		}
 		if modules.System != nil && !snapshot.LocalMode {
 			modules.System.RegisterAdminRoutes(adminGroup)
+		}
+		if modules.Infra != nil && !snapshot.LocalMode {
+			modules.Infra.RegisterAdminRoutes(adminGroup)
 		}
 		if modules.PersonalProvider != nil {
 			modules.PersonalProvider.RegisterAdminRoutes(adminGroup)

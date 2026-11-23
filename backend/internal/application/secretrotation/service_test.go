@@ -376,3 +376,18 @@ func TestRecordFailuresAreCappedInTheLog(t *testing.T) {
 		t.Fatalf("failed = %v", got)
 	}
 }
+
+func TestVerifyStoredKeysRejectsWrongSetupKey(t *testing.T) {
+	repo := newMemoryRepo()
+	ciphertext := encrypt(t, "original", "user TOTP secret")
+	repo.secrets[repository.SecretFieldTOTPSecret] = map[uint]string{1: ciphertext}
+	if err := NewService(repo, keyring(t, "replacement"), nil).VerifyStoredKeys(t.Context()); err == nil {
+		t.Fatal("wrong key accepted")
+	}
+	if err := NewService(repo, keyring(t, "original"), nil).VerifyStoredKeys(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if repo.secrets[repository.SecretFieldTOTPSecret][1] != ciphertext {
+		t.Fatal("verification rewrote the original ciphertext")
+	}
+}

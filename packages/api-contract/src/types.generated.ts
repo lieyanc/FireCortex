@@ -256,6 +256,45 @@ export interface AnnouncementStateRequest {
   updatedAt: string;
 }
 
+export interface ApplyRequest {
+  adminDisplayName: string;
+  adminPassword: string;
+  adminUsername: string;
+  adoptExistingPGData: boolean;
+  backupDir: string;
+  /** managed_redis | external_redis | memory */
+  cacheMode: string;
+  composeSync: boolean;
+  corsAllowOrigin: string;
+  dataDir: string;
+  /** managed | external */
+  databaseMode: string;
+  dockerHost: string;
+  env: string;
+  existingDataEncryptionKey?: string;
+  existingPGDatabase: string;
+  existingPGPassword: string;
+  existingPGUser: string;
+  existingRedisPassword: string;
+  externalPostgresDSN: string;
+  externalRedisAddr: string;
+  externalRedisDB: number;
+  externalRedisPass: string;
+  externalRedisSkipTLS: boolean;
+  externalRedisTLS: boolean;
+  externalRedisUser: string;
+  postgresDataDir: string;
+  postgresImage: string;
+  postgresMemoryLimitMB: number;
+  postgresPort: number;
+  publicBaseURL: string;
+  redisDataDir: string;
+  redisImage: string;
+  redisMemoryLimitMB: number;
+  redisPort: number;
+  registryMirror: string;
+}
+
 export interface AuditLogListResponseDoc {
   data: {
     results: AuditLogResponse[];
@@ -355,6 +394,30 @@ export interface AuthUserResponse {
   updatedAt: string;
   username: string;
   usernameChangedAt: string | null;
+}
+
+export interface BackupListResponse {
+  backups: BackupRecordDTO[];
+}
+
+export interface BackupListResponseDoc {
+  data: BackupListResponse;
+  errorMsg: string;
+}
+
+export interface BackupRecordDTO {
+  sha256: string;
+  createdAt: string;
+  fileName: string;
+  id: string;
+  sizeBytes: number;
+  trigger: string;
+  verified: boolean;
+}
+
+export interface BackupRecordResponseDoc {
+  data: BackupRecordDTO;
+  errorMsg: string;
 }
 
 export interface BatchDeleteRedemptionCodeDataResponse {
@@ -722,6 +785,15 @@ export interface CleanupLogsResponse {
 
 export interface CleanupLogsResponseDoc {
   data: CleanupLogsResponse;
+  errorMsg: string;
+}
+
+export interface ComposePreviewResponse {
+  content: string;
+}
+
+export interface ComposePreviewResponseDoc {
+  data: ComposePreviewResponse;
   errorMsg: string;
 }
 
@@ -1456,6 +1528,63 @@ export interface CreateUserResponseDoc {
   errorMsg: string;
 }
 
+export interface DaemonInfoDTO {
+  apiVersion: string;
+  architecture: string;
+  available: boolean;
+  containersRunning: number;
+  host: string;
+  memTotalBytes: number;
+  osType: string;
+  serverVersion: string;
+}
+
+export interface DangerRecreateContainerRequest {
+  confirmText: string;
+  currentPassword: string;
+  serviceID: string;
+}
+
+export interface DangerRestoreBackupRequest {
+  backupID: string;
+  confirmText: string;
+  currentPassword: string;
+}
+
+export interface DangerRestoreBackupResponse {
+  preRestoreBackup: string;
+  restartScheduled: boolean;
+  restoredBackupID: string;
+}
+
+export interface DangerRestoreBackupResponseDoc {
+  data: DangerRestoreBackupResponse;
+  errorMsg: string;
+}
+
+export interface DangerSwitchDatabaseRequest {
+  cacheMode: string;
+  confirmText: string;
+  currentPassword: string;
+  databaseMode: string;
+  externalPostgresDSN: string;
+  externalRedisAddr: string;
+  externalRedisDB: number;
+  externalRedisPassword: string;
+  externalRedisSkipTLS: boolean;
+  externalRedisTLS: boolean;
+  externalRedisUsername: string;
+}
+
+export interface DangerSwitchDatabaseResponse {
+  restartScheduled: boolean;
+}
+
+export interface DangerSwitchDatabaseResponseDoc {
+  data: DangerSwitchDatabaseResponse;
+  errorMsg: string;
+}
+
 export interface DeleteAccountRequest {
   /**
    * @minLength 6
@@ -1520,6 +1649,22 @@ export interface DeleteUserResponse {
 export interface DeleteUserResponseDoc {
   data: DeleteUserResponse;
   errorMsg: string;
+}
+
+export interface DirInspectionDTO {
+  backupDir: string;
+  diskFreeBytes: number;
+  diskTotalBytes: number;
+  hasExistingCompose: boolean;
+  hasManagedMarker: boolean;
+  pgVersion?: string;
+  postgresDataDir: string;
+  reason?: string;
+  redisDataDir: string;
+  resolvedRoot: string;
+  status: string;
+  valid: boolean;
+  warnings?: string[];
 }
 
 export interface EmailBootstrapCompleteRequest {
@@ -2049,6 +2194,154 @@ export interface ImportUpstreamModelsResponseDoc {
   errorMsg: string;
 }
 
+export interface InfraConfigResponse {
+  storageS3AccessKeyID: string;
+  storageS3Bucket: string;
+  storageS3Endpoint: string;
+  storageS3ForcePathStyle: boolean;
+  storageS3Prefix: string;
+  storageS3Region: string;
+  storageS3SecretConfigured: boolean;
+  configFile: string;
+  corsAllowOrigin: string;
+  env: string;
+  httpPort: string;
+  managedBackupEnabled: boolean;
+  managedBackupRetentionCount: number;
+  managedBackupSchedule: string;
+  managedComposeSync: boolean;
+  managedDataDir: string;
+  managedPostgresEnabled: boolean;
+  managedPostgresMemoryLimitMB: number;
+  managedRedisEnabled: boolean;
+  managedRedisMemoryLimitMB: number;
+  managedRegistryMirror: string;
+  publicAPIBaseURL: string;
+  publicWebBaseURL: string;
+  ssrfAllowedCIDRs: string;
+  ssrfAllowedHosts: string;
+  ssrfProtectionEnabled: boolean;
+  storageBackend: string;
+  storageRootDir: string;
+  trustedProxies: string;
+  updateChannel: string;
+  updateCheckIntervalSeconds: number;
+  updateEnabled: boolean;
+  updateProxyBaseURL: string;
+  updateSource: string;
+}
+
+export interface InfraConfigResponseDoc {
+  data: InfraConfigResponse;
+  errorMsg: string;
+}
+
+export interface InfraDaemonInfoDTO {
+  apiVersion: string;
+  architecture: string;
+  available: boolean;
+  containersRunning: number;
+  host: string;
+  memTotalBytes: number;
+  osType: string;
+  serverVersion: string;
+}
+
+export interface InfraDirInfoDTO {
+  backupDir: string;
+  diskFreeBytes: number;
+  diskTotalBytes: number;
+  hasExistingCompose: boolean;
+  hasManagedMarker: boolean;
+  pgVersion?: string;
+  postgresDataDir: string;
+  reason?: string;
+  redisDataDir: string;
+  resolvedRoot: string;
+  status: string;
+  valid: boolean;
+  warnings?: string[];
+}
+
+export interface InfraJobEventDTO {
+  action: string;
+  jobID: string;
+  message: string;
+  percent: number;
+  serviceID: string;
+  status: string;
+  step: string;
+  timestamp: string;
+}
+
+export interface InfraJobSnapshotResponse {
+  action: string;
+  error?: string;
+  events: InfraJobEventDTO[];
+  jobID: string;
+  serviceID: string;
+  state: string;
+}
+
+export interface InfraJobSnapshotResponseDoc {
+  data: InfraJobSnapshotResponse;
+  errorMsg: string;
+}
+
+export interface InfraOverviewResponse {
+  backupEnabled: boolean;
+  backupRetention: number;
+  backupSchedule: string;
+  composeSync: boolean;
+  dataDir: InfraDirInfoDTO;
+  docker: InfraDaemonInfoDTO;
+  dockerError?: string;
+  registryMirror: string;
+  services: ManagedServiceDTO[];
+}
+
+export interface InfraOverviewResponseDoc {
+  data: InfraOverviewResponse;
+  errorMsg: string;
+}
+
+export interface InspectDirRequest {
+  backupDir: string;
+  dataDir: string;
+  postgresDataDir: string;
+  redisDataDir: string;
+}
+
+export interface InspectDirResponseDoc {
+  data: DirInspectionDTO;
+  errorMsg: string;
+}
+
+export interface JobEventResponse {
+  jobID: string;
+  message: string;
+  percent: number;
+  service?: string;
+  status: string;
+  step: string;
+  timestamp: string;
+}
+
+export interface JobSnapshotResponse {
+  adoptedDB: boolean;
+  composePath?: string;
+  configPath?: string;
+  error?: string;
+  events: JobEventResponse[];
+  jobID: string;
+  state: string;
+}
+
+export interface JobSnapshotResponseDoc {
+  data: JobSnapshotResponse;
+  errorMsg: string;
+}
+
 export interface KnowledgeBaseDataResponse {
   knowledgeBase: KnowledgeBaseResponse;
 }
@@ -2241,6 +2534,32 @@ export interface LogoutResponse {
 export interface LogoutResponseDoc {
   data: LogoutResponse;
   errorMsg: string;
+}
+
+export interface ManagedServiceDTO {
+  canPull: boolean;
+  canRestart: boolean;
+  canStart: boolean;
+  canStop: boolean;
+  /** core | optional */
+  category: string;
+  containerName: string;
+  cpuPercent: number;
+  dataDir?: string;
+  description: string;
+  endpointURL?: string;
+  health?: string;
+  id: string;
+  image: string;
+  memoryLimitBytes: number;
+  memoryUsageBytes: number;
+  message?: string;
+  /** managed | external | memory | disabled */
+  mode: string;
+  name: string;
+  port: number;
+  reachable: boolean;
+  status: string;
 }
 
 export interface McpErrorDoc {
@@ -3195,6 +3514,49 @@ export interface PatchAnnouncementRequestDoc {
   type?: "critical" | "warning" | "info" | "normal" | "general";
 }
 
+export interface PatchInfraConfigRequest {
+  storageS3AccessKeyID: string;
+  storageS3Bucket: string;
+  storageS3Endpoint: string;
+  storageS3ForcePathStyle: boolean;
+  storageS3Prefix: string;
+  storageS3Region: string;
+  storageS3SecretAccessKey: string;
+  corsAllowOrigin: string;
+  env: string;
+  managedBackupEnabled: boolean;
+  managedBackupRetentionCount: number;
+  managedBackupSchedule: string;
+  managedComposeSync: boolean;
+  managedPostgresMemoryLimitMB: number;
+  managedRedisMemoryLimitMB: number;
+  managedRegistryMirror: string;
+  publicAPIBaseURL: string;
+  publicWebBaseURL: string;
+  restartNow: boolean;
+  ssrfAllowedCIDRs: string;
+  ssrfAllowedHosts: string;
+  ssrfProtectionEnabled: boolean;
+  storageBackend: string;
+  storageRootDir: string;
+  trustedProxies: string;
+  updateChannel: string;
+  updateCheckIntervalSeconds: number;
+  updateEnabled: boolean;
+  updateProxyBaseURL: string;
+  updateSource: string;
+}
+
+export interface PatchInfraConfigResponse {
+  config: InfraConfigResponse;
+  restartScheduled: boolean;
+}
+
+export interface PatchInfraConfigResponseDoc {
+  data: PatchInfraConfigResponse;
+  errorMsg: string;
+}
+
 export interface PatchItem {
   clear?: boolean;
   key: string;
@@ -3553,6 +3915,22 @@ export interface PlatformFileDeleteDataResponse {
 
 export interface PlatformFileDeleteResponseDoc {
   data: PlatformFileDeleteDataResponse;
+  errorMsg: string;
+}
+
+export interface PreflightResponse {
+  defaultDir: DirInspectionDTO;
+  defaults: SetupDefaultsDTO;
+  docker: DaemonInfoDTO;
+  dockerError?: string;
+  postgresPortAvailable: boolean;
+  postgresPortMessage?: string;
+  redisPortAvailable: boolean;
+  redisPortMessage?: string;
+}
+
+export interface PreflightResponseDoc {
+  data: PreflightResponse;
   errorMsg: string;
 }
 
@@ -4261,6 +4639,22 @@ export interface ServerToolOrderResponse {
   tools: ToolResponse[];
 }
 
+export interface ServiceActionRequest {
+  memoryLimitMB: number;
+  port: number;
+  tesseractLang: string;
+}
+
+export interface ServiceLogsResponse {
+  logs: string;
+  serviceID: string;
+}
+
+export interface ServiceLogsResponseDoc {
+  data: ServiceLogsResponse;
+  errorMsg: string;
+}
+
 export interface SetConversationArchiveRequest {
   archived: boolean;
 }
@@ -4330,6 +4724,31 @@ export interface SetModelsDisplayGroupRequest {
 export interface SettingsPatchSettingsRequest {
   /** @minItems 1 */
   items: PatchItem[];
+}
+
+export interface SetupDefaultsDTO {
+  dataDir: string;
+  dockerHost: string;
+  httpPort: string;
+  network: string;
+  postgresImage: string;
+  postgresPort: number;
+  redisImage: string;
+  redisPort: number;
+  registryMirror: string;
+}
+
+export interface SetupStatusResponse {
+  authenticated: boolean;
+  defaults?: SetupDefaultsDTO;
+  jobState: string;
+  needsSetup: boolean;
+  version: string;
+}
+
+export interface SetupStatusResponseDoc {
+  data: SetupStatusResponse;
+  errorMsg: string;
 }
 
 export interface SkillDataResponse {
@@ -4558,6 +4977,33 @@ export interface TemporaryChatUIStateRequest {
   state?: object;
   /** @maxLength 200 */
   title?: string;
+}
+
+export interface TestExternalRequest {
+  cacheDriver: string;
+  postgresDSN: string;
+  redisAddr: string;
+  redisDB: number;
+  redisPassword: string;
+  redisTLSEnabled: boolean;
+  redisTLSInsecureSkip: boolean;
+  redisUsername: string;
+}
+
+export interface TestExternalResponse {
+  postgresError?: string;
+  postgresOK: boolean;
+  postgresVectorAvailable: boolean;
+  postgresVectorInstalled: boolean;
+  postgresVersion?: string;
+  redisChecked: boolean;
+  redisError?: string;
+  redisOK: boolean;
+}
+
+export interface TestExternalResponseDoc {
+  data: TestExternalResponse;
+  errorMsg: string;
 }
 
 export interface ToolListResponse {
@@ -5606,6 +6052,20 @@ export interface UserSettingsResponseDoc {
   errorMsg: string;
 }
 
+export interface VerifyTokenRequest {
+  token: string;
+}
+
+export interface VerifyTokenResponse {
+  authenticated: boolean;
+  defaults: SetupDefaultsDTO;
+}
+
+export interface VerifyTokenResponseDoc {
+  data: VerifyTokenResponse;
+  errorMsg: string;
+}
+
 export interface WriteKnowledgeBaseRequest {
   /** @maxLength 255 */
   description?: string;
@@ -6427,6 +6887,269 @@ export namespace Admin {
     export type RequestBody = never;
     export type RequestHeaders = {};
     export type ResponseBody = ErrorLogListResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin/infra
+   * @name InfraBackupsList
+   * @summary 列出托管 PostgreSQL 历史逻辑备份
+   * @request GET:/admin/infra/backups
+   * @secure
+   */
+  export namespace InfraBackupsList {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = BackupListResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin/infra
+   * @name InfraBackupsCreate
+   * @summary 立即执行一次手动 PostgreSQL 逻辑备份
+   * @request POST:/admin/infra/backups
+   * @secure
+   */
+  export namespace InfraBackupsCreate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = BackupRecordResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin/infra
+   * @name InfraBackupsDelete
+   * @summary 删除单份过期备份文件（绝不触碰数据库目录）
+   * @request DELETE:/admin/infra/backups/{id}
+   * @secure
+   */
+  export namespace InfraBackupsDelete {
+    export type RequestParams = {
+      /** 备份文件名 ID */
+      id: string;
+    };
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = SuccessDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin/infra
+   * @name InfraBackupsDownloadList
+   * @summary 流式下载单份 PostgreSQL 逻辑备份归档
+   * @request GET:/admin/infra/backups/{id}/download
+   * @secure
+   */
+  export namespace InfraBackupsDownloadList {
+    export type RequestParams = {
+      /** 备份文件名 ID */
+      id: string;
+    };
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = Blob;
+  }
+
+  /**
+   * No description
+   * @tags admin/infra
+   * @name InfraComposeList
+   * @summary 查看落盘的 docker-compose.yml（不含明文密码）
+   * @request GET:/admin/infra/compose
+   * @secure
+   */
+  export namespace InfraComposeList {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = ComposePreviewResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin/infra
+   * @name InfraConfigList
+   * @summary 读取常用基础设施 config.json 脱敏视图
+   * @request GET:/admin/infra/config
+   * @secure
+   */
+  export namespace InfraConfigList {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = InfraConfigResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin/infra
+   * @name InfraConfigPartialUpdate
+   * @summary 校验并保存常用基础设施配置到 config.json，可选平滑重启
+   * @request PATCH:/admin/infra/config
+   * @secure
+   */
+  export namespace InfraConfigPartialUpdate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = PatchInfraConfigRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = PatchInfraConfigResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin/infra
+   * @name InfraDangerRecreateContainerCreate
+   * @summary 高危操作：强制重建核心托管容器（严格保留宿主机数据目录）
+   * @request POST:/admin/infra/danger/recreate-container
+   * @secure
+   */
+  export namespace InfraDangerRecreateContainerCreate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = DangerRecreateContainerRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = InfraJobSnapshotResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin/infra
+   * @name InfraDangerRestoreBackupCreate
+   * @summary 高危操作：校验并从历史备份一键恢复 PostgreSQL（先自动留存保护快照）
+   * @request POST:/admin/infra/danger/restore-backup
+   * @secure
+   */
+  export namespace InfraDangerRestoreBackupCreate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = DangerRestoreBackupRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = DangerRestoreBackupResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin/infra
+   * @name InfraDangerSwitchDatabaseCreate
+   * @summary 高危操作：连通测试后切换托管/外部数据库及缓存模式并平滑重启
+   * @request POST:/admin/infra/danger/switch-database
+   * @secure
+   */
+  export namespace InfraDangerSwitchDatabaseCreate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = DangerSwitchDatabaseRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = DangerSwitchDatabaseResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin/infra
+   * @name InfraJobsDetail
+   * @summary 查询异步基础设施任务快照
+   * @request GET:/admin/infra/jobs/{jobId}
+   * @secure
+   */
+  export namespace InfraJobsDetail {
+    export type RequestParams = {
+      /** 任务 ID */
+      jobId: string;
+    };
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = InfraJobSnapshotResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin/infra
+   * @name InfraJobsEventsList
+   * @summary 通过 SSE 实时订阅异步基础设施任务进度
+   * @request GET:/admin/infra/jobs/{jobId}/events
+   * @secure
+   */
+  export namespace InfraJobsEventsList {
+    export type RequestParams = {
+      /** 任务 ID */
+      jobId: string;
+    };
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = string;
+  }
+
+  /**
+   * No description
+   * @tags admin/infra
+   * @name InfraOverviewList
+   * @summary 查询 Docker 宿主机与托管服务总览
+   * @request GET:/admin/infra/overview
+   * @secure
+   */
+  export namespace InfraOverviewList {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = InfraOverviewResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin/infra
+   * @name InfraServicesLogsList
+   * @summary 读取托管容器最近日志
+   * @request GET:/admin/infra/services/{id}/logs
+   * @secure
+   */
+  export namespace InfraServicesLogsList {
+    export type RequestParams = {
+      /** 服务 ID */
+      id: string;
+    };
+    export type RequestQuery = {
+      /** 读取行数（默认 200） */
+      tail?: number;
+    };
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = ServiceLogsResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags admin/infra
+   * @name InfraServicesCreate
+   * @summary 触发托管服务的启停、重启或拉取升级任务
+   * @request POST:/admin/infra/services/{id}/{action}
+   * @secure
+   */
+  export namespace InfraServicesCreate {
+    export type RequestParams = {
+      /** 操作 (start/stop/restart/pull) */
+      action: string;
+      /** 服务 ID (postgres/redis/tika/docling/tesseract/rapidocr) */
+      id: string;
+    };
+    export type RequestQuery = {};
+    export type RequestBody = ServiceActionRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = InfraJobSnapshotResponseDoc;
   }
 
   /**
@@ -11955,6 +12678,131 @@ export namespace Settings {
     export type RequestBody = never;
     export type RequestHeaders = {};
     export type ResponseBody = Envelope;
+  }
+}
+
+export namespace Setup {
+  /**
+   * No description
+   * @tags setup
+   * @name ApplyCreate
+   * @summary 启动异步初始化与容器编排任务
+   * @request POST:/setup/apply
+   */
+  export namespace ApplyCreate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = ApplyRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = JobSnapshotResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags setup
+   * @name EventsList
+   * @summary 通过 SSE 实时订阅初始化进度事件
+   * @request GET:/setup/events
+   */
+  export namespace EventsList {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = string;
+  }
+
+  /**
+   * No description
+   * @tags setup
+   * @name InspectDirCreate
+   * @summary 校验托管数据目录安全性与已有 PostgreSQL 数据
+   * @request POST:/setup/inspect-dir
+   */
+  export namespace InspectDirCreate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = InspectDirRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = InspectDirResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags setup
+   * @name GetSetup
+   * @summary 查询当前初始化任务快照
+   * @request GET:/setup/job
+   */
+  export namespace GetSetup {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = JobSnapshotResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags setup
+   * @name PreflightList
+   * @summary 宿主机 Docker、目录与端口环境体检
+   * @request GET:/setup/preflight
+   */
+  export namespace PreflightList {
+    export type RequestParams = {};
+    export type RequestQuery = {
+      /** 可选 Docker Engine 地址 */
+      dockerHost?: string;
+    };
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = PreflightResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags setup
+   * @name StatusList
+   * @summary 查询引导模式状态
+   * @request GET:/setup/status
+   */
+  export namespace StatusList {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = never;
+    export type RequestHeaders = {};
+    export type ResponseBody = SetupStatusResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags setup
+   * @name TestExternalCreate
+   * @summary 只读测试外部 PostgreSQL（含 pgvector）与 Redis 连通性
+   * @request POST:/setup/test-external
+   */
+  export namespace TestExternalCreate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = TestExternalRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = TestExternalResponseDoc;
+  }
+
+  /**
+   * No description
+   * @tags setup
+   * @name VerifyCreate
+   * @summary 验证一次性 Setup Token 并签发引导会话
+   * @request POST:/setup/verify
+   */
+  export namespace VerifyCreate {
+    export type RequestParams = {};
+    export type RequestQuery = {};
+    export type RequestBody = VerifyTokenRequest;
+    export type RequestHeaders = {};
+    export type ResponseBody = VerifyTokenResponseDoc;
   }
 }
 

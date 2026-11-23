@@ -21,6 +21,7 @@ require (
 	github.com/mmonterroca/docxgo/v2 v2.4.0
 	github.com/oschwald/maxminddb-golang v1.13.1
 	github.com/pdfcpu/pdfcpu v0.13.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/swaggo/swag v1.16.6
