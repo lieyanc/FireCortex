@@ -130,8 +130,11 @@ if [[ $staticcheck_status -eq 1 && ! -s "$work_dir/staticcheck.output" ]]; then
 fi
 
 echo "Running deadcode..."
+# SQLite drivers are only reachable from main in -tags sqlite builds (desktop
+# sidecar / opt-in); analyze with -tags sqlite so that code stays covered while
+# CI separately guards the default CGO_ENABLED=0 build.
 set +e
-go tool deadcode ./... \
+go tool deadcode -tags sqlite ./... \
   > "$work_dir/deadcode.output" \
   2> "$work_dir/deadcode.error"
 deadcode_status=$?

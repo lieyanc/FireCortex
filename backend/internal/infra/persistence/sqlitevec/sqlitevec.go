@@ -2,14 +2,14 @@ package sqlitevec
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/lieyanc/FireCortex/backend/internal/infra/persistence/vectorutil"
-	sqlite_vec "github.com/asg017/sqlite-vec-go-bindings/cgo"
 	"gorm.io/gorm"
 )
 
@@ -22,7 +22,6 @@ const (
 )
 
 var (
-	registerOnce              sync.Once
 	vectorDimensionPattern    = regexp.MustCompile(`(?i)embedding\s+FLOAT\[(\d+)\]`)
 	vectorTableMigrationSpecs = []vectorTableSpec{
 		{name: FileChunkVectorTable, keyColumns: []string{"chunk_id", "user_id", "file_obj_id"}, partitionColumn: "user_id"},
@@ -35,13 +34,6 @@ type vectorTableSpec struct {
 	name            string
 	keyColumns      []string
 	partitionColumn string
-}
-
-// Register 将 sqlite-vec 加载到此调用之后打开的所有 SQLite 连接中。
-func Register() {
-	registerOnce.Do(func() {
-		sqlite_vec.Auto()
-	})
 }
 
 // Migrate 创建 SQLite 部署使用的本地向量表。
@@ -88,7 +80,11 @@ func SerializeFloat32(vector []float32) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return sqlite_vec.SerializeFloat32(aligned)
+	buf := make([]byte, len(aligned)*4)
+	for i, v := range aligned {
+		binary.LittleEndian.PutUint32(buf[4*i:], math.Float32bits(v))
+	}
+	return buf, nil
 }
 
 func ensureVectorTable(db *gorm.DB, spec vectorTableSpec) error {

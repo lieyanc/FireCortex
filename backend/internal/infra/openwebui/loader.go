@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -76,7 +75,7 @@ func openDB(dsn string) (*gorm.DB, error) {
 			return nil, repository.ErrInvalidInput
 		}
 	}
-	return gorm.Open(sqlite.Open(trimmed), &gorm.Config{})
+	return openSQLite(trimmed)
 }
 
 func importQuery(hasCredit bool) string {

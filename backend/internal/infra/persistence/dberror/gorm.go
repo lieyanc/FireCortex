@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
-	sqlite3 "github.com/mattn/go-sqlite3"
 	"gorm.io/gorm"
 )
 
@@ -29,16 +28,7 @@ func IsUniqueConstraint(err error) bool {
 	if errors.As(err, &stateErr) && stateErr.SQLState() == "23505" {
 		return true
 	}
-	var sqliteErr sqlite3.Error
-	if !errors.As(err, &sqliteErr) || sqliteErr.Code != sqlite3.ErrConstraint {
-		return false
-	}
-	switch sqliteErr.ExtendedCode {
-	case sqlite3.ErrConstraintUnique, sqlite3.ErrConstraintPrimaryKey, sqlite3.ErrConstraintRowID:
-		return true
-	default:
-		return false
-	}
+	return isSQLiteUniqueConstraint(err)
 }
 
 // Translate 将通用数据库错误映射为仓储契约错误。
