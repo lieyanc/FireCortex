@@ -1,5 +1,7 @@
 # Windows deployment
 
+> **Fork support notice:** The desktop client is **unsupported by default** in this server-first FireCortex fork and is not built automatically on releases. Packages are produced only when the `Desktop Release` workflow is manually triggered via `workflow_dispatch` (using the `sqlite` tag for the local sidecar).
+
 For IT administrators deploying FireCortex Desktop to managed Windows machines. For how the app is built and how each distribution form behaves, see [`apps/desktop/README.md`](../../apps/desktop/README.md#windows-distribution).
 
 ## Choose a package

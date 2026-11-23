@@ -26,7 +26,7 @@ pnpm build
 
 Use `pnpm dev`, `pnpm dev:web`, or `pnpm dev:api` for local development.
 
-FireCortex is deployed only as a single binary with the web UI embedded. Run `pnpm build:binary` to build it into `dist/firecortex`; this needs a C compiler and SQLite headers because the backend uses CGO. Do not add Docker images or compose files for the application itself.
+FireCortex is deployed only as a single binary with the web UI embedded. Run `pnpm build:binary` to build the default pure-Go (`CGO_ENABLED=0`), PostgreSQL-only binary into `dist/firecortex`. Running backend `go test` requires CGO and SQLite headers (`libsqlite3-dev`) because test fixtures use SQLite; SQLite deployments (`FIRECORTEX_SQLITE=1` / `-tags sqlite`) and the desktop app are opt-in and unsupported by default. Do not add Docker images or compose files for the application itself.
 
 Use the example configuration files for local development. Do not commit local secrets or production credentials.
 

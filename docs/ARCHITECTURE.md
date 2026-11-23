@@ -1,5 +1,7 @@
 # 多端架构
 
+> **分支支持范围说明：** 本独立维护的 FireCortex 分支优先面向服务端部署（默认仅支持 PostgreSQL 的纯 Go 构建）；SQLite 部署方式与桌面端默认不受支持，相关代码与架构文档保留自上游多端能力，桌面端不再随发版自动构建或发布。
+
 本文档定义 FireCortex 的仓库结构、各端职责边界、共享代码规则与安全约束。新增客户端（桌面、移动）必须遵循本文档；与本文档冲突的实现视为架构违规。
 
 ## 1. 仓库结构
@@ -153,7 +155,8 @@ apps/*  →  packages/core  →  packages/api-contract  →  backend/docs/swagge
 PR:   pnpm check（所有包 lint + typecheck + 桌面 cargo check）
       pnpm test（所有包）
       pnpm api:check（后端 Swagger 变了必须重新生成）
-Tag:  上面 + Docker 镜像 + 桌面四目标构建（macOS arm64/x64、Linux、Windows）
+Tag:  单二进制服务端发布（CGO_ENABLED=0，PostgreSQL only）
+      桌面四目标构建（macOS arm64/x64、Linux、Windows）仅通过 Desktop Release 手动触发（workflow_dispatch），不再随默认发布执行；sidecar 构建需显式传 sqlite tag
 ```
 
 `turbo.json` 已按包声明依赖，新增 `apps/*` 或 `packages/*` 会自动纳入 `pnpm check` / `pnpm test`。`apps/desktop` 的 `check` 脚本会运行 `cargo check`，因此 PR 阶段即可发现 Rust 侧编译错误，而不必等到发布。
@@ -165,5 +168,5 @@ Tag:  上面 + Docker 镜像 + 桌面四目标构建（macOS arm64/x64、Linux�
 1. ✅ 目录重构：`frontend/` → `apps/web/`，建立 `packages/core` 骨架与隔离守卫。
 2. ✅ 鉴权状态机进 core：`createAuthClient(host)` 承载并发去重、revision 守卫、401→续期→重试→终态清理；Web 端只剩 `apps/web/shared/auth/auth-client.ts` 这一个 host 适配文件。API 地址改为 `resolveApiBaseUrl` 三级解析（运行时覆盖 → 构建期变量 → 页面 origin），`registerRuntimeApiBaseURLResolver()` 是桌面端的接入点。
 3. ✅ 桌面端落地：`apps/desktop`（Tauri 2）加载 `apps/web/out`；后端按 `X-Client-Platform` 经响应体投递 refresh token；`apps/web` 的平台层负责服务器地址持久化、keychain 适配与首次启动的服务器设置页；`AuthHost.onSessionRefreshed` 统一处理轮换写回；`deploy/` 与后端默认值已加入 Tauri webview Origin。
-4. ✅ CI：PR 阶段 `cargo check`，tag 触发桌面四目标构建 + 签名 + updater manifest（`.github/workflows/desktop-release.yml`）。
+4. ✅ 桌面端构建流水线（上游继承，当前分支改为仅通过 `.github/workflows/desktop-release.yml` 的 `workflow_dispatch` 手动构建，且 sidecar 显式使用 `sqlite` build tag；PR 阶段仍保留 `cargo check`）。
 5. 移动端立项时再做第二次抽取与 `apps/mobile`；`X-Client-Platform: mobile` 与 `packages/core` 已为它预留。

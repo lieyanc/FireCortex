@@ -70,3 +70,11 @@ Upstream serves the static frontend from disk through `registerFrontendStatic` i
 Upstream reads a YAML `config.yaml` and keeps its defaults in Go literals. FireCortex reads `config.json` instead. The complete default configuration is the JSON template `backend/internal/infra/config/template.json`, embedded into the binary. On start, a missing file is written from it with random secrets, and keys missing from an existing file are filled in and saved (`backend/internal/infra/config/file.go`). The fork deleted upstream's `config.example.yaml`, `config.full.example.yaml`, and `config.sqlite.example.yaml` in favor of partial `config*.example.json` overlays, so an upstream sync that touches them stops with a modify/delete conflict. Keep them deleted.
 
 When upstream adds or changes a config field, port it by hand: add the key to `template.json` and the matching field to `fileConfig` in the same position (`TestTemplateMatchesFileConfig` fails otherwise), then read it in `Load`. Move any default upstream puts in Go code into the template. If upstream changes a field that one of the example profiles sets, update the JSON overlay as well.
+
+## Fork policy
+
+FireCortex prioritizes server deployments (PostgreSQL + pgvector only, pure Go `CGO_ENABLED=0`). SQLite deployments and the desktop application are unsupported by default:
+
+- **SQLite stays behind the `sqlite` build tag.** The gating files are `backend/internal/infra/persistence/sqlite_driver*.go`, `backend/internal/infra/openwebui/sqlite_source*.go`, `backend/internal/infra/persistence/sqlitevec/register_*.go`, and `backend/internal/infra/persistence/dberror/sqlite_*.go`. Upstream syncs must not reintroduce untagged SQLite or CGO imports into the default build; CI's `CGO_ENABLED=0 go build ./...` check guards this.
+- **Desktop releases are manual.** `.github/workflows/release.yml` must not automatically dispatch `.github/workflows/desktop-release.yml`; desktop builds run only via explicit `workflow_dispatch` (with `-tags ...,sqlite` for the sidecar).
+- **Keep `config.sqlite.example.json`.** It remains in the repository as referenced above for `-tags sqlite` opt-in builds, while documentation points server deployments to `config.full.example.json`.

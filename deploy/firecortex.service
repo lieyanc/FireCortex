@@ -32,7 +32,7 @@ RestartSec=5
 LimitNOFILE=65535
 
 # Hardening. The filesystem is read-only except for /opt/firecortex, which holds
-# the binary, config.json, data/ (SQLite, updates) and storage/. Add any other
+# the binary, config.json, data/ (updates) and storage/. Add any other
 # writable paths configured in config.json to ReadWritePaths.
 ProtectSystem=strict
 ReadWritePaths=/opt/firecortex

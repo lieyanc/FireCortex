@@ -31,6 +31,8 @@ FireCortex is a self-hosted AI workspace built around one idea: a single chat bo
 
 FireCortex is derived from [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat) v0.4.6 and inherits its production-grade foundation: multi-provider access, files and RAG, MCP tools, billing, identity, audit, and a lightweight single-runtime deployment. <!-- rebrand:keep -->
 
+> **Support scope:** This independently maintained FireCortex fork prioritizes server deployments. Official releases build as pure Go (`CGO_ENABLED=0`) and support **PostgreSQL + pgvector** only (with Redis or in-memory cache). SQLite deployments and the desktop application are **not supported by default**; upstream SQLite/desktop code is retained only for self-built `-tags sqlite` binaries and desktop local mode, with no support guarantee.
+
 ## Roadmap
 
 | Capability | Status |
@@ -55,7 +57,7 @@ The capabilities below are inherited from upstream and available today.
 | Billing and payments | Model pricing, per-call tool pricing, subscriptions, top-ups, balances, usage ledgers, billing snapshots, Stripe Checkout, EPay, and webhook validation. |
 | Identity and security | Local accounts, session management, HttpOnly refresh cookies, 2FA/TOTP, trusted devices, SSO/OIDC/OAuth, contact verification, and encrypted sensitive data. |
 | Administration and audit | Centralized management for users, roles, upstreams, models, routes, pricing, subscriptions, balances, usage logs, audit logs, auth events, and system events. |
-| Deployment and operations | Single self-contained binary serving the frontend and API, built-in OTA updates from GitHub Releases, SQLite or PostgreSQL, in-memory cache or Redis, S3-compatible storage, Swagger, structured logs, version endpoint, GeoIP, and OpenTelemetry. |
+| Deployment and operations | Single self-contained binary serving the frontend and API, built-in OTA updates from GitHub Releases, PostgreSQL, in-memory cache or Redis, S3-compatible storage, Swagger, structured logs, version endpoint, GeoIP, and OpenTelemetry. |
 
 ## Architecture and Tech Stack
 
@@ -83,7 +85,7 @@ flowchart TB
   end
 
   subgraph Data["Data and Storage"]
-    DB["PostgreSQL + pgvector<br/>or SQLite + sqlite-vec"]
+    DB["PostgreSQL + pgvector"]
     Cache["Redis<br/>or In-Memory Cache"]
     Storage["Local Filesystem<br/>or S3-Compatible Storage"]
   end
@@ -105,11 +107,11 @@ flowchart TB
 | --- | --- | --- |
 | Frontend | Chat UI, admin console, and static builds | Next.js 16, React 19, TypeScript, Tailwind CSS, Shadcn/UI, Streamdown, KaTeX, Mermaid, Recharts, Motion |
 | Backend runtime | APIs, authentication, authorization, orchestration, protocol adaptation, and static serving | Go 1.26, Gin, Gorm, Swagger, OpenTelemetry, Zap |
-| Data and cache | Domain data, vector retrieval, session state, and runtime cache | PostgreSQL, pgvector, SQLite, sqlite-vec, Redis, in-memory cache |
+| Data and cache | Domain data, vector retrieval, session state, and runtime cache | PostgreSQL, pgvector, Redis, in-memory cache (SQLite + sqlite-vec optional self-build, unsupported) |
 | Files and storage | Uploaded files, generated files, object storage, and local persistence | Local filesystem, S3-compatible object storage |
 | File processing | Text extraction, OCR, document parsing, and LLM OCR fallback | Built-in extractors, Apache Tika, Docling, RapidOCR, Tesseract OCR, Paddle OCR, cloud OCR adapters, MinerU |
 | Tool protocol | MCP tool integration and provider-native official tools | MCP Streamable HTTP JSON-RPC, provider-native tools |
-| Deployment runtime | Lightweight single-node deployment or multi-node production deployment | Single binary with embedded UI, systemd, OTA self-update, SQLite/in-memory cache, PostgreSQL/Redis |
+| Deployment runtime | Single-node or multi-node server deployment | Single binary with embedded UI, systemd, OTA self-update, PostgreSQL, Redis/in-memory cache |
 
 The backend keeps clear internal boundaries: `backend/cmd/server` is the executable entrypoint, `backend/internal/cli` owns process startup, `backend/internal/app` assembles and wires the application, and `backend/internal/transport/http` owns the HTTP boundary. Requests then flow through `application` use cases to consumer-owned `repository` or `ports` interfaces and their `infra` implementations. The data layer uses domain-prefixed tables, while financial records, audit trails, system events, and high-growth vector data remain separate sources of truth.
 
@@ -153,10 +155,10 @@ The backend keeps clear internal boundaries: `backend/cmd/server` is the executa
 - Node.js 20.9 or newer for development (release builds and CI use Node.js 24).
 - pnpm 10.17.0, normally enabled through Corepack.
 - Go 1.26.8 for backend development.
-- A C compiler and SQLite headers (`libsqlite3-dev` on Debian/Ubuntu), because the backend builds with CGO.
+- A C compiler and SQLite headers (`libsqlite3-dev` on Debian/Ubuntu) are only needed when running backend tests (`go test`) or building an unsupported SQLite binary (`FIRECORTEX_SQLITE=1`).
 - PostgreSQL with pgvector and Redis for the default development configuration.
 
-Running a release binary needs none of these. The SQLite profile does not require a separately managed database or cache. The default development configuration uses PostgreSQL and Redis.
+Running a release binary needs none of these toolchain prerequisites (PostgreSQL with pgvector is required; Redis is optional when using single-process in-memory cache). The default development configuration uses PostgreSQL and Redis.
 
 ## Quick Start
 
@@ -164,7 +166,7 @@ Running a release binary needs none of these. The SQLite profile does not requir
 
 ### Local Development
 
-Local development is intended for editing source code and running the frontend and backend separately. The default config connects to local PostgreSQL and Redis. If you only want a low-dependency trial, use a release binary with the lightweight SQLite profile below.
+Local development is intended for editing source code and running the frontend and backend separately. The default config connects to local PostgreSQL and Redis.
 
 1. Prepare backend configuration:
 
@@ -229,29 +231,30 @@ The frontend is exported as static files, so `pnpm build` writes the browser art
 
 ### Binary Deployment
 
+> **Support scope:** Official release binaries are built for server deployments (`CGO_ENABLED=0`, PostgreSQL + pgvector only). SQLite deployment and the desktop app are not supported by default; SQLite code is retained only for self-built `-tags sqlite` binaries and desktop local mode, with no support guarantee.
+
 FireCortex ships as a single self-contained binary. The web UI is embedded in the executable, and one process serves both the API and the UI on `server.http_port` (default `8080`). Each [GitHub Release](https://github.com/lieyanc/FireCortex/releases) provides:
 
 | Asset | Platform |
 | --- | --- |
-| `firecortex-linux-amd64` | Linux x86-64, glibc 2.35 or newer (Debian 12+, Ubuntu 22.04+) |
-| `firecortex-linux-arm64` | Linux ARM64, glibc 2.35 or newer (Debian 12+, Ubuntu 22.04+) |
+| `firecortex-linux-amd64` | Linux x86-64 (static pure-Go binary) |
+| `firecortex-linux-arm64` | Linux ARM64 (static pure-Go binary) |
 | `firecortex-darwin-arm64` | macOS on Apple silicon |
 | `SHA256SUMS` | SHA-256 checksums for the binaries |
 | `version.json` | Release metadata used by the built-in updater |
 
-Stable releases are published from `vX.Y.Z` tags. Every push to the `dev` branch also publishes a rolling prerelease under the `dev-latest` tag. Windows builds are not provided.
+Stable releases are published from `vX.Y.Z` tags. Every push to the `dev` branch also publishes a rolling prerelease under the `dev-latest` tag. Windows server builds and desktop packages are not built or released by default.
 
 Choose a configuration profile first:
 
 | Profile | Use case | Config file | External services |
 | --- | --- | --- | --- |
-| Lightweight | Local evaluation, personal use, small single-node deployments | `config.sqlite.example.json` | None. SQLite + sqlite-vec + in-memory cache |
-| PostgreSQL + Redis | Multi-node or high-concurrency production deployments | `config.full.example.json` | PostgreSQL with pgvector, Redis |
+| PostgreSQL + Redis | Server deployments (recommended; set `cache.driver` to `memory` for single-process setups without Redis) | `config.full.example.json` | PostgreSQL with pgvector, Redis (optional) |
 | Development | Source development with `pnpm dev` | `config.example.json` | PostgreSQL with pgvector, Redis |
 
 The example files are partial overlays: they contain only the keys that the profile changes, and the server fills in everything else from its built-in template on startup.
 
-SQLite + memory cache is single-process only. It is good for local use, evaluation, and small single-node deployments. Use PostgreSQL + Redis for multi-node or high-concurrency production deployments.
+SQLite deployment (`config.sqlite.example.json`) is not supported by default: official release binaries exclude the SQLite driver and return an error if `database.driver` is set to `sqlite`. SQLite is only available in self-built `-tags sqlite` binaries and desktop local mode, with no support guarantee.
 
 #### 1. Install the Binary
 
@@ -271,16 +274,16 @@ On macOS, verify with `shasum -a 256 -c SHA256SUMS --ignore-missing`.
 
 #### 2. Prepare `config.json`
 
-The binary reads `config.json` from its working directory, or the file named by `CONFIG_FILE`. If the file does not exist, the first start writes it from the built-in template (defaults: `app.env` set to `prod`, PostgreSQL + Redis) and generates the secrets (see [Configuration](#configuration)). Relative paths inside the config file, such as `./data/firecortex.db` and `./storage`, resolve against the directory that contains the config file.
+The binary reads `config.json` from its working directory, or the file named by `CONFIG_FILE`. If the file does not exist, the first start writes it from the built-in template (defaults: `app.env` set to `prod`, PostgreSQL + Redis) and generates the secrets (see [Configuration](#configuration)). Relative paths inside the config file, such as `./data/updates` and `./storage`, resolve against the directory that contains the config file.
 
-To start from a profile, download its example as `config.json`:
+To start from the server profile, download `config.full.example.json` as `config.json`:
 
 ```bash
 ref=dev   # or the release tag you installed
-sudo curl -fL -o config.json "https://raw.githubusercontent.com/lieyanc/FireCortex/$ref/config.sqlite.example.json"
+sudo curl -fL -o config.json "https://raw.githubusercontent.com/lieyanc/FireCortex/$ref/config.full.example.json"
 ```
 
-Use `config.full.example.json` instead for the PostgreSQL + Redis profile. Alternatively, start the binary without a config file and edit the released `config.json`, for example set `database.driver` to `sqlite` and `cache.driver` to `memory` for the lightweight profile, then restart.
+Alternatively, start the binary without a config file and edit the generated `config.json` (for single-process deployments without Redis, set `cache.driver` to `memory`), then restart.
 
 The examples contain no secrets: `security.jwt_secret` and `security.data_encryption_key` are generated on first start. Keep them stable afterwards; `data_encryption_key` protects stored upstream API keys and other secrets, and changing it makes them unreadable. The examples set `app.env` to `dev`; before exposing the service, set `app.env` to `prod` and set `server.public_api_base_url`, `server.public_web_base_url`, and `server.cors_allow_origin` to your public HTTPS origin.
 
@@ -326,7 +329,6 @@ With the default paths, persistent data lives next to `config.json`:
 
 | Data | Default path |
 | --- | --- |
-| SQLite database | `./data/firecortex.db`, lightweight profile only |
 | Uploaded and generated files | `./storage` |
 | GeoIP MMDB cache | `./data/geoip/` |
 | Downloaded updates | `./data/updates` |
@@ -404,14 +406,16 @@ Requirements and caveats:
 
 ### Build from Source
 
-Building a binary requires Go (the version in `backend/go.mod`), Node.js 24 with pnpm, a C compiler, and SQLite headers (`libsqlite3-dev` on Debian/Ubuntu), because the backend uses CGO for go-sqlite3 and sqlite-vec.
+Building the default binary requires Go (the version in `backend/go.mod`) and Node.js 24 with pnpm. No C compiler or CGO is needed for the default PostgreSQL-only server build.
 
 ```bash
 pnpm install
 pnpm build:binary
 ```
 
-The script builds the Next.js static export, stages it into `backend/internal/webui/dist`, and runs `go build` with CGO enabled. The result is `dist/firecortex`, which runs exactly like a release binary. Because of CGO, build on the target operating system and architecture.
+The script builds the Next.js static export, stages it into `backend/internal/webui/dist`, and runs `CGO_ENABLED=0 go build`. The result is `dist/firecortex`, a statically linked binary matching official releases.
+
+If you explicitly need an unsupported SQLite build for local experimentation, build with `FIRECORTEX_SQLITE=1 pnpm build:binary` (requires a C compiler and SQLite headers such as `libsqlite3-dev`, and builds with `CGO_ENABLED=1 -tags sqlite` on the target OS and architecture).
 
 The embedded UI calls the API on the same origin. Leave `NEXT_PUBLIC_API_BASE_URL` unset (including in `apps/web/.env.local`) when building a binary for deployment.
 
@@ -515,20 +519,20 @@ Static configuration environment variables:
 | Security | `SSRF_ALLOWED_HOSTS` | Exact hostnames for deployment-level integrations or trusted private redirect targets, comma-separated. |
 | Security | `SSRF_ALLOWED_CIDRS` | Trusted deployment-level integration or private redirect CIDRs, comma-separated. |
 | Security | `TURNSTILE_SITEVERIFY_URL` | Cloudflare Turnstile siteverify endpoint. |
-| Database | `DATABASE_DRIVER` | `postgres` or `sqlite`. |
+| Database | `DATABASE_DRIVER` | `postgres` (default; `sqlite` only works in unsupported `-tags sqlite` builds). |
 | PostgreSQL | `POSTGRES_DSN` | PostgreSQL DSN. |
 | PostgreSQL | `POSTGRES_MAX_OPEN_CONNS` | Maximum open connections. |
 | PostgreSQL | `POSTGRES_MAX_IDLE_CONNS` | Maximum idle connections. |
 | PostgreSQL | `POSTGRES_CONN_MAX_LIFETIME_MINUTES` | Maximum connection lifetime. |
 | PostgreSQL | `POSTGRES_CONN_MAX_IDLE_TIME_MINUTES` | Maximum idle connection time. |
-| SQLite | `SQLITE_PATH` | Database file path. |
-| SQLite | `SQLITE_DSN` | Full DSN; takes priority over path-based DSN construction. |
-| SQLite | `SQLITE_MAX_OPEN_CONNS` | Maximum open connections, default `1`. |
-| SQLite | `SQLITE_BUSY_TIMEOUT_MS` | Busy timeout. |
-| SQLite | `SQLITE_CACHE_SIZE_KB` | Page cache size. |
-| SQLite | `SQLITE_MMAP_SIZE_BYTES` | Mmap size. |
-| SQLite | `SQLITE_SYNCHRONOUS` | Synchronous mode: `OFF`, `NORMAL`, `FULL`, or `EXTRA`. |
-| SQLite | `SQLITE_TEMP_STORE` | Temporary storage: `DEFAULT`, `FILE`, or `MEMORY`. |
+| SQLite | `SQLITE_PATH` | Database file path (only in `-tags sqlite` builds). |
+| SQLite | `SQLITE_DSN` | Full DSN; takes priority over path-based DSN construction (only in `-tags sqlite` builds). |
+| SQLite | `SQLITE_MAX_OPEN_CONNS` | Maximum open connections, default `1` (only in `-tags sqlite` builds). |
+| SQLite | `SQLITE_BUSY_TIMEOUT_MS` | Busy timeout (only in `-tags sqlite` builds). |
+| SQLite | `SQLITE_CACHE_SIZE_KB` | Page cache size (only in `-tags sqlite` builds). |
+| SQLite | `SQLITE_MMAP_SIZE_BYTES` | Mmap size (only in `-tags sqlite` builds). |
+| SQLite | `SQLITE_SYNCHRONOUS` | Synchronous mode: `OFF`, `NORMAL`, `FULL`, or `EXTRA` (only in `-tags sqlite` builds). |
+| SQLite | `SQLITE_TEMP_STORE` | Temporary storage: `DEFAULT`, `FILE`, or `MEMORY` (only in `-tags sqlite` builds). |
 | Cache | `CACHE_DRIVER` | `redis` or `memory`; `memory` is single-process only. |
 | Redis | `REDIS_ADDR` | Redis address. |
 | Redis | `REDIS_USERNAME` | Redis ACL username; leave empty for password-only/default-user Redis. |
@@ -571,7 +575,7 @@ Authentication, registration, conversation settings, model option policies, file
 
 When SSRF protection is enabled in production, administrator-saved model, MCP, Embedding, OIDC/OAuth2, and custom Turnstile endpoints are authorized locally by exact origin (`scheme + host + port`) and do not require entries in the global allowlist. Model, MCP, and Embedding redirects retain standard compatibility: public cross-origin targets are allowed, while private cross-origin targets must match `SSRF_ALLOWED_HOSTS` or `SSRF_ALLOWED_CIDRS`; OIDC/OAuth2 and Turnstile keep their stricter identity boundary. Generated media is downloaded, validated, and stored by the backend: a private artifact URL inherits trust only when it has the same origin as the selected model endpoint; public cross-origin artifact URLs remain subject to the strict public-network policy, and private cross-origin artifact URLs are blocked. The global allowlist also remains available for deployment-level integrations that cannot be tied to an administrator-saved endpoint, such as selected GeoIP or extraction deployments. Link-local, multicast, unspecified, and known metadata targets always remain blocked. Invalid allowlist entries stop backend startup, and global allowlist changes require a restart.
 
-### OAuth callbacks for Web, App, and Desktop (multi-platform clients not yet released)
+### OAuth callbacks for Web, App, and Desktop (desktop not supported by this fork by default)
 
 Set `PUBLIC_API_BASE_URL` to the externally reachable API origin before enabling the provider auth bridge. For every OIDC/OAuth2 provider, register the server callback shown in the admin provider dialog:
 

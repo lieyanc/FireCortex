@@ -31,6 +31,8 @@ FireCortex 是一个可自托管的 AI 工作台，核心理念只有一个：�
 
 FireCortex 基于 [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat) v0.4.6 二次开发，继承其生产级基础能力：多上游模型接入、文件与 RAG、MCP 工具、计费、身份、审计以及轻量的单运行时部署。 <!-- rebrand:keep -->
 
+> **支持范围：** 本独立维护的分支优先面向服务端部署。官方发布版以纯 Go（`CGO_ENABLED=0`）构建，仅支持 **PostgreSQL + pgvector**（缓存支持 Redis 或内存缓存）；**默认不支持 SQLite 部署方式与桌面版**。SQLite 与桌面端相关代码仅保留给自编译的 `-tags sqlite` 构建及桌面端本地模式，不提供支持保证。
+
 ## 路线图
 
 | 能力 | 状态 |
@@ -55,7 +57,7 @@ FireCortex 基于 [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat) v0.4.6 �
 | 计费与支付 | 内置模型定价、工具按次定价、订阅、充值、余额、用量账本、计费快照、Stripe Checkout、易支付和 Webhook 校验。 |
 | 身份与安全 | 覆盖本地账号、会话管理、HttpOnly Refresh Cookie、2FA/TOTP、可信设备、SSO/OIDC/OAuth、联系方式验证和敏感信息加密。 |
 | 管理与审计 | 后台集中管理用户、角色、上游、模型、路由、价格、订阅、余额、调用日志、审计日志、认证事件和系统事件。 |
-| 部署与运维 | 支持单个自包含二进制托管前端与 API、基于 GitHub Releases 的内置 OTA 更新、SQLite 或 PostgreSQL、内存缓存或 Redis、S3 兼容存储、Swagger、结构化日志、版本接口、GeoIP 和 OpenTelemetry。 |
+| 部署与运维 | 支持单个自包含二进制托管前端与 API、基于 GitHub Releases 的内置 OTA 更新、PostgreSQL、内存缓存或 Redis、S3 兼容存储、Swagger、结构化日志、版本接口、GeoIP 和 OpenTelemetry。 |
 
 ## 系统架构与技术栈
 
@@ -83,7 +85,7 @@ flowchart TB
   end
 
   subgraph Data["数据与存储"]
-    DB["PostgreSQL + pgvector<br/>或 SQLite + sqlite-vec"]
+    DB["PostgreSQL + pgvector"]
     Cache["Redis<br/>或内存缓存"]
     Storage["本地文件系统<br/>或 S3 兼容存储"]
   end
@@ -105,11 +107,11 @@ flowchart TB
 | --- | --- | --- |
 | 前端 | 用户对话、后台管理、静态构建 | Next.js 16、React 19、TypeScript、Tailwind CSS、Shadcn/UI、Streamdown、KaTeX、Mermaid、Recharts、Motion |
 | 后端运行时 | API、认证授权、业务编排、协议适配、静态资源托管 | Go 1.26、Gin、Gorm、Swagger、OpenTelemetry、Zap |
-| 数据与缓存 | 领域数据、向量检索、会话状态、运行时缓存 | PostgreSQL、pgvector、SQLite、sqlite-vec、Redis、内存缓存 |
+| 数据与缓存 | 领域数据、向量检索、会话状态、运行时缓存 | PostgreSQL、pgvector、Redis、内存缓存（SQLite + sqlite-vec 仅支持自编译，默认不受支持） |
 | 文件与存储 | 上传文件、生成文件、对象存储和本地持久化 | 本地文件系统、S3 兼容对象存储 |
 | 文件处理 | 文本提取、OCR、文档解析和 LLM OCR 回退 | 内置提取、Apache Tika、Docling、RapidOCR、Tesseract OCR、Paddle OCR、云 OCR 适配、MinerU |
 | 工具协议 | MCP 工具接入和厂商官方原生工具调用 | MCP Streamable HTTP JSON-RPC、Provider Native Tools |
-| 部署运行 | 单节点轻量部署或多节点生产部署 | 内嵌界面的单二进制、systemd、OTA 自更新、SQLite/内存缓存、PostgreSQL/Redis |
+| 部署运行 | 单节点或多节点服务端部署 | 内嵌界面的单二进制、systemd、OTA 自更新、PostgreSQL、Redis/内存缓存 |
 
 后端内部保持清晰分层：`backend/cmd/server` 是可执行入口，`backend/internal/cli` 负责进程启动，`backend/internal/app` 负责应用装配和依赖注入，`backend/internal/transport/http` 负责 HTTP 边界。请求随后经过 `application` 用例层，依赖消费方定义的 `repository` 或 `ports` 接口，再由 `infra` 提供具体实现。数据层按领域前缀组织表结构，财务流水、审计日志、系统事件和高增长向量数据保持独立事实源。
 
@@ -153,10 +155,10 @@ flowchart TB
 - Node.js 20.9 或更高版本，用于开发（发布构建和 CI 使用 Node.js 24）。
 - pnpm 10.17.0，通常通过 Corepack 启用。
 - Go 1.26.8，用于后端开发。
-- C 编译器和 SQLite 头文件（Debian/Ubuntu 上为 `libsqlite3-dev`），因为后端使用 CGO 构建。
+- C 编译器和 SQLite 头文件（Debian/Ubuntu 上为 `libsqlite3-dev`），仅在运行后端测试（`go test`）或自编译不受支持的 SQLite 版本（`FIRECORTEX_SQLITE=1`）时需要。
 - 带 pgvector 的 PostgreSQL 和 Redis，用于默认开发配置。
 
-运行发布版二进制不需要以上任何依赖。SQLite 方案不要求单独管理数据库或缓存。默认开发配置使用 PostgreSQL 和 Redis。
+运行发布版二进制不需要以上工具链依赖（需要配合带 pgvector 的 PostgreSQL；单进程使用内存缓存时 Redis 为可选项）。默认开发配置使用 PostgreSQL 和 Redis。
 
 ## 快速开始
 
@@ -164,7 +166,7 @@ flowchart TB
 
 ### 本地开发
 
-本地开发适合改动源码并分别启动前后端。默认配置连接本机 PostgreSQL 和 Redis；如果只是低依赖试用，建议直接使用发布版二进制配合下面的 SQLite 轻量方案。
+本地开发适合改动源码并分别启动前后端。默认配置连接本机 PostgreSQL 和 Redis。
 
 1. 准备后端配置：
 
@@ -229,29 +231,30 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8080
 
 ### 二进制部署
 
+> **支持范围：** 官方发布二进制面向服务端部署构建（`CGO_ENABLED=0`，仅支持 PostgreSQL + pgvector）。默认不支持 SQLite 部署方式和桌面版；SQLite 相关代码仅保留给自编译的 `-tags sqlite` 构建及桌面端本地模式，不提供支持保证。
+
 FireCortex 以单个自包含二进制文件发布。Web 界面嵌入在可执行文件中，同一个进程在 `server.http_port`（默认 `8080`）上同时提供 API 和界面。每个 [GitHub Release](https://github.com/lieyanc/FireCortex/releases) 包含：
 
 | 文件 | 平台 |
 | --- | --- |
-| `firecortex-linux-amd64` | Linux x86-64，需要 glibc 2.35 或更高版本（Debian 12+、Ubuntu 22.04+） |
-| `firecortex-linux-arm64` | Linux ARM64，需要 glibc 2.35 或更高版本（Debian 12+、Ubuntu 22.04+） |
+| `firecortex-linux-amd64` | Linux x86-64（纯 Go 静态链接二进制） |
+| `firecortex-linux-arm64` | Linux ARM64（纯 Go 静态链接二进制） |
 | `firecortex-darwin-arm64` | Apple 芯片 macOS |
 | `SHA256SUMS` | 各二进制文件的 SHA-256 校验和 |
 | `version.json` | 内置更新器使用的发布元数据 |
 
-正式版由 `vX.Y.Z` 标签发布。每次推送到 `dev` 分支还会在 `dev-latest` 标签下滚动发布一个预发布版本。不提供 Windows 构建。
+正式版由 `vX.Y.Z` 标签发布。每次推送到 `dev` 分支还会在 `dev-latest` 标签下滚动发布一个预发布版本。默认不构建或发布 Windows 服务端与桌面端安装包。
 
 先选择配置方案：
 
 | 方案 | 适合场景 | 配置文件 | 外部服务 |
 | --- | --- | --- | --- |
-| 轻量安装 | 本地试用、个人部署、小型单节点 | `config.sqlite.example.json` | 无，SQLite + sqlite-vec + 内存缓存 |
-| PostgreSQL + Redis | 多节点或高并发生产部署 | `config.full.example.json` | 带 pgvector 的 PostgreSQL、Redis |
+| PostgreSQL + Redis | 服务端部署（推荐；单进程无 Redis 场景可将 `cache.driver` 设为 `memory`） | `config.full.example.json` | 带 pgvector 的 PostgreSQL、Redis（可选） |
 | 开发 | 配合 `pnpm dev` 进行源码开发 | `config.example.json` | 带 pgvector 的 PostgreSQL、Redis |
 
 示例文件是部分覆盖片段：只包含该方案需要修改的配置项，其余配置由服务启动时从内置模板补全。
 
-SQLite + memory cache 只适合单进程。多节点、高并发或更严格的生产部署建议使用 PostgreSQL + Redis。
+本分支默认不支持 SQLite 部署（`config.sqlite.example.json`）：官方发布二进制未编译 SQLite 驱动，将 `database.driver` 设为 `sqlite` 会直接报错。SQLite 仅可用于自编译 `-tags sqlite` 二进制及桌面端本地模式，不提供支持保证。
 
 #### 1. 安装二进制文件
 
@@ -271,16 +274,16 @@ macOS 上使用 `shasum -a 256 -c SHA256SUMS --ignore-missing` 校验。
 
 #### 2. 准备 `config.json`
 
-二进制文件会读取运行目录下的 `config.json`，也可以通过 `CONFIG_FILE` 指定。文件不存在时，首次启动会根据内置模板写出该文件（默认 `app.env` 为 `prod`，使用 PostgreSQL + Redis）并生成密钥（见[配置说明](#配置说明)）。配置文件中的相对路径（例如 `./data/firecortex.db` 和 `./storage`）以配置文件所在目录为基准解析。
+二进制文件会读取运行目录下的 `config.json`，也可以通过 `CONFIG_FILE` 指定。文件不存在时，首次启动会根据内置模板写出该文件（默认 `app.env` 为 `prod`，使用 PostgreSQL + Redis）并生成密钥（见[配置说明](#配置说明)）。配置文件中的相对路径（例如 `./data/updates` 和 `./storage`）以配置文件所在目录为基准解析。
 
-如需从某个方案开始，把对应示例下载为 `config.json`：
+如需从服务端配置模板开始，把 `config.full.example.json` 下载为 `config.json`：
 
 ```bash
 ref=dev   # 或已安装版本的发布标签
-sudo curl -fL -o config.json "https://raw.githubusercontent.com/lieyanc/FireCortex/$ref/config.sqlite.example.json"
+sudo curl -fL -o config.json "https://raw.githubusercontent.com/lieyanc/FireCortex/$ref/config.full.example.json"
 ```
 
-PostgreSQL + Redis 方案改用 `config.full.example.json`。也可以不准备配置文件直接启动二进制，再编辑释放出的 `config.json`，例如轻量安装把 `database.driver` 设为 `sqlite`、`cache.driver` 设为 `memory`，然后重启。
+也可以不准备配置文件直接启动二进制，再编辑释放出的 `config.json`（如单进程部署不使用 Redis，可将 `cache.driver` 设为 `memory`），然后重启。
 
 示例文件不包含密钥：`security.jwt_secret` 和 `security.data_encryption_key` 会在首次启动时生成，之后请保持不变。`data_encryption_key` 用于保护已保存的上游 API Key 等密钥，修改后这些数据将无法读取。示例文件把 `app.env` 设为 `dev`；对外提供服务前，请把 `app.env` 设为 `prod`，并把 `server.public_api_base_url`、`server.public_web_base_url` 和 `server.cors_allow_origin` 设置为公开的 HTTPS 地址。
 
@@ -326,7 +329,6 @@ sudo systemctl enable --now firecortex
 
 | 数据 | 默认路径 |
 | --- | --- |
-| SQLite 数据库 | `./data/firecortex.db`，仅轻量安装 |
 | 上传文件和生成文件 | `./storage` |
 | GeoIP MMDB 缓存 | `./data/geoip/` |
 | 下载的更新 | `./data/updates` |
@@ -404,14 +406,16 @@ FireCortex 会从 GitHub Releases 自我更新。管理员可以在 **后台管�
 
 ### 从源码构建
 
-后端通过 CGO 使用 go-sqlite3 和 sqlite-vec，因此构建二进制需要 Go（版本见 `backend/go.mod`）、Node.js 24 与 pnpm、C 编译器，以及 SQLite 头文件（Debian/Ubuntu 上为 `libsqlite3-dev`）。
+构建默认服务端二进制只需要 Go（版本见 `backend/go.mod`）和 Node.js 24 与 pnpm。默认的纯 PostgreSQL 服务端构建无需 C 编译器或 CGO。
 
 ```bash
 pnpm install
 pnpm build:binary
 ```
 
-脚本会构建 Next.js 静态导出，将其放入 `backend/internal/webui/dist`，再启用 CGO 执行 `go build`。产物为 `dist/firecortex`，用法与发布版二进制完全相同。由于依赖 CGO，请在目标操作系统和架构上构建。
+脚本会构建 Next.js 静态导出，将其放入 `backend/internal/webui/dist`，再以 `CGO_ENABLED=0` 执行 `go build`。产物为 `dist/firecortex`，为静态链接二进制，与官方发布版一致。
+
+如果确需自行编译不受支持的 SQLite 版本进行本地试验，可执行 `FIRECORTEX_SQLITE=1 pnpm build:binary`（需要 C 编译器与 SQLite 头文件如 `libsqlite3-dev`，会在目标操作系统和架构上以 `CGO_ENABLED=1 -tags sqlite` 编译）。
 
 嵌入的界面会以同源方式请求 API。构建用于部署的二进制时，请不要设置 `NEXT_PUBLIC_API_BASE_URL`（包括 `apps/web/.env.local` 中的设置）。
 
@@ -515,20 +519,20 @@ journalctl -u firecortex -e
 | 安全 | `SSRF_ALLOWED_HOSTS` | 部署级集成或可信私网重定向目标的主机名，逗号分隔。 |
 | 安全 | `SSRF_ALLOWED_CIDRS` | 部署级集成或可信私网重定向目标的 CIDR 网段，逗号分隔。 |
 | 安全 | `TURNSTILE_SITEVERIFY_URL` | Cloudflare Turnstile siteverify 端点。 |
-| 数据库 | `DATABASE_DRIVER` | `postgres` 或 `sqlite`。 |
+| 数据库 | `DATABASE_DRIVER` | `postgres`（默认；`sqlite` 仅在不受支持的 `-tags sqlite` 构建中可用）。 |
 | PostgreSQL | `POSTGRES_DSN` | PostgreSQL DSN。 |
 | PostgreSQL | `POSTGRES_MAX_OPEN_CONNS` | 最大打开连接数。 |
 | PostgreSQL | `POSTGRES_MAX_IDLE_CONNS` | 最大空闲连接数。 |
 | PostgreSQL | `POSTGRES_CONN_MAX_LIFETIME_MINUTES` | 连接最长生命周期。 |
 | PostgreSQL | `POSTGRES_CONN_MAX_IDLE_TIME_MINUTES` | 连接最长空闲时间。 |
-| SQLite | `SQLITE_PATH` | 数据库文件路径。 |
-| SQLite | `SQLITE_DSN` | 完整 DSN；设置后优先于路径拼装。 |
-| SQLite | `SQLITE_MAX_OPEN_CONNS` | 最大打开连接数，默认 `1`。 |
-| SQLite | `SQLITE_BUSY_TIMEOUT_MS` | busy timeout。 |
-| SQLite | `SQLITE_CACHE_SIZE_KB` | page cache 大小。 |
-| SQLite | `SQLITE_MMAP_SIZE_BYTES` | mmap 大小。 |
-| SQLite | `SQLITE_SYNCHRONOUS` | 同步模式：`OFF`、`NORMAL`、`FULL`、`EXTRA`。 |
-| SQLite | `SQLITE_TEMP_STORE` | 临时存储：`DEFAULT`、`FILE`、`MEMORY`。 |
+| SQLite | `SQLITE_PATH` | 数据库文件路径（仅在 `-tags sqlite` 构建中生效）。 |
+| SQLite | `SQLITE_DSN` | 完整 DSN；设置后优先于路径拼装（仅在 `-tags sqlite` 构建中生效）。 |
+| SQLite | `SQLITE_MAX_OPEN_CONNS` | 最大打开连接数，默认 `1`（仅在 `-tags sqlite` 构建中生效）。 |
+| SQLite | `SQLITE_BUSY_TIMEOUT_MS` | busy timeout（仅在 `-tags sqlite` 构建中生效）。 |
+| SQLite | `SQLITE_CACHE_SIZE_KB` | page cache 大小（仅在 `-tags sqlite` 构建中生效）。 |
+| SQLite | `SQLITE_MMAP_SIZE_BYTES` | mmap 大小（仅在 `-tags sqlite` 构建中生效）。 |
+| SQLite | `SQLITE_SYNCHRONOUS` | 同步模式：`OFF`、`NORMAL`、`FULL`、`EXTRA`（仅在 `-tags sqlite` 构建中生效）。 |
+| SQLite | `SQLITE_TEMP_STORE` | 临时存储：`DEFAULT`、`FILE`、`MEMORY`（仅在 `-tags sqlite` 构建中生效）。 |
 | 缓存 | `CACHE_DRIVER` | `redis` 或 `memory`；`memory` 仅适用于单进程。 |
 | Redis | `REDIS_ADDR` | Redis 地址。 |
 | Redis | `REDIS_USERNAME` | Redis ACL 用户名；使用仅密码或默认用户 Redis 时留空。 |
@@ -571,7 +575,7 @@ journalctl -u firecortex -e
 
 生产环境启用 SSRF 防护后，管理员保存的模型、MCP、Embedding、OIDC/OAuth2 和自定义 Turnstile endpoint 均按精确 origin（协议、主机和端口）获得局部授权，不需要加入全局白名单。模型、MCP 与 Embedding 保留标准重定向兼容性：跨 origin 的公网目标可以继续访问，跨 origin 的私网目标必须命中 `SSRF_ALLOWED_HOSTS` 或 `SSRF_ALLOWED_CIDRS`；OIDC/OAuth2 与 Turnstile 继续维持更严格的身份边界。模型生成的图片或视频由后端下载、校验并转存：私网制品 URL 只有与本次选中的模型 endpoint 同 origin 时才继承该局部信任；跨 origin 的公网制品仍按严格公网策略下载，跨 origin 的私网制品会被拦截。全局白名单也继续用于无法绑定管理员保存 endpoint 的部署级集成，例如部分 GeoIP 或提取服务部署。链路本地、组播、未指定地址和已知云元数据目标始终禁止。白名单配置不合法会阻止后端启动；全局白名单修改后需重启生效。
 
-### Web、App 与桌面端 OAuth 回调（多端暂未发布）
+### Web、App 与桌面端 OAuth 回调（本分支默认不支持桌面端与多端客户端）
 
 启用第三方授权桥前，请先把 `PUBLIC_API_BASE_URL` 配置为外部可访问的 API 地址。每个 OIDC/OAuth2 身份源都应登记后台身份源弹窗展示的服务器回调：
 

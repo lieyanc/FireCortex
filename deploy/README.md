@@ -1,55 +1,15 @@
 # Deployment
 
-Everything needed to run FireCortex with Docker lives in this directory. Copy it to your
-server as-is; the application source is not required.
+This directory holds deployment assets for the single-binary server and optional sidecar services.
 
-```
+```text
 deploy/
-├── docker-compose.yml            Default: app only, external PostgreSQL + Redis
-├── docker-compose.sqlite.yml     Lightweight: app only, SQLite + in-memory cache
-├── docker-compose.full.yml       Full: app + PostgreSQL + Redis containers
-├── config.example.yaml           Template for the default profile (also used for local development)
-├── config.sqlite.example.yaml    Template for the lightweight profile
-├── config.full.example.yaml      Template for the full profile
-├── services/                     Optional document extraction / OCR services
-└── windows/                      Desktop client rollout on managed Windows (MSI, portable, Group Policy)
+├── firecortex.service   Example systemd unit for the single-binary server
+├── secrets/             Desktop signing secret template (unused unless building desktop manually)
+├── services/            Optional document extraction / OCR services (Tika, Docling, Tesseract, RapidOCR)
+└── windows/             Managed Windows desktop rollout docs and templates (desktop unsupported by default)
 ```
 
-Rolling out the desktop client to managed Windows machines is covered separately in
-[`windows/README.md`](windows/README.md).
+FireCortex is deployed as a single self-contained binary (`CGO_ENABLED=0`, PostgreSQL + pgvector). See the [Binary Deployment guide](../README.md#binary-deployment) in the root README for installation, configuration (`config.full.example.json`), systemd setup, and starting the optional services under `deploy/services/`.
 
-## Run
-
-Pick one profile, copy its template to `config.yaml` **in this directory**, then start it:
-
-```bash
-cd deploy
-cp config.sqlite.example.yaml config.yaml
-docker compose -f docker-compose.sqlite.yml up -d
-```
-
-Every compose file mounts `./config.yaml` (relative to this directory) to `/app/config.yaml`.
-`deploy/config.yaml` is git-ignored and excluded from the image build context.
-
-The full guide, including profile trade-offs, persistence paths and optional services, is in the
-[root README](../README.md#docker-deployment).
-
-## Build a local image
-
-The application image is built from the repository root:
-
-```bash
-docker build -t firecortex:local .
-cd deploy && FIRECORTEX_IMAGE=firecortex:local docker compose up -d
-```
-
-## Optional services
-
-Each service under `services/` is self-contained (its own build context) and attaches to
-`firecortex-network`, so start an application profile first:
-
-```bash
-docker compose -f services/tika/docker-compose.yml up -d
-docker compose -f services/tesseract/docker-compose.yml up -d --build
-docker compose -f services/docling/docker-compose.yml up -d --build
-```
+> **Note:** Desktop builds and SQLite deployments are unsupported by default in this fork. Desktop packages are only built when `Desktop Release` is triggered manually via `workflow_dispatch`.
