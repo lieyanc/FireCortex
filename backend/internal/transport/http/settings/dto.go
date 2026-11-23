@@ -131,6 +131,7 @@ type ChatContextPolicyResponse struct {
 // FeaturePolicyResponse 返回用户侧功能开关策略。
 type FeaturePolicyResponse struct {
 	KnowledgeBaseEnabled bool `json:"knowledgeBaseEnabled"`
+	ModelRouterEnabled   bool `json:"modelRouterEnabled"`
 	ProcessTraceEnabled  bool `json:"processTraceEnabled"`
 	// DesktopDownloadEnabled 为 true 时网页端用户菜单展示「下载桌面端」入口；桌面端内由前端自行隐藏。
 	DesktopDownloadEnabled bool `json:"desktopDownloadEnabled"`

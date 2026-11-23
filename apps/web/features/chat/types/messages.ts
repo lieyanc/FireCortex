@@ -153,6 +153,7 @@ export type ChatAreaMessage = {
   status?: string;
   runID?: string;
   platformModelName?: string;
+  autoRouted?: boolean;
   serverMessageID?: number;
   createdAt?: string;
   updatedAt?: string;

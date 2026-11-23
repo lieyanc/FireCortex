@@ -113,7 +113,10 @@ export function useAdminConversationSettings(conversationSettingsFields: Convers
       const flattened = flattenConversationSettings(grouped);
       setSettingsMap(flattened);
       setSavedMap(flattened);
-      overrideFeaturePolicy({ processTraceEnabled: flattened["chat.process_trace_enabled"] !== "false" });
+      overrideFeaturePolicy({
+        processTraceEnabled: flattened["chat.process_trace_enabled"] !== "false",
+        modelRouterEnabled: flattened["chat.model_router_enabled"] === "true",
+      });
       toast.success(t("toast.updated"));
     } catch (error) {
       toast.error(t("toast.saveFailed"), { description: resolveAdminErrorMessage(error) });

@@ -112,6 +112,8 @@ var (
 	// ErrMessageParentDeleted 父消息已被删除，无法再挂在其下创建新消息。
 	ErrMessageParentDeleted    = apperr.New("conversation.message_parent_deleted", "parent message was deleted")
 	ErrModelRouteNotConfigured = apperr.NewMasked("llm.model_route_not_configured", "model route is not configured", "model route not configured")
+	// ErrModelRouterDisabled 管理员未开放 Auto 模型路由。
+	ErrModelRouterDisabled = apperr.New("llm.model_router_disabled", "automatic model routing is disabled")
 	// ErrModelAccessDenied 当前用户无权使用此模型。
 	ErrModelAccessDenied = apperr.NewMasked("llm.model_access_denied", "you do not have access to this model", "model access denied by group policy")
 	// ErrUpstreamRequestFailed 上游请求失败。对外错误码与文案取决于上游错误特征，由 transport 按 MessageErrorCode /

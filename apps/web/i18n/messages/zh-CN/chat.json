@@ -453,6 +453,7 @@
   },
   "meta": {
     "inputTokens": "输入 tokens",
+    "autoRoutedModel": "Auto → {model}",
     "cacheReadTokens": "缓存(读) tokens",
     "reasoningTokens": "思考 tokens",
     "outputTokens": "输出 tokens",
@@ -705,6 +706,10 @@
   },
   "modelPicker": {
     "selectModel": "选择模型",
+    "auto": {
+      "label": "Auto",
+      "description": "由快速模型判断每条消息的类型，并自动选择合适的模型。"
+    },
     "empty": "暂无模型",
     "group": "分组",
     "inputModalities": {

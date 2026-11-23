@@ -453,6 +453,7 @@
   },
   "meta": {
     "inputTokens": "Input tokens",
+    "autoRoutedModel": "Auto → {model}",
     "cacheReadTokens": "Cache read tokens",
     "reasoningTokens": "Reasoning tokens",
     "outputTokens": "Output tokens",
@@ -705,6 +706,10 @@
   },
   "modelPicker": {
     "selectModel": "Select model",
+    "auto": {
+      "label": "Auto",
+      "description": "A fast model classifies each message and picks a suitable model."
+    },
     "empty": "No models",
     "group": "Group",
     "inputModalities": {

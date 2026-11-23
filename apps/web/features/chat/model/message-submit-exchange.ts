@@ -96,6 +96,7 @@ export function settleCompletedExchange(
     userPublicID: completed.userMessage.publicID,
     assistantPublicID: completed.assistantMessage.publicID,
     platformModelName: completed.assistantMessage.platformModelName?.trim() || current.platformModelName,
+    autoRouted: completed.assistantMessage.autoRouted || current.autoRouted,
     userContent: completed.userMessage.content,
     userServerMessageID: completed.userMessage.id,
     userCreatedAt: completed.userMessage.createdAt,

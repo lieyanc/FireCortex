@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/application/modelrouter"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
@@ -71,6 +72,11 @@ func (h *Handler) StreamTemporaryChatMessage(c *gin.Context) {
 		response.ErrorFrom(c, http.StatusBadRequest, errInvalidTemporaryChatMessages)
 		return
 	}
+	autoRoute, err := h.resolveTemporaryChatAutoModel(c, &input)
+	if err != nil {
+		handleSendMessageError(c, err)
+		return
+	}
 
 	session, ok := h.beginUsageSession(c, appconversation.SendMessageBillingInput{
 		UserID:            input.UserID,
@@ -111,6 +117,9 @@ func (h *Handler) StreamTemporaryChatMessage(c *gin.Context) {
 	}
 	input.OnEvent = func(eventType string, payload map[string]any) error {
 		return writeEvent(normalizeStreamEventPayload(eventType, payload))
+	}
+	if autoRoute != nil {
+		_ = input.OnEvent("routed", appconversation.AutoRouteEventPayload(*autoRoute))
 	}
 
 	result, streamErr := h.service.StreamTemporaryChat(generationCtx, input, func(delta string) error {
@@ -310,4 +319,39 @@ func (h *Handler) recordTemporaryChatAuditAsync(c *gin.Context, req TemporaryCha
 func temporaryChatSessionHash(sessionID string) string {
 	digest := sha256.Sum256([]byte(strings.TrimSpace(sessionID)))
 	return hex.EncodeToString(digest[:16])
+}
+
+// resolveTemporaryChatAutoModel 在计费预留前把 Auto 请求解析为具体模型；非 Auto 请求返回 nil。
+func (h *Handler) resolveTemporaryChatAutoModel(c *gin.Context, input *appconversation.TemporaryChatInput) (*modelrouter.Decision, error) {
+	if !strings.EqualFold(input.Model, modelrouter.AutoModelName) {
+		return nil, nil
+	}
+	if !h.service.ModelRouterEnabled() {
+		return nil, appconversation.ErrModelRouterDisabled
+	}
+	last := len(input.Messages) - 1
+	history := make([]modelrouter.HistoryMessage, 0, last)
+	for _, item := range input.Messages[:last] {
+		history = append(history, modelrouter.HistoryMessage{Role: item.Role, Content: item.Content})
+	}
+	mimeTypes := make([]string, 0, len(input.Attachments))
+	for _, attachment := range input.Attachments {
+		if attachment.MessageIndex == last {
+			mimeTypes = append(mimeTypes, attachment.MimeType)
+		}
+	}
+	decision, err := h.service.DecideAutoModel(c.Request.Context(), appconversation.AutoRouteInput{
+		UserID:              input.UserID,
+		RequestID:           input.RequestID,
+		Message:             input.Messages[last].Content,
+		History:             history,
+		AttachmentMIMETypes: mimeTypes,
+		SelectedToolIDs:     input.SelectedToolIDs,
+		Options:             input.Options,
+	})
+	if err != nil {
+		return nil, err
+	}
+	input.Model = decision.Model
+	return &decision, nil
 }

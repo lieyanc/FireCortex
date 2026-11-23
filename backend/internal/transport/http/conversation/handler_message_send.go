@@ -12,6 +12,7 @@ import (
 	"time"
 
 	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
+	"github.com/lieyanc/FireCortex/backend/internal/application/modelrouter"
 	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
@@ -145,8 +146,56 @@ func (h *Handler) parseSendMessageInput(c *gin.Context) (appconversation.SendMes
 		SourceMessagePublicID:   req.SourceMessagePublicID,
 		BranchReason:            req.BranchReason,
 	}
+	if err = h.applyAutoModelRoute(c, &input, conversation, &req); err != nil {
+		handleSendMessageError(c, err)
+		return appconversation.SendMessageInput{}, nil, nil, err
+	}
 
 	return input, conversation, &req, nil
+}
+
+// applyAutoModelRoute 在计费预留前把 Auto 请求解析为具体模型，并同步会话的 manual/auto 模式。
+// 路由关闭后，未显式选择 Auto 的 Auto 会话按上一轮模型继续，显式 Auto 请求则报错。
+func (h *Handler) applyAutoModelRoute(c *gin.Context, input *appconversation.SendMessageInput, conversation *model.Conversation, req *SendMessageRequest) error {
+	ctx := c.Request.Context()
+	explicitAuto := strings.EqualFold(strings.TrimSpace(req.Model), modelrouter.AutoModelName)
+	if !appconversation.IsAutoModelRequest(req.Model, conversation) {
+		if strings.TrimSpace(req.Model) == "" {
+			return nil
+		}
+		return h.service.SetConversationModelMode(ctx, conversation, modelrouter.ModelModeManual)
+	}
+	if !h.service.ModelRouterEnabled() {
+		if explicitAuto {
+			return appconversation.ErrModelRouterDisabled
+		}
+		return nil
+	}
+	previousModel := ""
+	if conversation.ModelMode == modelrouter.ModelModeAuto {
+		previousModel = conversation.Model
+	}
+	decision, err := h.service.DecideAutoModel(ctx, appconversation.AutoRouteInput{
+		UserID:          input.UserID,
+		ConversationID:  input.ConversationID,
+		RequestID:       input.RequestID,
+		Message:         input.Content,
+		PreviousModel:   previousModel,
+		FileIDs:         input.FileIDs,
+		SelectedToolIDs: input.SelectedToolIDs,
+		Options:         input.Options,
+	})
+	if err != nil {
+		return err
+	}
+	if err = h.service.SetConversationModelMode(ctx, conversation, modelrouter.ModelModeAuto); err != nil {
+		return err
+	}
+	req.Model = decision.Model
+	input.PlatformModelName = decision.Model
+	input.RequestedModelName = modelrouter.AutoModelName
+	input.AutoRoute = &decision
+	return nil
 }
 
 // beginUsageSession 在写入响应头前预留预算并启动续租；失败时已写出 HTTP 错误响应。

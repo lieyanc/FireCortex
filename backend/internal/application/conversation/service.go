@@ -13,6 +13,7 @@ import (
 	appcm "github.com/lieyanc/FireCortex/backend/internal/application/contentmoderation"
 	appembedding "github.com/lieyanc/FireCortex/backend/internal/application/embedding"
 	"github.com/lieyanc/FireCortex/backend/internal/application/extraction"
+	"github.com/lieyanc/FireCortex/backend/internal/application/modelrouter"
 	appstorage "github.com/lieyanc/FireCortex/backend/internal/application/objectstorage"
 	appprocessing "github.com/lieyanc/FireCortex/backend/internal/application/processing"
 	apprag "github.com/lieyanc/FireCortex/backend/internal/application/rag"
@@ -223,6 +224,10 @@ type SendMessageInput struct {
 	SourceMessagePublicID string
 	BranchReason          string
 	Cancelable            bool
+	// RequestedModelName 覆盖运行记录的请求模型；Auto 路由时为 "auto"，PlatformModelName 为路由结果。
+	RequestedModelName string
+	// AutoRoute 是本轮 Auto 路由决策，非空时在生成开始后推送 routed 事件。
+	AutoRoute *modelrouter.Decision
 	// UsageAuthorization 是请求级计费授权；提示词形状确定后据此把预算预留抬高到预估成本。
 	UsageAuthorization *domainbilling.UsageAuthorization
 	// OnEvent 用于向调用方推送中间事件（如 rag_search），流式场景使用。

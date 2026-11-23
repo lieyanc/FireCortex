@@ -122,6 +122,13 @@ export function useChatRunStream({
             assistantActivityLabel: message.trim() || t("processingAttachments"),
           }));
         },
+        onRouted: (event) => {
+          updatePendingExchange(exchangeKey, (current) => ({
+            ...current,
+            platformModelName: event.model,
+            autoRouted: true,
+          }));
+        },
         onRagSearch: (message) => {
           updatePendingExchange(exchangeKey, (current) => ({
             ...current,

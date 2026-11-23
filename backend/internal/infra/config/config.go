@@ -374,6 +374,8 @@ type Config struct {
 	ModelOptionPolicyMode        string
 	ModelOptionAllowedPaths      string
 	ModelOptionDeniedPaths       string
+	ModelRouterEnabled           bool   // 是否向用户提供 Auto 智能模型路由
+	ModelRouterPolicy            string // Auto 路由策略 JSON；空串使用内置默认策略
 	// 知识库配置
 	KnowledgeBaseEnabled bool
 	// 用户自带 Key（个人模型服务）配置
@@ -652,6 +654,8 @@ func loadPath(path string) (Config, error) {
 		ModelOptionPolicyMode:             "allowlist",
 		ModelOptionAllowedPaths:           DefaultModelOptionAllowedPathsJSON(),
 		ModelOptionDeniedPaths:            DefaultModelOptionDeniedPathsJSON(),
+		ModelRouterEnabled:                false,
+		ModelRouterPolicy:                 "",
 		KnowledgeBaseEnabled:              true,
 		PersonalProvidersMaxPerUser:       DefaultPersonalProvidersMaxPerUser,
 		DesktopDownloadEnabled:            true,

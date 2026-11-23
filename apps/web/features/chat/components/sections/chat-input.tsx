@@ -129,6 +129,7 @@ type ChatInputProps = {
   billingDisplayUsdToCnyRate: number | null;
   billingEnabled: boolean;
   selectedPlatformModelName: string;
+  autoModelAvailable?: boolean;
   availableTools: MCPToolDTO[];
   selectedToolIDs: number[];
   selectedSkills: SkillSummaryDTO[];
@@ -227,6 +228,7 @@ function ChatInputComponent({
   billingDisplayUsdToCnyRate,
   billingEnabled,
   selectedPlatformModelName,
+  autoModelAvailable = false,
   availableTools,
   selectedToolIDs,
   selectedSkills,
@@ -1282,6 +1284,7 @@ function ChatInputComponent({
                 billingDisplayUsdToCnyRate={billingDisplayUsdToCnyRate}
                 billingEnabled={billingEnabled}
                 selectedPlatformModelName={selectedPlatformModelName}
+                autoModelAvailable={autoModelAvailable}
                 loading={modelLoading}
                 disabled={modelDisabled}
                 onModelCatalogRefresh={onModelCatalogRefresh}

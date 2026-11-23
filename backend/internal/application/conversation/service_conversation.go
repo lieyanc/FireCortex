@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lieyanc/FireCortex/backend/internal/application/modelrouter"
 	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
@@ -57,6 +58,15 @@ func (s *Service) CreateConversation(ctx context.Context, userID uint, title str
 	}
 
 	normalizedModel := strings.TrimSpace(modelName)
+	modelMode := modelrouter.ModelModeManual
+	// Auto 是虚拟模型：会话只记模式，具体模型由首轮路由写入。
+	// 路由未开放时退化为未指定模型的普通会话。
+	if strings.EqualFold(normalizedModel, modelrouter.AutoModelName) {
+		normalizedModel = ""
+		if s.ModelRouterEnabled() {
+			modelMode = modelrouter.ModelModeAuto
+		}
+	}
 	var projectID *uint
 	var project *model.ConversationProject
 	if normalizedProjectID := strings.TrimSpace(projectPublicID); normalizedProjectID != "" {
@@ -69,7 +79,7 @@ func (s *Service) CreateConversation(ctx context.Context, userID uint, title str
 		}
 		project = resolvedProject
 		projectID = &project.ID
-		if normalizedModel == "" {
+		if normalizedModel == "" && modelMode == modelrouter.ModelModeManual {
 			projectDefaultModel := strings.TrimSpace(project.DefaultModel)
 			if projectDefaultModel != "" {
 				available, availabilityErr := s.isAvailableConversationProjectDefaultModel(ctx, userID, projectDefaultModel)
@@ -90,6 +100,7 @@ func (s *Service) CreateConversation(ctx context.Context, userID uint, title str
 		Title:           normalizedTitle,
 		LabelsJSON:      "[]",
 		Model:           normalizedModel,
+		ModelMode:       modelMode,
 		Provider:        inferProvider(normalizedModel),
 		SessionKey:      uuid.NewString(),
 		MessageCount:    0,

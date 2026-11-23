@@ -342,6 +342,9 @@ func (s *Service) sendMessageInternal(
 			retErr = err
 			return nil, err
 		}
+		if input.AutoRoute != nil {
+			emitEvent(input.OnEvent, "routed", AutoRouteEventPayload(*input.AutoRoute))
+		}
 		if len(input.FileIDs) > 0 {
 			emitEvent(input.OnEvent, "file_proc", map[string]any{"message": "正在处理附件…"})
 		}

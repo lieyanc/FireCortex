@@ -41,6 +41,7 @@ type TemporaryMessage = TemporaryChatHistoryMessage & {
   historyOffset: number;
   parentID?: string;
   model?: string;
+  autoRouted?: boolean;
   runID?: string;
   streaming?: boolean;
   failed?: boolean;
@@ -121,6 +122,7 @@ function toAreaMessage(message: TemporaryMessage): ChatAreaMessage {
     status: message.failed ? "failed" : message.streaming ? "processing" : "completed",
     isStreaming: message.streaming,
     platformModelName: message.model,
+    autoRouted: message.autoRouted,
     runID: message.runID,
     inputTokens: message.inputTokens,
     outputTokens: message.outputTokens,
@@ -501,6 +503,9 @@ export function useChatTemporaryRuntime({
               content: `${message.content}${delta}`,
               activityLabel: undefined,
             }));
+          },
+          onRouted: (event) => {
+            updateMessage(assistantID, (item) => ({ ...item, model: event.model, autoRouted: true }));
           },
           onRagSearch: (message) => {
             updateMessage(assistantID, (item) => ({ ...item, activityLabel: message }));

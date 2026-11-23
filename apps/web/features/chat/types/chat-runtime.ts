@@ -111,6 +111,7 @@ export type PendingExchange = {
   assistantPublicID?: string;
   runID?: string;
   platformModelName?: string;
+  autoRouted?: boolean;
   parentPublicID: string | null;
   sourcePublicID: string | null;
   branchReason: "default" | "retry" | "edit";

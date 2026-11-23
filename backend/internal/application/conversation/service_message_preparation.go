@@ -208,10 +208,7 @@ func (s *Service) persistRejectedMessageSend(
 	if runID == "" {
 		runID = "run_" + normalizePublicID(uuid.NewString())
 	}
-	requestedModelName := strings.TrimSpace(input.PlatformModelName)
-	if requestedModelName == "" {
-		requestedModelName = strings.TrimSpace(conversation.Model)
-	}
+	requestedModelName := textutil.FirstNonEmpty(input.RequestedModelName, input.PlatformModelName, conversation.Model)
 	run := &model.Run{
 		RunID:              runID,
 		RequestID:          strings.TrimSpace(input.RequestID),

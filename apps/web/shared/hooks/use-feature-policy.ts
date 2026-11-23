@@ -7,6 +7,7 @@ import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
 
 const DEFAULT_FEATURE_POLICY: FeaturePolicy = {
   knowledgeBaseEnabled: true,
+  modelRouterEnabled: false,
   processTraceEnabled: true,
   desktopDownloadEnabled: true,
   desktopDownloadURL: DEFAULT_DESKTOP_DOWNLOAD_URL,

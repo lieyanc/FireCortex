@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	appadmin "github.com/lieyanc/FireCortex/backend/internal/application/admin"
 	appembedding "github.com/lieyanc/FireCortex/backend/internal/application/embedding"
 	appruntime "github.com/lieyanc/FireCortex/backend/internal/application/runtime"
@@ -17,7 +18,6 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/shared/nativetool"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 const runtimeActionTimeout = 5 * time.Minute
@@ -309,6 +309,7 @@ func (h *Handler) GetFeaturePolicy(c *gin.Context) {
 func featurePolicyResponse(cfg config.Config) FeaturePolicyResponse {
 	resp := FeaturePolicyResponse{
 		KnowledgeBaseEnabled: cfg.KnowledgeBaseEnabled,
+		ModelRouterEnabled:   cfg.ModelRouterEnabled,
 		ProcessTraceEnabled:  cfg.ProcessTraceEnabled,
 	}
 	downloadURL := strings.TrimSpace(cfg.DesktopDownloadURL)

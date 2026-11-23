@@ -97,7 +97,7 @@ func newMessageSendRunState(
 			UpstreamID:         0,
 			UpstreamModelID:    0,
 			UpstreamName:       "",
-			RequestedModelName: strings.TrimSpace(conversation.Model),
+			RequestedModelName: textutil.FirstNonEmpty(input.RequestedModelName, conversation.Model),
 			PlatformModelName:  "",
 			RoutedBindingCode:  "",
 			ModelVendor:        "",

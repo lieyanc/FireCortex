@@ -211,6 +211,7 @@ export function mapServerMessage(
     status: item.status || "success",
     runID: runID || undefined,
     platformModelName: item.platformModelName?.trim() || undefined,
+    autoRouted: item.autoRouted || undefined,
     serverMessageID: item.id,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,

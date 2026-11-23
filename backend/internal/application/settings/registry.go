@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/lieyanc/FireCortex/backend/internal/application/extraction"
+	"github.com/lieyanc/FireCortex/backend/internal/application/modelrouter"
 	domainsettings "github.com/lieyanc/FireCortex/backend/internal/domain/settings"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	extractionport "github.com/lieyanc/FireCortex/backend/internal/ports/extraction"
@@ -159,6 +160,10 @@ var settingSpecs = []settingSpec{
 		Validate: validateModelOptionPathsJSON, Apply: applyField(func(c *config.Config) *string { return &c.ModelOptionAllowedPaths }, rawText)},
 	{Namespace: "chat", Key: "model_option_denied_paths", ValueType: "json", Default: config.DefaultModelOptionDeniedPathsJSON(), Description: "模型 options 黑名单路径 JSON，default 对所有协议生效",
 		Validate: validateModelOptionPathsJSON, Apply: applyField(func(c *config.Config) *string { return &c.ModelOptionDeniedPaths }, rawText)},
+	{Namespace: "chat", Key: "model_router_enabled", ValueType: "bool", Default: "false", Description: "是否向用户提供 Auto 智能模型路由：由快速模型分类请求后选择聊天模型",
+		Validate: boolValue(), Apply: applyField(func(c *config.Config) *bool { return &c.ModelRouterEnabled }, toBool)},
+	{Namespace: "chat", Key: "model_router_policy", ValueType: "json", Default: modelrouter.DefaultPolicyJSON(), Description: "Auto 路由策略 JSON：分类模型、超时、类别与类别到模型的映射规则",
+		Validate: validateModelRouterPolicyJSON, Apply: applyField(func(c *config.Config) *string { return &c.ModelRouterPolicy }, rawText)},
 
 	// 知识库配置
 	{Namespace: "knowledgebase", Key: "enabled", ValueType: "bool", Default: "true", Description: "是否启用知识库功能；关闭后隐藏用户侧入口并拒绝知识库请求",

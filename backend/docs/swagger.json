@@ -22051,6 +22051,7 @@
                 "lastShareAccessedAt",
                 "messageCount",
                 "model",
+                "modelMode",
                 "projectID",
                 "projectName",
                 "provider",
@@ -22096,6 +22097,13 @@
                 },
                 "model": {
                     "type": "string"
+                },
+                "modelMode": {
+                    "type": "string",
+                    "enum": [
+                        "manual",
+                        "auto"
+                    ]
                 },
                 "projectID": {
                     "type": "string"
@@ -23784,6 +23792,7 @@
                 "desktopDownloadEnabled",
                 "desktopDownloadURL",
                 "knowledgeBaseEnabled",
+                "modelRouterEnabled",
                 "processTraceEnabled"
             ],
             "properties": {
@@ -23796,6 +23805,9 @@
                     "type": "string"
                 },
                 "knowledgeBaseEnabled": {
+                    "type": "boolean"
+                },
+                "modelRouterEnabled": {
                     "type": "boolean"
                 },
                 "processTraceEnabled": {
@@ -25961,6 +25973,7 @@
             "type": "object",
             "required": [
                 "attachments",
+                "autoRouted",
                 "branchReason",
                 "cacheReadTokens",
                 "cacheWriteTokens",
@@ -26000,6 +26013,9 @@
             "properties": {
                 "attachments": {
                     "type": "string"
+                },
+                "autoRouted": {
+                    "type": "boolean"
                 },
                 "billingCost": {
                     "$ref": "#/definitions/MessageBillingCostResponse"

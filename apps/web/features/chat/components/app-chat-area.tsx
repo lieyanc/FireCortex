@@ -61,6 +61,7 @@ import { useAuthSession } from "@/shared/auth/auth-session-context";
 import { DeleteFilesOption } from "@/entities/file";
 import { hasMultipleImageAttachmentProcessors, normalizeImageAttachmentProcessorSelection } from "@/entities/mcp";
 import { resolveChatContentWidthClassName } from "@/entities/user-settings";
+import { useFeaturePolicy } from "@/shared/hooks/use-feature-policy";
 
 const EMPTY_CONVERSATION_OPTIONS: ConversationOptions = {};
 const EMPTY_LIST: never[] = [];
@@ -139,6 +140,7 @@ export function AppChatArea() {
     loaded: chatPreferencesLoaded,
     reuseModelOptions,
   } = useSettingsChatPreferences();
+  const { modelRouterEnabled } = useFeaturePolicy();
   const items = useSidebarConversationField("items");
   const projects = useSidebarConversationField("projects");
   const projectsLoading = useSidebarConversationField("projectsLoading");
@@ -239,6 +241,8 @@ export function AppChatArea() {
   } = useChatModelOptions({
     conversationPublicID: conversationID,
     conversationModel: currentConversation?.model ?? null,
+    conversationModelMode: currentConversation?.modelMode ?? null,
+    modelRouterEnabled,
     newConversationDefaultModel: newConversationProject?.defaultModel ?? "",
     newConversationDefaultsPending,
     resetToken: newConversationRevision,
@@ -778,6 +782,7 @@ export function AppChatArea() {
     billingDisplayUsdToCnyRate,
     billingEnabled,
     selectedPlatformModelName,
+    autoModelAvailable: modelRouterEnabled,
     availableTools: temporaryMode ? temporaryAvailableTools : availableTools,
     selectedToolIDs: temporaryMode ? temporarySelectedToolIDs : selectedToolIDs,
     selectedSkills,

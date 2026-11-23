@@ -1088,6 +1088,7 @@ export interface ConversationResponse {
   lastShareAccessedAt: string | null;
   messageCount: number;
   model: string;
+  modelMode: "manual" | "auto";
   projectID: string;
   projectName: string;
   provider: string;
@@ -1718,6 +1719,7 @@ export interface FeaturePolicyResponse {
   /** DesktopDownloadURL 为桌面端下载页地址；入口关闭时为空串。 */
   desktopDownloadURL: string;
   knowledgeBaseEnabled: boolean;
+  modelRouterEnabled: boolean;
   processTraceEnabled: boolean;
 }
 
@@ -2392,6 +2394,7 @@ export interface MessagePromptTraceSourceResponse {
 
 export interface MessageResponse {
   attachments: string;
+  autoRouted: boolean;
   billingCost?: MessageBillingCostResponse;
   branchReason: string;
   cacheReadTokens: number;

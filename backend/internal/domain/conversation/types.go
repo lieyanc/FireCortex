@@ -20,6 +20,8 @@ type Conversation struct {
 	LabelsJSON            string
 	LabelsManuallyManaged bool
 	Model                 string
+	// ModelMode 为 manual 或 auto；auto 时 Model 记录最近一次路由选中的模型。
+	ModelMode             string
 	Provider              string
 	SessionKey            string
 	IsStarred             bool

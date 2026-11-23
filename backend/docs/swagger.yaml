@@ -2629,6 +2629,11 @@ definitions:
         type: integer
       model:
         type: string
+      modelMode:
+        enum:
+        - manual
+        - auto
+        type: string
       projectID:
         type: string
       projectName:
@@ -2669,6 +2674,7 @@ definitions:
     - lastShareAccessedAt
     - messageCount
     - model
+    - modelMode
     - projectID
     - projectName
     - provider
@@ -3847,12 +3853,15 @@ definitions:
         type: string
       knowledgeBaseEnabled:
         type: boolean
+      modelRouterEnabled:
+        type: boolean
       processTraceEnabled:
         type: boolean
     required:
     - desktopDownloadEnabled
     - desktopDownloadURL
     - knowledgeBaseEnabled
+    - modelRouterEnabled
     - processTraceEnabled
     type: object
   FeaturePolicyResponseDoc:
@@ -5361,6 +5370,8 @@ definitions:
     properties:
       attachments:
         type: string
+      autoRouted:
+        type: boolean
       billingCost:
         $ref: '#/definitions/MessageBillingCostResponse'
       branchReason:
@@ -5467,6 +5478,7 @@ definitions:
         type: integer
     required:
     - attachments
+    - autoRouted
     - branchReason
     - cacheReadTokens
     - cacheWriteTokens

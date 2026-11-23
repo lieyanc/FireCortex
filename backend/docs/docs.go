@@ -22058,6 +22058,7 @@ const docTemplate = `{
                 "lastShareAccessedAt",
                 "messageCount",
                 "model",
+                "modelMode",
                 "projectID",
                 "projectName",
                 "provider",
@@ -22103,6 +22104,13 @@ const docTemplate = `{
                 },
                 "model": {
                     "type": "string"
+                },
+                "modelMode": {
+                    "type": "string",
+                    "enum": [
+                        "manual",
+                        "auto"
+                    ]
                 },
                 "projectID": {
                     "type": "string"
@@ -23791,6 +23799,7 @@ const docTemplate = `{
                 "desktopDownloadEnabled",
                 "desktopDownloadURL",
                 "knowledgeBaseEnabled",
+                "modelRouterEnabled",
                 "processTraceEnabled"
             ],
             "properties": {
@@ -23803,6 +23812,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "knowledgeBaseEnabled": {
+                    "type": "boolean"
+                },
+                "modelRouterEnabled": {
                     "type": "boolean"
                 },
                 "processTraceEnabled": {
@@ -25968,6 +25980,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "attachments",
+                "autoRouted",
                 "branchReason",
                 "cacheReadTokens",
                 "cacheWriteTokens",
@@ -26007,6 +26020,9 @@ const docTemplate = `{
             "properties": {
                 "attachments": {
                     "type": "string"
+                },
+                "autoRouted": {
+                    "type": "boolean"
                 },
                 "billingCost": {
                     "$ref": "#/definitions/MessageBillingCostResponse"

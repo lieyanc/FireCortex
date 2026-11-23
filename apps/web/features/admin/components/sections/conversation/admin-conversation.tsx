@@ -388,6 +388,10 @@ export function AdminConversationPage() {
     () => visibleConversationSettingsFields.filter((field) => field.section === "contextManagement"),
     [visibleConversationSettingsFields],
   );
+  const modelRouterFields = React.useMemo(
+    () => visibleConversationSettingsFields.filter((field) => field.section === "modelRouter"),
+    [visibleConversationSettingsFields],
+  );
   const modelOptionFields = React.useMemo(
     () => visibleConversationSettingsFields.filter(isModelOptionPolicyField),
     [visibleConversationSettingsFields],
@@ -427,6 +431,10 @@ export function AdminConversationPage() {
   const modelOptionActions = renderSaveAction(modelOptionFields);
   const contextManagementActions = renderSaveAction(contextManagementFields);
   const conversationActions = renderSaveAction(conversationFields);
+  // 关闭开关时策略字段被隐藏，但仍需随开关一起保存其未提交的修改。
+  const modelRouterActions = renderSaveAction(
+    conversationSettingsFields.filter((field) => field.section === "modelRouter"),
+  );
 
   function renderField(
     field: ConversationSettingsField,
@@ -507,6 +515,14 @@ export function AdminConversationPage() {
       <SettingsSection title={t("sections.contextManagement")} actions={contextManagementActions}>
         <SettingsFieldList>
           {contextManagementFields.map((field, index) => renderField(field, index, { inset: Boolean(field.subgroupKey) }))}
+        </SettingsFieldList>
+      </SettingsSection>
+
+      <SettingsSectionSeparator />
+
+      <SettingsSection title={t("sections.modelRouter")} actions={modelRouterActions}>
+        <SettingsFieldList>
+          {modelRouterFields.map((field, index) => renderField(field, index, { animateLayout: false }))}
         </SettingsFieldList>
       </SettingsSection>
 

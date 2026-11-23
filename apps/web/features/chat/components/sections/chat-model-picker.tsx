@@ -2,7 +2,7 @@
 
 import { AnimatePresence, useReducedMotion } from "motion/react";
 import * as React from "react";
-import { ArrowRight, AudioLines, Check, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign, FileText, Image as ImageIcon, KeyRound, TicketSlash, Type, Video } from "lucide-react";
+import { ArrowRight, AudioLines, Check, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign, FileText, Image as ImageIcon, KeyRound, Sparkles, TicketSlash, Type, Video } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { InputGroupButton } from "@/components/ui/input-group";
+import { AUTO_MODEL_NAME, isAutoModelName } from "@/features/chat/model/auto-model";
 import type { ChatModelOption, ModelModality } from "@/features/chat/types/chat-runtime";
 import { useChatPopoverAlignOffset } from "@/features/chat/hooks/use-chat-popover-align-offset";
 import {
@@ -48,6 +49,7 @@ type ChatModelPickerProps = {
   /** False in self-hosted mode, where no model shows a price. */
   billingEnabled: boolean;
   selectedPlatformModelName: string;
+  autoModelAvailable?: boolean;
   loading: boolean;
   disabled: boolean;
   onModelCatalogRefresh?: () => void | Promise<void>;
@@ -126,6 +128,46 @@ function ChatModelIdentity({ model }: { model: ChatModelOption }) {
       <ModelIcon iconUrl={iconURL} label={platformModelName} />
       <p className="min-w-0 flex-1 truncate text-[12.5px] font-medium leading-4 text-foreground">{platformModelName}</p>
     </div>
+  );
+}
+
+function AutoModelIdentity({ label }: { label: string }) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <Sparkles className="size-4 shrink-0 text-muted-foreground" strokeWidth={1.8} />
+      <p className="truncate text-[12.5px] font-medium leading-4 text-foreground">{label}</p>
+    </div>
+  );
+}
+
+function AutoModelMenuItem({
+  label,
+  description,
+  selected,
+  onSelect,
+  buttonRef,
+}: {
+  label: string;
+  description: string;
+  selected: boolean;
+  onSelect: () => void;
+  buttonRef?: React.Ref<HTMLButtonElement>;
+}) {
+  return (
+    <button
+      ref={buttonRef}
+      type="button"
+      data-selected={selected}
+      title={description}
+      className="flex h-7 w-full shrink-0 items-center gap-2 rounded-md px-2 py-0 text-left text-[11px] font-medium text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground"
+      onClick={onSelect}
+    >
+      <Sparkles className="size-4 shrink-0" strokeWidth={1.8} />
+      <span className="min-w-0 flex-1 truncate leading-4">{label}</span>
+      <span className="flex size-3 shrink-0 items-center justify-center">
+        {selected ? <Check className="size-3 text-current" strokeWidth={1.7} /> : null}
+      </span>
+    </button>
   );
 }
 
@@ -880,6 +922,7 @@ export function ChatModelPicker({
   billingDisplayUsdToCnyRate,
   billingEnabled,
   selectedPlatformModelName,
+  autoModelAvailable = false,
   loading,
   disabled,
   onModelCatalogRefresh,
@@ -935,7 +978,8 @@ export function ChatModelPicker({
     [selectedModel],
   );
   const selectedGroupKey = selectedPresentation?.key ?? "";
-  const selectedGroupLabel = selectedPresentation?.label ?? "";
+  const autoSelected = isAutoModelName(selectedPlatformModelName);
+  const selectedGroupLabel = autoSelected ? t("auto.label") : selectedPresentation?.label ?? "";
   const modelGroups = React.useMemo(() => resolveModelGroups(modelOptions), [modelOptions]);
   // Counts share one width, so the badges in front of them line up whatever the digit count.
   const groupCountStyle = React.useMemo<React.CSSProperties>(
@@ -1093,7 +1137,7 @@ export function ChatModelPicker({
       triggerTop: triggerRect?.top,
       triggerBottom: triggerRect?.bottom,
       sideOffset: DESKTOP_MODEL_MENU_SIDE_OFFSET,
-      verticalChrome: DESKTOP_GROUP_MENU_VERTICAL_CHROME,
+      verticalChrome: DESKTOP_GROUP_MENU_VERTICAL_CHROME + (autoModelAvailable ? 28 : 0),
     });
 
     let nextSubmenuTop = 0;
@@ -1198,7 +1242,7 @@ export function ChatModelPicker({
     setDesktopSubmenuWidth(nextSubmenuWidth);
     setDesktopGroupListMaxHeight(nextGroupListMaxHeight);
     setDesktopSubmenuListMaxHeight(nextSubmenuListMaxHeight);
-  }, [activeDesktopGroup, hasDesktopModelSubmenu, isMobile, open, setDetailLayout]);
+  }, [autoModelAvailable, activeDesktopGroup, hasDesktopModelSubmenu, isMobile, open, setDetailLayout]);
 
   React.useLayoutEffect(() => {
     updateDesktopSubmenuMetrics();
@@ -1284,6 +1328,20 @@ export function ChatModelPicker({
     handleOpenChange(false);
   }, [handleOpenChange]);
 
+  const selectAutoModel = React.useCallback(() => {
+    onModelChange(AUTO_MODEL_NAME);
+    closeMenu();
+  }, [closeMenu, onModelChange]);
+  const autoMenuItem = autoModelAvailable ? (
+    <AutoModelMenuItem
+      label={t("auto.label")}
+      description={t("auto.description")}
+      selected={autoSelected}
+      onSelect={selectAutoModel}
+      buttonRef={autoSelected ? selectedModelButtonRef : undefined}
+    />
+  ) : null;
+
   const selectDesktopGroup = React.useCallback((groupKey: string) => {
     if (groupKey === activeDesktopGroupKey) {
       return;
@@ -1307,6 +1365,8 @@ export function ChatModelPicker({
             >
               {loading ? (
                 <ChatModelTriggerSkeleton />
+              ) : autoSelected ? (
+                <AutoModelIdentity label={t("auto.label")} />
               ) : selectedModel ? (
                 <ChatModelIdentity model={selectedModel} />
               ) : selectedPlatformModelName.trim() ? (
@@ -1366,6 +1426,7 @@ export function ChatModelPicker({
                     {mobileGroup ? mobileGroup.label : selectedGroupLabel}
                   </span>
                 </div>
+                {!mobileGroup ? autoMenuItem : null}
                 {modelGroups.length === 0 ? (
                   <div className="px-2 py-3 text-[11px] leading-4 text-muted-foreground">
                     {t("empty")}
@@ -1543,6 +1604,7 @@ export function ChatModelPicker({
                       {selectedGroupLabel}
                     </span>
                   </div>
+                  {autoMenuItem}
                   {modelGroups.length === 0 ? (
                     <div className="px-2 py-3 text-[11px] leading-4 text-muted-foreground">
                       {t("empty")}

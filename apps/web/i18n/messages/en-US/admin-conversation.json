@@ -3,6 +3,7 @@
     "conversation": "Conversation settings",
     "contextManagement": "Context management",
     "optionPassthrough": "Option passthrough",
+    "modelRouter": "Auto model routing",
     "dataExport": "Data export"
   },
   "defaultModel": {
@@ -126,7 +127,15 @@
       "label": "Label generation prompt",
       "description": "The model must return JSON: '{' \"labels\": [\"label1\", \"label2\"] '}'. Supports the '{{MESSAGES}}' placeholder."
     },
-    "defaultPromptPlaceholder": "Leave empty to use the built-in default prompt"
+    "defaultPromptPlaceholder": "Leave empty to use the built-in default prompt",
+    "modelRouterEnabled": {
+      "label": "Auto model routing",
+      "description": "Show an \"Auto\" option in the model picker. Each turn is checked against hard constraints (images, tools, context length), classified by a fast model, and sent to the mapped model. Classification calls are billed as the model_router basic service."
+    },
+    "modelRouterPolicy": {
+      "label": "Routing policy",
+      "description": "JSON policy. routerModel is the fast classifier model (empty follows the conversation task model); timeoutMs is the classification timeout, after which the previous or default model is used; defaultModels are tried when no rule matches; rules map a category and optional difficulty (easy, medium, hard) to an ordered list of models. With no rules, the classifier is skipped."
+    }
   },
   "preview": {
     "title": "Live preview",

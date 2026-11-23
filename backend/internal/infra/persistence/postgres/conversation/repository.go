@@ -870,6 +870,15 @@ func (r *Repo) UpdateConversationModel(ctx context.Context, conversationID uint,
 		Error)
 }
 
+// UpdateConversationModelMode 更新会话的模型选择模式（manual/auto）。
+func (r *Repo) UpdateConversationModelMode(ctx context.Context, conversationID uint, modelMode string) error {
+	return dberror.Translate(r.db.WithContext(ctx).
+		Model(&models.Conversation{}).
+		Where("id = ?", conversationID).
+		Update("model_mode", modelMode).
+		Error)
+}
+
 // ListAllConversationsAfterID 按主键游标分页列出会话（管理员导出用）。
 func (r *Repo) ListAllConversationsAfterID(ctx context.Context, afterID uint, limit int) ([]domainconversation.Conversation, error) {
 	var rows []models.Conversation
@@ -3839,6 +3848,7 @@ func toConversationDomain(item models.Conversation) domainconversation.Conversat
 		LabelsJSON:            labelsJSON,
 		LabelsManuallyManaged: item.LabelsManuallyManaged,
 		Model:                 item.Model,
+		ModelMode:             item.ModelMode,
 		Provider:              item.Provider,
 		SessionKey:            item.SessionKey,
 		IsStarred:             item.IsStarred,
@@ -3897,6 +3907,7 @@ func toConversationModel(item *domainconversation.Conversation) models.Conversat
 		LabelsJSON:            labelsJSON,
 		LabelsManuallyManaged: item.LabelsManuallyManaged,
 		Model:                 item.Model,
+		ModelMode:             item.ModelMode,
 		Provider:              item.Provider,
 		SessionKey:            item.SessionKey,
 		IsStarred:             item.IsStarred,

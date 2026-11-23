@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import * as React from "react";
+import { AUTO_MODEL_NAME, isAutoModelName } from "@/features/chat/model/auto-model";
 import { sanitizeConversationOptions } from "@/features/chat/model/conversation-options";
 import {
   type ChatModelOption,
@@ -395,12 +396,16 @@ function parseModalities(value: unknown): ModelModality[] {
 export function useChatModelOptions({
   conversationPublicID,
   conversationModel,
+  conversationModelMode,
+  modelRouterEnabled = false,
   newConversationDefaultModel,
   newConversationDefaultsPending = false,
   resetToken,
 }: {
   conversationPublicID: string | null;
   conversationModel?: string | null;
+  conversationModelMode?: string | null;
+  modelRouterEnabled?: boolean;
   newConversationDefaultModel?: string | null;
   newConversationDefaultsPending?: boolean;
   resetToken?: number;
@@ -562,7 +567,9 @@ export function useChatModelOptions({
       userSelectedModelRef.current = false;
     }
 
-    const fallbackModel = conversationModel?.trim() || "";
+    // Auto 会话恢复为 Auto 选项；路由关闭后退回上一轮实际使用的模型。
+    const autoMode = modelRouterEnabled && conversationModelMode === "auto";
+    const fallbackModel = autoMode ? AUTO_MODEL_NAME : conversationModel?.trim() || "";
     if (!userSelectedModelRef.current) {
       setSelectedPlatformModelName(fallbackModel);
     }
@@ -585,7 +592,11 @@ export function useChatModelOptions({
         return;
       }
 
-      const latestRunModel = runs.results[0]?.platformModelName?.trim() || "";
+      const latestRun = runs.results[0];
+      const latestRunModel =
+        modelRouterEnabled && isAutoModelName(latestRun?.requestedModelName)
+          ? AUTO_MODEL_NAME
+          : latestRun?.platformModelName?.trim() || "";
       setSelectedPlatformModelName(latestRunModel || fallbackModel);
     }
 
@@ -594,7 +605,7 @@ export function useChatModelOptions({
     return () => {
       cancelled = true;
     };
-  }, [conversationModel, conversationPublicID, resetToken]);
+  }, [conversationModel, conversationModelMode, conversationPublicID, modelRouterEnabled, resetToken]);
 
   React.useEffect(() => {
     if (availableModels.length === 0) {
@@ -650,6 +661,15 @@ export function useChatModelOptions({
       cancelled = true;
     };
   }, [availableModels, conversationPublicID, newConversationDefaultModel, newConversationDefaultsPending, resetToken, userDefaultModel]);
+
+  React.useEffect(() => {
+    // 管理员关闭 Auto 路由后，已选中的 Auto 退回会话模型或首个可用模型。
+    if (modelRouterEnabled || !isAutoModelName(selectedPlatformModelName) || availableModels.length === 0) {
+      return;
+    }
+    const fallbackModel = conversationModel?.trim() || availableModels[0]?.platformModelName || "";
+    setSelectedPlatformModelName(fallbackModel);
+  }, [availableModels, conversationModel, modelRouterEnabled, selectedPlatformModelName]);
 
   const modelOptions = React.useMemo<ChatModelOption[]>(
     () =>

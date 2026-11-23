@@ -8,6 +8,7 @@ import (
 
 	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
 	appembedding "github.com/lieyanc/FireCortex/backend/internal/application/embedding"
+	"github.com/lieyanc/FireCortex/backend/internal/application/modelrouter"
 	appprocessing "github.com/lieyanc/FireCortex/backend/internal/application/processing"
 	appupload "github.com/lieyanc/FireCortex/backend/internal/application/upload"
 	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
@@ -24,6 +25,7 @@ type ConversationResponse struct {
 	Title               string     `json:"title"`
 	LabelsJSON          string     `json:"labelsJSON"`
 	Model               string     `json:"model"`
+	ModelMode           string     `json:"modelMode" enums:"manual,auto"`
 	Provider            string     `json:"provider"`
 	SessionKey          string     `json:"sessionKey"`
 	IsStarred           bool       `json:"isStarred"`
@@ -93,6 +95,13 @@ type ConversationDefaultModelCandidateResponse struct {
 	UsedAt            *time.Time `json:"usedAt" extensions:"x-nullable,!x-omitempty"`
 }
 
+func conversationModelMode(mode string) string {
+	if mode == modelrouter.ModelModeAuto {
+		return modelrouter.ModelModeAuto
+	}
+	return modelrouter.ModelModeManual
+}
+
 func toConversationResponse(item *model.Conversation) ConversationResponse {
 	labelsJSON := strings.TrimSpace(item.LabelsJSON)
 	if labelsJSON == "" || labelsJSON == "null" {
@@ -110,6 +119,7 @@ func toConversationResponse(item *model.Conversation) ConversationResponse {
 		Title:               item.Title,
 		LabelsJSON:          labelsJSON,
 		Model:               item.Model,
+		ModelMode:           conversationModelMode(item.ModelMode),
 		Provider:            item.Provider,
 		SessionKey:          item.SessionKey,
 		IsStarred:           item.IsStarred,
@@ -895,6 +905,7 @@ type MessageResponse struct {
 	EditedAt         *time.Time                       `json:"editedAt" extensions:"x-nullable,!x-omitempty"`
 	CreatedAt        time.Time                        `json:"createdAt"`
 	UpdatedAt        time.Time                        `json:"updatedAt"`
+	AutoRouted       bool                             `json:"autoRouted"`
 }
 
 // MessageModerationResponse 向客户端暴露软审核状态。
@@ -1092,7 +1103,8 @@ func toMessageResponseWithRun(m model.Message, run model.Run) MessageResponse {
 
 func toMessageResponseWithRunAndFallback(m model.Message, run model.Run, fallbackModel string) MessageResponse {
 	platformModelName := strings.TrimSpace(run.PlatformModelName)
-	if platformModelName == "" {
+	autoRouted := strings.EqualFold(strings.TrimSpace(run.RequestedModelName), modelrouter.AutoModelName)
+	if platformModelName == "" && !autoRouted {
 		platformModelName = strings.TrimSpace(run.RequestedModelName)
 	}
 	if platformModelName == "" {
@@ -1140,6 +1152,7 @@ func toMessageResponseWithRunAndFallback(m model.Message, run model.Run, fallbac
 		UpstreamModelName: strings.TrimSpace(run.UpstreamModelName),
 		ModelVendor:       strings.TrimSpace(run.ModelVendor),
 		ModelIcon:         strings.TrimSpace(run.ModelIcon),
+		AutoRouted:        autoRouted,
 		ParentPublicID:    m.ParentPublicID,
 		SourcePublicID:    m.SourcePublicID,
 		MyFeedback:        m.MyFeedback,

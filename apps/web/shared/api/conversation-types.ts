@@ -294,6 +294,15 @@ export type TemporaryChatMessageRequest = Omit<ContractTemporaryChatMessageReque
 
 export type StreamMessageEvent =
   | {
+      type: "routed";
+      seq?: number;
+      model: string;
+      source: string;
+      category?: string;
+      difficulty?: string;
+      reason?: string;
+    }
+  | {
       type: "file_proc";
       seq?: number;
       message: string;

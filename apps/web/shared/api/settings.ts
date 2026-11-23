@@ -21,6 +21,7 @@ export type ChatContextPolicy = {
 export const DEFAULT_DESKTOP_DOWNLOAD_URL = "https://github.com/lieyanc/FireCortex";
 
 export type FeaturePolicy = {
+  modelRouterEnabled: boolean;
   knowledgeBaseEnabled: boolean;
   processTraceEnabled: boolean;
   /** Whether the web user menu offers the desktop app download entry. */
@@ -80,6 +81,8 @@ function parseFeaturePolicy(data: unknown): Partial<FeaturePolicy> {
   const policy: Partial<FeaturePolicy> = {};
   const knowledgeBaseEnabled = readBoolean(data, "knowledgeBaseEnabled");
   if (knowledgeBaseEnabled !== undefined) policy.knowledgeBaseEnabled = knowledgeBaseEnabled;
+  const modelRouterEnabled = readBoolean(data, "modelRouterEnabled");
+  if (modelRouterEnabled !== undefined) policy.modelRouterEnabled = modelRouterEnabled;
   const processTraceEnabled = readBoolean(data, "processTraceEnabled");
   if (processTraceEnabled !== undefined) policy.processTraceEnabled = processTraceEnabled;
   const desktopDownloadEnabled = readBoolean(data, "desktopDownloadEnabled");

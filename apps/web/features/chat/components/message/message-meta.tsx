@@ -64,6 +64,7 @@ const META_ACTION_BUTTON_CLASSNAME =
 
 type ChatMetaMessage = {
   publicID: string;
+  autoRouted?: boolean;
   parentPublicID?: string | null;
   status?: string;
   createdAt?: string;
@@ -554,12 +555,13 @@ function EditedBadge({ messageRole = "assistant" }: { messageRole?: "user" | "as
   );
 }
 
-function ModelBadge({ label }: { label: string }) {
+function ModelBadge({ label, autoRouted = false }: { label: string; autoRouted?: boolean }) {
   const t = useTranslations("chat.meta");
-  const normalized = label.trim();
-  if (!normalized) {
+  const modelName = label.trim();
+  if (!modelName) {
     return null;
   }
+  const normalized = autoRouted ? t("autoRoutedModel", { model: modelName }) : modelName;
 
   return (
     <Tooltip>
@@ -1106,7 +1108,7 @@ export function AssistantMessageMeta({
       <div className="flex min-w-0 max-w-full flex-col items-start gap-1.5 pt-0.5">
         {hasDetailBadges ? (
           <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1">
-            {showModelInfo ? <ModelBadge label={resolveModelOptionLabel(item.platformModelName ?? "")} /> : null}
+            {showModelInfo ? <ModelBadge label={resolveModelOptionLabel(item.platformModelName ?? "")} autoRouted={item.autoRouted} /> : null}
             {showTokenUsage ? (
               <TokenBadge
                 inputTokens={item.inputTokens}

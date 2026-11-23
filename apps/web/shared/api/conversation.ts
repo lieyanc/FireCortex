@@ -324,6 +324,11 @@ function handleStreamEvent(event: ParsedStreamEvent, options: ConversationStream
     options.onEventSeq?.(seq);
   }
 
+  if (event.type === "routed") {
+    options.onRouted?.(event);
+    return null;
+  }
+
   if (event.type === "file_proc") {
     options.onFileProc?.(event.message);
     return null;
@@ -1296,6 +1301,7 @@ export type ConversationStreamOptions = {
   onEventSeq?: (seq: number) => void;
   onDelta?: (delta: string) => void;
   onTextSnapshot?: (content: string) => void;
+  onRouted?: (event: Extract<StreamMessageEvent, { type: "routed" }>) => void;
   onFileProc?: (message: string) => void;
   onRagSearch?: (message: string) => void;
   onMediaStatus?: (event: Extract<StreamMessageEvent, { type: "media_status" }>) => void;

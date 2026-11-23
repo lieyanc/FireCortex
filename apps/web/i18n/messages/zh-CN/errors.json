@@ -241,6 +241,7 @@
     "invalidProtocolDefaultsConfig": "协议默认配置无效。",
     "modelAccessDenied": "当前权限组无权使用此模型。",
     "modelRouteNotConfigured": "模型路由未配置。",
+    "modelRouterDisabled": "自动模型路由未开启，请手动选择模型。",
     "modelIconInvalid": "模型图标引用无效，请使用内置图标名称、上传图标或 http(s) 图片 URL。",
     "modelIconFileInvalid": "图标文件无效，仅支持 PNG、JPEG 或 WebP。",
     "modelIconFileTooLarge": "图标文件不能超过 1 MiB。",

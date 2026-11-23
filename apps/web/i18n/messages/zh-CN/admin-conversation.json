@@ -3,6 +3,7 @@
     "conversation": "会话配置",
     "contextManagement": "上下文管理",
     "optionPassthrough": "参数透传",
+    "modelRouter": "自动模型路由",
     "dataExport": "数据导出"
   },
   "defaultModel": {
@@ -126,7 +127,15 @@
       "label": "生成标签提示词",
       "description": "模型需返回 JSON：'{' \"labels\": [\"标签1\", \"标签2\"] '}'。支持 '{{MESSAGES}}' 占位符。"
     },
-    "defaultPromptPlaceholder": "留空使用内置默认提示词"
+    "defaultPromptPlaceholder": "留空使用内置默认提示词",
+    "modelRouterEnabled": {
+      "label": "自动模型路由",
+      "description": "在模型选择器中显示“自动”选项。每轮先按硬约束（图片、工具、上下文长度）过滤候选模型，再由快速模型分类并映射到对应模型。分类调用按基础服务 model_router 计费。"
+    },
+    "modelRouterPolicy": {
+      "label": "路由策略",
+      "description": "JSON 策略。routerModel 为执行分类的快速模型（留空跟随会话任务模型）；timeoutMs 为分类超时，超时后沿用上一轮或默认模型；defaultModels 在无规则命中时依次尝试；rules 把类别与可选难度（easy、medium、hard）映射到按优先级排列的模型列表。未配置规则时跳过分类调用。"
+    }
   },
   "preview": {
     "title": "实时预览",
