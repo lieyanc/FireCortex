@@ -371,6 +371,7 @@
     "invalidImageIndex": "图片索引无效。",
     "invalidImportCreditMultiplier": "导入计费倍率无效。",
     "invalidImportDsn": "导入数据源无效。",
+    "invalidImportRecentDays": "导入天数范围无效，请输入 1 到 36500 之间的整数。",
     "invalidLocationPayload": "位置数据无效。",
     "invalidLogCleanupBefore": "日志清理截止时间无效。",
     "invalidLogCleanupType": "日志清理类型无效。",

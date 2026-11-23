@@ -15,6 +15,8 @@ import type {
   AdminRapidOCRRuntimeView,
   AdminTesseractRuntimeView,
   AdminTikaRuntimeView,
+  ImportOpenWebUIConversationsData,
+  ImportOpenWebUIConversationsRequest,
 } from "@/features/admin/api/admin-types";
 import type { PatchSettingsRequest, SettingItem, SettingsGrouped } from "@/shared/api/settings-types";
 
@@ -195,4 +197,19 @@ export async function exportAllConversations(accessToken: string): Promise<Admin
     blob: await response.blob(),
     fileName: contentDispositionFileName(response.headers.get("Content-Disposition")) ?? `conversations-export-${timestamp}.jsonl`,
   };
+}
+
+export async function importOpenWebUIConversations(
+  accessToken: string,
+  payload: ImportOpenWebUIConversationsRequest,
+): Promise<ImportOpenWebUIConversationsData> {
+  return authedRequest<ImportOpenWebUIConversationsData>(
+    "/api/v1/admin/conversations/import/openwebui",
+    {
+      method: "POST",
+      accessToken,
+      body: payload,
+    },
+    true,
+  );
 }

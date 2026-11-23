@@ -4,7 +4,7 @@
     "contextManagement": "上下文管理",
     "optionPassthrough": "参数透传",
     "modelRouter": "自动模型路由",
-    "dataExport": "数据导出"
+    "dataExport": "数据导入与导出"
   },
   "defaultModel": {
     "systemRecommended": "系统推荐"
@@ -180,5 +180,44 @@
     "success": "已导出 {count} 个对话",
     "partial": "已导出 {exported} 个对话，{failed} 个失败",
     "failed": "导出失败，请重试。"
+  },
+  "openWebUIImport": {
+    "rowTitle": "从 OpenWebUI 导入对话记录",
+    "rowDescription": "连接 OpenWebUI 数据库导入对话历史、分支树与思考过程，支持按近 X 天筛选。",
+    "importButton": "导入 OpenWebUI 对话",
+    "title": "导入 OpenWebUI 对话历史",
+    "description": "连接 OpenWebUI 数据库并导入历史对话、消息分支与推理过程。",
+    "dedupeTitle": "去重与归属规则",
+    "dedupeDescriptionMultiUser": "按用户邮箱匹配已有账户，并按源会话 ID 去重；已导入对话不会重复写入或覆盖。",
+    "dedupeDescriptionLocal": "本地模式下所有有效对话将导入到当前本地账户，并按源会话 ID 去重；已导入对话不会重复写入。",
+    "dsnLabel": "DB 连接地址",
+    "dsnPlaceholder": "postgres://... 或 /data/openwebui.db",
+    "recentDaysLabel": "时间范围（可选）",
+    "recentDaysPlaceholder": "留空导入全部历史，例如 30",
+    "recentDaysHint": "填写大于 0 的整数（1–36500）表示仅导入最近 X 天内活跃的对话；留空导入全部。",
+    "recentDaysInvalid": "请输入 1 到 36500 之间的整数，或留空以导入全部历史。",
+    "presets": {
+      "all": "全部",
+      "days": "近 {days} 天"
+    },
+    "cancel": "取消",
+    "preview": "预览",
+    "submit": "导入",
+    "previewing": "预览中",
+    "importing": "导入中",
+    "toastPreviewSucceeded": "OpenWebUI 对话预览完成：可导入 {imported} 个对话（{messages} 条消息），跳过 {skipped} 个",
+    "toastSucceeded": "OpenWebUI 对话导入完成：新增 {imported} 个对话（{messages} 条消息），跳过 {skipped} 个",
+    "toastFailed": "OpenWebUI 对话导入失败",
+    "summary": {
+      "recentDays": "时间范围：仅近 {days} 天活跃对话",
+      "scanned": "扫描 {count}",
+      "imported": "可导入对话 {count}",
+      "importedMessages": "导入消息 {count}",
+      "skippedOutsideTimeRange": "超出时间范围 {count}",
+      "skippedExistingConversation": "已存在对话 {count}",
+      "skippedUnmatchedUser": "未匹配用户 {count}",
+      "skippedEmptyConversation": "空对话 {count}",
+      "skippedInvalidRow": "无效行 {count}"
+    }
   }
 }

@@ -4,7 +4,7 @@
     "contextManagement": "Context management",
     "optionPassthrough": "Option passthrough",
     "modelRouter": "Auto model routing",
-    "dataExport": "Data export"
+    "dataExport": "Data import & export"
   },
   "defaultModel": {
     "systemRecommended": "System recommended"
@@ -180,5 +180,44 @@
     "success": "Exported {count} conversations",
     "partial": "Exported {exported} conversations, {failed} failed",
     "failed": "Export failed. Please try again."
+  },
+  "openWebUIImport": {
+    "rowTitle": "Import OpenWebUI conversations",
+    "rowDescription": "Connect to an OpenWebUI database to import chat history, branches, and reasoning, optionally filtered to the last X days.",
+    "importButton": "Import OpenWebUI chats",
+    "title": "Import OpenWebUI chat history",
+    "description": "Connect to an OpenWebUI database and import conversations, message branches, and reasoning traces.",
+    "dedupeTitle": "Dedupe & ownership rule",
+    "dedupeDescriptionMultiUser": "Conversations are matched to existing accounts by email and deduped per source chat ID. Existing conversations are skipped without modification.",
+    "dedupeDescriptionLocal": "In local mode, all valid conversations are imported into your local account and deduped per source chat ID without overwriting existing chats.",
+    "dsnLabel": "DB connection string",
+    "dsnPlaceholder": "postgres://... or /data/openwebui.db",
+    "recentDaysLabel": "Time range (optional)",
+    "recentDaysPlaceholder": "Leave blank to import all history, e.g. 30",
+    "recentDaysHint": "Enter an integer between 1 and 36500 to import chats active in the last X days; leave blank for all history.",
+    "recentDaysInvalid": "Enter a whole number between 1 and 36500, or leave blank to import all history.",
+    "presets": {
+      "all": "All",
+      "days": "Last {days}d"
+    },
+    "cancel": "Cancel",
+    "preview": "Preview",
+    "submit": "Import",
+    "previewing": "Previewing",
+    "importing": "Importing",
+    "toastPreviewSucceeded": "OpenWebUI preview finished: {imported} chats ({messages} messages) can be added, {skipped} skipped",
+    "toastSucceeded": "OpenWebUI import finished: {imported} chats ({messages} messages) added, {skipped} skipped",
+    "toastFailed": "OpenWebUI conversation import failed",
+    "summary": {
+      "recentDays": "Time range: active within last {days} days",
+      "scanned": "Scanned {count}",
+      "imported": "Chats to import {count}",
+      "importedMessages": "Messages {count}",
+      "skippedOutsideTimeRange": "Outside range {count}",
+      "skippedExistingConversation": "Existing chats {count}",
+      "skippedUnmatchedUser": "Unmatched users {count}",
+      "skippedEmptyConversation": "Empty chats {count}",
+      "skippedInvalidRow": "Invalid rows {count}"
+    }
   }
 }

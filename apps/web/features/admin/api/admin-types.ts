@@ -6,6 +6,8 @@ import type {
   ConversationEventResponse,
   CreateUserRequest,
   DeleteUserResponse,
+  ImportOpenWebUIConversationsRequest as ContractImportOpenWebUIConversationsRequest,
+  ImportOpenWebUIConversationsResponse,
   ImportOpenWebUIUsersRequest as ContractImportOpenWebUIUsersRequest,
   ImportOpenWebUIUsersResponse,
   PatchUserRequest,
@@ -41,6 +43,8 @@ export type ResetAdminUserPasswordRequest = ResetUserPasswordRequest;
 
 export type ImportOpenWebUIUsersRequest = ContractImportOpenWebUIUsersRequest;
 
+export type ImportOpenWebUIConversationsRequest = ContractImportOpenWebUIConversationsRequest;
+
 export type AdminUserData = Omit<UserDataResponse, "user"> & {
   user: AdminUserDTO;
 };
@@ -58,6 +62,11 @@ export type DeleteAdminUserData = DeleteUserResponse;
 export type ImportOpenWebUIUsersData = Omit<ImportOpenWebUIUsersResponse, "dedupeField" | "source"> & {
   source: "openwebui";
   dedupeField: "email";
+};
+
+export type ImportOpenWebUIConversationsData = Omit<ImportOpenWebUIConversationsResponse, "dedupeField" | "source"> & {
+  source: "openwebui";
+  dedupeField: "session_key";
 };
 
 export type AdminUserAuthEventDTO = AuthEventResponse;

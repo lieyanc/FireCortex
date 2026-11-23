@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleHelp, Download, Save } from "lucide-react";
+import { CircleHelp, Download, Save, Upload } from "lucide-react";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConversationOpenWebUIImportDialog } from "@/features/admin/components/sections/conversation/conversation-openwebui-import-dialog";
 import { ConversationPromptPresetsSection } from "@/features/admin/components/sections/conversation/conversation-prompt-presets";
 import { useAdminConversationExport } from "@/features/admin/hooks/use-admin-conversation-export";
+import { useAdminConversationOpenWebUIImport } from "@/features/admin/hooks/use-admin-conversation-openwebui-import";
 import { useAdminConversationSettings } from "@/features/admin/hooks/use-admin-conversation-settings";
 import {
   buildConversationSettingsFields,
@@ -375,6 +377,14 @@ export function AdminConversationPage() {
     handleSave,
   } = useAdminConversationSettings(conversationSettingsFields);
   const { exporting, handleExportConversations } = useAdminConversationExport();
+  const {
+    openWebUIImportOpen,
+    setOpenWebUIImportOpen,
+    openWebUIImportPending,
+    openWebUIImportResult,
+    setOpenWebUIImportResult,
+    handleImportOpenWebUI,
+  } = useAdminConversationOpenWebUIImport();
 
   const visibleConversationSettingsFields = React.useMemo(
     () => resolveVisibleConversationFields(conversationSettingsFields, settingsMap),
@@ -547,7 +557,26 @@ export function AdminConversationPage() {
 
       <SettingsSection title={t("sections.dataExport")}>
         <SettingsFieldList>
-          <SettingsFieldItem>
+          <SettingsFieldItem index={0}>
+            <SettingsFieldRow
+              title={t("openWebUIImport.rowTitle")}
+              description={t("openWebUIImport.rowDescription")}
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={openWebUIImportPending}
+                onClick={() => {
+                  setOpenWebUIImportResult(null);
+                  setOpenWebUIImportOpen(true);
+                }}
+              >
+                <Upload className="size-3.5" />
+                {t("openWebUIImport.importButton")}
+              </Button>
+            </SettingsFieldRow>
+          </SettingsFieldItem>
+          <SettingsFieldItem index={1}>
             <SettingsFieldRow
               title={t("dataExport.title")}
               description={t("dataExport.description")}
@@ -565,6 +594,23 @@ export function AdminConversationPage() {
           </SettingsFieldItem>
         </SettingsFieldList>
       </SettingsSection>
+
+      <ConversationOpenWebUIImportDialog
+        open={openWebUIImportOpen}
+        pending={openWebUIImportPending}
+        result={openWebUIImportResult}
+        onOpenChange={(open) => {
+          if (!open && openWebUIImportPending) {
+            return;
+          }
+          setOpenWebUIImportOpen(open);
+          if (!open) {
+            setOpenWebUIImportResult(null);
+          }
+        }}
+        onPreviewReset={() => setOpenWebUIImportResult(null)}
+        onSubmit={handleImportOpenWebUI}
+      />
     </SettingsPage>
   );
 }

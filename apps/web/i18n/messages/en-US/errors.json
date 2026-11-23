@@ -371,6 +371,7 @@
     "invalidImageIndex": "Invalid image index.",
     "invalidImportCreditMultiplier": "Invalid import credit multiplier.",
     "invalidImportDsn": "Invalid import data source.",
+    "invalidImportRecentDays": "Invalid recent days filter. Enter an integer between 1 and 36500.",
     "invalidLocationPayload": "Invalid location data.",
     "invalidLogCleanupBefore": "Invalid log cleanup cutoff.",
     "invalidLogCleanupType": "Invalid log cleanup type.",
