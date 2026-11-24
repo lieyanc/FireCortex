@@ -24,7 +24,7 @@ import { formatBillingDisplayAmountFromUSD, type BillingDisplayOptions } from "@
 import { isPersonalModelRef, resolveModelOptionLabel } from "@/entities/model";
 
 const STACK_COLORS = [
-  "#2563eb",
+  "#018eee",
   "#06b6d4",
   "#f97316",
   "#7c3aed",

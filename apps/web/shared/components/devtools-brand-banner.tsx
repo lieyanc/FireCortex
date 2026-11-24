@@ -14,16 +14,16 @@ const BANNER_SCRIPT = `
   if (globalThis[key]) return;
   globalThis[key] = true;
   const banner = ${JSON.stringify(BANNER)};
-  console.log("%c" + banner, "color:#111827;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-weight:700;line-height:1.15");
+  console.log("%c" + banner, "color:#018eee;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-weight:700;line-height:1.15");
   console.log(
     "%c  %c  %c  %c  %c  %c  %c  %c  ",
-    "background:#000000",
-    "background:#111111",
-    "background:#262626",
-    "background:#404040",
-    "background:#737373",
-    "background:#a3a3a3",
-    "background:#d4d4d4",
+    "background:#003c75",
+    "background:#005cc8",
+    "background:#0076d6",
+    "background:#018eee",
+    "background:#38b6ff",
+    "background:#7dd3fc",
+    "background:#bae6fd",
     "background:transparent"
   );
   console.log("%cRepository: https://github.com/lieyanc/FireCortex  |  License: Apache License 2.0", "color:#64748b;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace");

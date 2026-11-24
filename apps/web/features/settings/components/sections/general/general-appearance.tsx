@@ -19,31 +19,31 @@ import { SettingsSection } from "@/shared/components/settings-layout";
 
 const THEME_PREVIEW_PALETTES: Record<"light" | "dark", ThemePreviewPalette> = {
   light: {
-    background: "oklch(0.9818 0.0054 95.1)",
-    sidebar: "oklch(0.9791 0.0041 91.45)",
-    sidebarBorder: "oklch(0.93 0 0)",
-    surface: "oklch(1 0 0)",
-    surfaceBorder: "oklch(0.9 0 0)",
-    textStrong: "oklch(0.25 0.0269 95.7226)",
-    textSoft: "oklch(0.6059 0.0075 97.4233)",
-    accent: "oklch(0.667 0.1081 42.03)",
+    background: "oklch(0.9800 0.0035 249.0000)",
+    sidebar: "oklch(0.9660 0.0055 249.0000)",
+    sidebarBorder: "oklch(0.9080 0.0080 249.0000)",
+    surface: "oklch(1.0000 0 0)",
+    surfaceBorder: "oklch(0.8920 0.0080 249.0000)",
+    textStrong: "oklch(0.2450 0.0160 250.0000)",
+    textSoft: "oklch(0.5250 0.0140 250.0000)",
+    accent: "oklch(0.6341 0.1747 249.0109)",
   },
   dark: {
-    background: "oklch(0.2637 0.0037 106.65)",
-    sidebar: "oklch(0.2357 0.0024 67.7077)",
-    sidebarBorder: "oklch(0.3085 0.0035 106.6039)",
-    surface: "oklch(0.3085 0.0035 106.6039)",
-    surfaceBorder: "oklch(0.4336 0.0113 100.2195)",
-    textStrong: "oklch(0.9211 0.004 106.4781)",
-    textSoft: "oklch(0.65 0.0142 93.0137)",
-    accent: "oklch(0.6724 0.1308 38.7559)",
+    background: "oklch(0.2050 0.0100 252.0000)",
+    sidebar: "oklch(0.1850 0.0100 252.0000)",
+    sidebarBorder: "oklch(0.2950 0.0110 251.0000)",
+    surface: "oklch(0.2420 0.0110 252.0000)",
+    surfaceBorder: "oklch(0.3350 0.0120 251.0000)",
+    textStrong: "oklch(0.9450 0.0050 249.0000)",
+    textSoft: "oklch(0.7200 0.0120 250.0000)",
+    accent: "oklch(0.6341 0.1747 249.0109)",
   },
 };
 
 const THEME_PRESET_PREVIEWS: ThemePresetPreview[] = [
   {
     label: "Default",
-    tone: "warm",
+    tone: "cool",
     value: "default",
     light: THEME_PREVIEW_PALETTES.light,
     dark: THEME_PREVIEW_PALETTES.dark,
