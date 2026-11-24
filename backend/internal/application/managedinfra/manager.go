@@ -462,7 +462,7 @@ func (m *Manager) probeSidecar(ctx context.Context, serviceID, endpoint string) 
 }
 
 // StartServiceAction 异步执行白名单服务的启停、重启或拉取升级任务，并返回可订阅 SSE 进度的任务快照。
-func (m *Manager) StartServiceAction(actorUserID uint, serviceID string, action string, opts ServiceActionOptions) (JobSnapshot, error) {
+func (m *Manager) StartServiceAction(ctx context.Context, actorUserID uint, serviceID string, action string, opts ServiceActionOptions) (JobSnapshot, error) {
 	serviceID = strings.ToLower(strings.TrimSpace(serviceID))
 	action = strings.ToLower(strings.TrimSpace(action))
 
@@ -487,12 +487,13 @@ func (m *Manager) StartServiceAction(actorUserID uint, serviceID string, action 
 	}
 
 	jobID := m.createJob(action, serviceID)
-	go m.runServiceActionJob(jobID, actorUserID, serviceID, action, isCore, tpl, opts)
+	go m.runServiceActionJob(context.WithoutCancel(ctx), jobID, actorUserID, serviceID, action, isCore, tpl, opts)
 	snap, _ := m.GetJob(jobID)
 	return snap, nil
 }
 
 func (m *Manager) runServiceActionJob(
+	parent context.Context,
 	jobID string,
 	actorUserID uint,
 	serviceID string,
@@ -501,7 +502,7 @@ func (m *Manager) runServiceActionJob(
 	tpl sidecarTemplate,
 	opts ServiceActionOptions,
 ) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	ctx, cancel := context.WithTimeout(parent, 15*time.Minute)
 	defer cancel()
 
 	cfg := m.snapshotConfig()

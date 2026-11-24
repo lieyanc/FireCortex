@@ -176,7 +176,7 @@ func (h *Handler) Apply(c *gin.Context) {
 		composeSync = *req.ComposeSync
 	}
 
-	snap, err := h.service.StartApply(appsetup.ApplyInput{
+	snap, err := h.service.StartApply(c.Request.Context(), appsetup.ApplyInput{
 		DatabaseMode:              req.DatabaseMode,
 		CacheMode:                 req.CacheMode,
 		DockerHost:                req.DockerHost,

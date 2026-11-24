@@ -136,7 +136,7 @@ func TestSetupServiceTokenAndApplyManagedFlow(t *testing.T) {
 		t.Fatal("ValidateAuth returned unexpected result")
 	}
 
-	if _, err := svc.StartApply(ApplyInput{
+	if _, err := svc.StartApply(t.Context(), ApplyInput{
 		DatabaseMode:  "managed",
 		CacheMode:     "managed_redis",
 		DataDir:       managedDir,
@@ -148,7 +148,7 @@ func TestSetupServiceTokenAndApplyManagedFlow(t *testing.T) {
 		t.Fatal("expected prod non-https URL to be rejected")
 	}
 
-	job, err := svc.StartApply(ApplyInput{
+	job, err := svc.StartApply(t.Context(), ApplyInput{
 		DatabaseMode:  "managed",
 		CacheMode:     "managed_redis",
 		DataDir:       managedDir,

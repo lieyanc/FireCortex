@@ -75,7 +75,7 @@ func NewEngine(cfg config.Config, svc *appsetup.Service) *gin.Engine {
 }
 
 // Run 启动 Setup Mode 引导服务器；当初始化完成触发重启时，优雅排空并调用 ReExecSelf 进入正式模式。
-func Run(cfg config.Config, svc *appsetup.Service, restartCh <-chan struct{}) error {
+func Run(ctx context.Context, cfg config.Config, svc *appsetup.Service, restartCh <-chan struct{}) error {
 	engine := NewEngine(cfg, svc)
 	port := strings.TrimSpace(cfg.HTTPPort)
 	if port == "" {
@@ -112,7 +112,7 @@ func Run(cfg config.Config, svc *appsetup.Service, restartCh <-chan struct{}) er
 		shouldRestart = true
 	}
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	_ = srv.Shutdown(shutdownCtx)
 	svc.CleanupTokenFile()

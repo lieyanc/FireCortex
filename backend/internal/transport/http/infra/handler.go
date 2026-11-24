@@ -58,7 +58,7 @@ func (h *Handler) TriggerServiceAction(c *gin.Context) {
 	_ = c.ShouldBindJSON(&req)
 
 	actorID := c.GetUint(middleware.ContextKeyUserID)
-	snap, err := h.manager.StartServiceAction(actorID, c.Param("id"), c.Param("action"), managedinfra.ServiceActionOptions{
+	snap, err := h.manager.StartServiceAction(c.Request.Context(), actorID, c.Param("id"), c.Param("action"), managedinfra.ServiceActionOptions{
 		Port:          req.Port,
 		MemoryLimitMB: req.MemoryLimitMB,
 		TesseractLang: req.TesseractLang,

@@ -482,7 +482,7 @@ func (s *Service) SubscribeJob(ctx context.Context) (<-chan JobEvent, func()) {
 }
 
 // StartApply 校验初始化表单并在后台启动异步编排任务。
-func (s *Service) StartApply(input ApplyInput) (JobSnapshot, error) {
+func (s *Service) StartApply(ctx context.Context, input ApplyInput) (JobSnapshot, error) {
 	normalized, dirInspection, err := s.validateAndNormalizeApply(input)
 	if err != nil {
 		return JobSnapshot{}, err
@@ -505,7 +505,7 @@ func (s *Service) StartApply(input ApplyInput) (JobSnapshot, error) {
 	}
 	s.mu.Unlock()
 
-	go s.runApplyJob(jobID, normalized, dirInspection)
+	go s.runApplyJob(context.WithoutCancel(ctx), jobID, normalized, dirInspection)
 	return s.CurrentJob(), nil
 }
 
@@ -618,8 +618,8 @@ func (s *Service) validateAndNormalizeApply(input ApplyInput) (ApplyInput, manag
 	return out, dirInfo, nil
 }
 
-func (s *Service) runApplyJob(jobID string, input ApplyInput, dirInfo managedports.DirInspection) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+func (s *Service) runApplyJob(parent context.Context, jobID string, input ApplyInput, dirInfo managedports.DirInspection) {
+	ctx, cancel := context.WithTimeout(parent, 15*time.Minute)
 	defer cancel()
 
 	emit := func(step, service, msg string, pct int, status string) {

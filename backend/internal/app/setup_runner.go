@@ -155,5 +155,5 @@ func RunSetupMode(cfg config.Config, configPath string) error {
 		return err
 	}
 	defer svc.CleanupTokenFile()
-	return setuphttp.Run(cfg, svc, restartCh)
+	return setuphttp.Run(context.Background(), cfg, svc, restartCh)
 }

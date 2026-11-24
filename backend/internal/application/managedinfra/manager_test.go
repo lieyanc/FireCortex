@@ -168,7 +168,7 @@ func TestManagerBackupCreateListRestoreAndCronMatch(t *testing.T) {
 	}
 
 	// Core postgres cannot be stopped from UI
-	if _, err := mgr.StartServiceAction(1, managedports.CoreServicePostgres, "stop", ServiceActionOptions{}); err == nil {
+	if _, err := mgr.StartServiceAction(t.Context(), 1, managedports.CoreServicePostgres, "stop", ServiceActionOptions{}); err == nil {
 		t.Fatal("expected stopping core postgres to be blocked")
 	}
 

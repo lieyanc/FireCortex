@@ -475,7 +475,7 @@ func (m *Manager) DangerRecreateContainer(ctx context.Context, actorUserID uint,
 	if serviceID != managedports.CoreServicePostgres && serviceID != managedports.CoreServiceRedis {
 		return JobSnapshot{}, errors.New("only managed postgres or redis containers can be recreated here")
 	}
-	return m.StartServiceAction(actorUserID, serviceID, "pull", ServiceActionOptions{})
+	return m.StartServiceAction(ctx, actorUserID, serviceID, "pull", ServiceActionOptions{})
 }
 
 func (m *Manager) verifyDangerGate(ctx context.Context, actorUserID uint, currentPassword, confirmText, expectedConfirm string) error {
