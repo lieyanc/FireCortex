@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-9.64 -20.39 340.56 104.79" width="3406" height="1048">
   <defs>
     <linearGradient id="fc-flame" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFB22E"/>
-      <stop offset="0.55" stop-color="#FF5A1F"/>
-      <stop offset="1" stop-color="#E5173F"/>
+      <stop offset="0" stop-color="#47C4FF"/>
+      <stop offset="0.52" stop-color="#018EEE"/>
+      <stop offset="1" stop-color="#005CC8"/>
     </linearGradient>
   </defs>
   <path fill="url(#fc-flame)" fill-rule="evenodd" d="M32 3C34.5 11 41 16.5 46 23C50.5 28.8 53 34.5 53 41C53 53 43.6 61 32 61C20.4 61 11 53 11 41C11 33.5 14.5 27.5 19.5 22.5C19.8 28 22 31.5 25.5 33C24.5 22 27 11.5 32 3ZM32 33.5A9.5 9.5 0 1 0 32 52.5A9.5 9.5 0 1 0 32 33.5Z"/><circle fill="url(#fc-flame)" cx="32" cy="43" r="4"/>
