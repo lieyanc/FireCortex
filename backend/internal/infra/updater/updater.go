@@ -3,9 +3,11 @@
 // Release protocol (shared with .github/workflows/release.yml; change both together):
 //   - assets are named firecortex-{goos}-{goarch};
 //   - every release carries a single SHA256SUMS file in sha256sum's native
-//     "<hash>  <bare file name>" format plus a version.json metadata file;
-//   - product versions are X.Y.Z.N; stable tags add a v prefix and the dev
-//     channel publishes the same version and its commit under DevReleaseTag.
+//     "<hash>  <bare file name>" format plus a version.json metadata file
+//     (carrying optional assets digests and Markdown release_notes);
+//   - stable releases use vX.Y.Z.N tags (version X.Y.Z.N); the dev channel
+//     follows the rolling DevReleaseTag prerelease with dev-{run}-{yyyymmdd}-{sha}
+//     versions and full commit metadata.
 package updater
 
 import (
@@ -62,11 +64,14 @@ const (
 	checksumsName = "SHA256SUMS"
 	versionName   = "version.json"
 
-	initialCheckDelay = 30 * time.Second
-	checkTimeout      = 30 * time.Second
-	idleWaitTimeout   = 10 * time.Minute
-	idlePollInterval  = 5 * time.Second
-	downloadTimeout   = 30 * time.Minute
+	initialCheckDelay  = 30 * time.Second
+	checkTimeout       = 30 * time.Second
+	idleWaitTimeout    = 10 * time.Minute
+	idlePollInterval   = 5 * time.Second
+	downloadTimeout    = 30 * time.Minute
+	maxManifestSize    = 64 << 10
+	maxChecksumsSize   = 64 << 10
+	maxReleaseBodySize = 1 << 20
 
 	progressChecking      = 5
 	progressReleaseFound  = 10
@@ -150,6 +155,7 @@ type Updater struct {
 
 	pendingBinaryPath string
 	pendingTag        string
+	pendingHash       string
 }
 
 // New creates an updater. cfg is called on every use so configuration changes
@@ -224,6 +230,7 @@ func (u *Updater) ApplyPending() error {
 	u.mu.Lock()
 	path := u.pendingBinaryPath
 	tag := u.pendingTag
+	expectedHash := u.pendingHash
 	if u.status.State != StateReady || path == "" {
 		u.mu.Unlock()
 		return ErrNoPendingUpdate
@@ -234,6 +241,7 @@ func (u *Updater) ApplyPending() error {
 	u.status.DownloadProgress = 0
 	u.pendingBinaryPath = ""
 	u.pendingTag = ""
+	u.pendingHash = ""
 	u.mu.Unlock()
 
 	go func() {
@@ -244,7 +252,7 @@ func (u *Updater) ApplyPending() error {
 			u.setError("apply canceled while waiting for idle: " + err.Error())
 			return
 		}
-		if err := u.applyUpdate(path, tag); err != nil {
+		if err := u.applyUpdate(path, tag, expectedHash); err != nil {
 			u.setError("apply failed: " + err.Error())
 		}
 	}()
@@ -263,6 +271,7 @@ func (u *Updater) DismissPending() {
 	}
 	u.pendingBinaryPath = ""
 	u.pendingTag = ""
+	u.pendingHash = ""
 	u.status.State = StateIdle
 	u.status.HasUpdate = false
 	u.status.Progress = 0
@@ -367,7 +376,7 @@ func (u *Updater) runUpdate(ctx context.Context) {
 	u.status.Progress = progressReleaseFound
 	u.mu.Unlock()
 
-	binaryPath, err := u.download(ctx, cfg, release)
+	binaryPath, verifiedHash, err := u.download(ctx, cfg, release)
 	if err != nil {
 		u.setError("download failed: " + err.Error())
 		return
@@ -384,7 +393,7 @@ func (u *Updater) runUpdate(ctx context.Context) {
 			u.setError("apply canceled while waiting for idle: " + err.Error())
 			return
 		}
-		if err := u.applyUpdate(binaryPath, release.TagName); err != nil {
+		if err := u.applyUpdate(binaryPath, release.TagName, verifiedHash); err != nil {
 			u.setError("apply failed: " + err.Error())
 		}
 		return
@@ -396,6 +405,7 @@ func (u *Updater) runUpdate(ctx context.Context) {
 	u.status.DownloadProgress = 0
 	u.pendingBinaryPath = binaryPath
 	u.pendingTag = release.TagName
+	u.pendingHash = verifiedHash
 	u.mu.Unlock()
 	u.logger.Info("self_update_ready", zap.String("version", release.displayVersion()))
 }
@@ -470,14 +480,15 @@ func overallDownloadProgress(downloadProgress float64) float64 {
 }
 
 type releaseInfo struct {
-	TagName         string      `json:"tag_name"`
-	TargetCommitish string      `json:"target_commitish"`
-	Prerelease      bool        `json:"prerelease"`
-	Body            string      `json:"body"`
-	Assets          []assetInfo `json:"assets"`
-	Version         string      `json:"-"`
-	Commit          string      `json:"-"`
-	BuildTime       string      `json:"-"`
+	TagName         string            `json:"tag_name"`
+	TargetCommitish string            `json:"target_commitish"`
+	Prerelease      bool              `json:"prerelease"`
+	Body            string            `json:"body"`
+	Assets          []assetInfo       `json:"assets"`
+	Version         string            `json:"-"`
+	Commit          string            `json:"-"`
+	BuildTime       string            `json:"-"`
+	AssetDigests    map[string]string `json:"-"`
 }
 
 type assetInfo struct {
@@ -487,10 +498,12 @@ type assetInfo struct {
 }
 
 type releaseVersionInfo struct {
-	Version   string `json:"version"`
-	Commit    string `json:"commit"`
-	BuildTime string `json:"build_time"`
-	Tag       string `json:"tag"`
+	Version      string            `json:"version"`
+	Commit       string            `json:"commit"`
+	BuildTime    string            `json:"build_time"`
+	Tag          string            `json:"tag"`
+	Assets       map[string]string `json:"assets,omitempty"`
+	ReleaseNotes string            `json:"release_notes,omitempty"`
 }
 
 func (r releaseInfo) displayVersion() string {
@@ -545,7 +558,7 @@ func (u *Updater) fetchReleaseFromGitHub(ctx context.Context, cfg Config) (*rele
 		versionURL = base + "/download/" + DevReleaseTag + "/" + versionName
 	}
 
-	body, status, err := u.httpGet(ctx, versionURL, 16*1024)
+	body, status, err := u.httpGet(ctx, versionURL, maxManifestSize)
 	if err != nil {
 		return nil, err
 	}
@@ -561,11 +574,23 @@ func (u *Updater) fetchReleaseFromGitHub(ctx context.Context, cfg Config) (*rele
 	if err := json.Unmarshal(body, &info); err != nil {
 		return nil, fmt.Errorf("decode version metadata: %w", err)
 	}
+	digests, err := validateManifestAssets(info.Assets)
+	if err != nil {
+		return nil, err
+	}
 	tag := strings.TrimSpace(info.Tag)
 	if cfg.Channel != ChannelStable {
+		if tag != "" && tag != DevReleaseTag {
+			return nil, fmt.Errorf("development metadata tag must be %s, got %q", DevReleaseTag, tag)
+		}
 		tag = DevReleaseTag
-	} else if tag == "" {
-		return nil, errors.New("version metadata missing release tag")
+	} else {
+		if tag == "" {
+			return nil, errors.New("version metadata missing release tag")
+		}
+		if _, ok := parseReleaseVersion(tag); !ok {
+			return nil, fmt.Errorf("version metadata contains invalid release tag %q", tag)
+		}
 	}
 
 	names := []string{targetName(), checksumsName, versionName}
@@ -574,12 +599,14 @@ func (u *Updater) fetchReleaseFromGitHub(ctx context.Context, cfg Config) (*rele
 		assets = append(assets, assetInfo{Name: name, BrowserDownloadURL: base + "/download/" + tag + "/" + name})
 	}
 	return &releaseInfo{
-		TagName:    tag,
-		Prerelease: cfg.Channel != ChannelStable,
-		Assets:     assets,
-		Version:    strings.TrimSpace(info.Version),
-		Commit:     strings.TrimSpace(info.Commit),
-		BuildTime:  strings.TrimSpace(info.BuildTime),
+		TagName:      tag,
+		Prerelease:   cfg.Channel != ChannelStable,
+		Body:         strings.TrimSpace(info.ReleaseNotes),
+		Assets:       assets,
+		Version:      strings.TrimSpace(info.Version),
+		Commit:       strings.TrimSpace(info.Commit),
+		BuildTime:    strings.TrimSpace(info.BuildTime),
+		AssetDigests: digests,
 	}, nil
 }
 
@@ -590,7 +617,7 @@ func (u *Updater) fetchReleaseViaProxy(ctx context.Context, cfg Config) (*releas
 	}
 	url := fmt.Sprintf("%s/api/releases/%s/%s", cfg.ProxyBaseURL, cfg.Repo, tag)
 
-	body, status, err := u.httpGet(ctx, url, 1<<20)
+	body, status, err := u.httpGet(ctx, url, maxReleaseBodySize)
 	if err != nil {
 		return nil, err
 	}
@@ -607,18 +634,24 @@ func (u *Updater) fetchReleaseViaProxy(ctx context.Context, cfg Config) (*releas
 		return nil, fmt.Errorf("decode release: %w", err)
 	}
 	if err := u.loadReleaseVersion(ctx, cfg, &release); err != nil {
-		// Metadata only refines display and dev comparison; the release itself is still usable.
-		u.logger.Warn("self_update_version_metadata_unavailable", zap.String("tag", release.TagName), zap.Error(err))
+		if errors.Is(err, errVersionAssetMissing) {
+			// Legacy releases without version.json still rely on SHA256SUMS and proxy release body.
+			u.logger.Warn("self_update_version_metadata_unavailable", zap.String("tag", release.TagName), zap.Error(err))
+		} else {
+			return nil, err
+		}
 	}
 	return &release, nil
 }
 
+var errVersionAssetMissing = errors.New("version.json asset not found")
+
 func (u *Updater) loadReleaseVersion(ctx context.Context, cfg Config, release *releaseInfo) error {
 	asset := release.asset(versionName)
 	if asset == nil {
-		return errors.New("version.json asset not found")
+		return errVersionAssetMissing
 	}
-	body, err := u.fetchAsset(ctx, cfg, asset, 16*1024)
+	body, err := u.fetchAsset(ctx, cfg, asset, maxManifestSize)
 	if err != nil {
 		return err
 	}
@@ -626,10 +659,47 @@ func (u *Updater) loadReleaseVersion(ctx context.Context, cfg Config, release *r
 	if err := json.Unmarshal(body, &info); err != nil {
 		return fmt.Errorf("decode version metadata: %w", err)
 	}
+	digests, err := validateManifestAssets(info.Assets)
+	if err != nil {
+		return err
+	}
+	if tag := strings.TrimSpace(info.Tag); tag != "" && release.TagName != "" && tag != release.TagName {
+		return fmt.Errorf("version metadata tag %q does not match release tag %q", tag, release.TagName)
+	}
 	release.Version = strings.TrimSpace(info.Version)
 	release.Commit = strings.TrimSpace(info.Commit)
 	release.BuildTime = strings.TrimSpace(info.BuildTime)
+	release.AssetDigests = digests
+	// Prefer notes bound to this build's manifest over the proxy release body,
+	// keeping the proxy body as fallback when an older manifest omits release_notes.
+	if notes := strings.TrimSpace(info.ReleaseNotes); notes != "" {
+		release.Body = notes
+	}
 	return nil
+}
+
+func validateManifestAssets(assets map[string]string) (map[string]string, error) {
+	if len(assets) == 0 {
+		return nil, nil
+	}
+	if len(assets) > 32 {
+		return nil, errors.New("version metadata contains too many asset entries")
+	}
+	normalized := make(map[string]string, len(assets))
+	for name, digest := range assets {
+		if !strings.HasPrefix(name, assetPrefix) || sanitizePathPart(name) != name {
+			return nil, fmt.Errorf("version metadata contains invalid asset name %q", name)
+		}
+		digest = strings.TrimSpace(digest)
+		if len(digest) != sha256.Size*2 {
+			return nil, fmt.Errorf("version metadata asset %q has invalid sha256 digest length", name)
+		}
+		if _, err := hex.DecodeString(digest); err != nil {
+			return nil, fmt.Errorf("version metadata asset %q has invalid sha256 digest: %w", name, err)
+		}
+		normalized[name] = strings.ToLower(digest)
+	}
+	return normalized, nil
 }
 
 func (u *Updater) isNewer(release releaseInfo, channel string) bool {
@@ -640,7 +710,7 @@ func (u *Updater) isNewer(release releaseInfo, channel string) bool {
 	if channel == ChannelStable {
 		comparison, ok := compareReleaseVersions(release.TagName, current)
 		if !ok {
-			// Legacy dev builds can switch to a versioned stable release.
+			// Dev builds can switch to a versioned stable release.
 			run, _ := parseDevVersion(current)
 			_, valid := parseReleaseVersion(release.TagName)
 			return run > 0 && valid
@@ -648,27 +718,39 @@ func (u *Updater) isNewer(release releaseInfo, channel string) bool {
 		return comparison > 0
 	}
 
-	// Use the product revision when available. Multiple dev builds of the
-	// same revision, and migrations from legacy builds, follow the commit.
+	remoteRun, remoteTagSHA := parseDevVersion(release.displayVersion())
+	localRun, localTagSHA := parseDevVersion(current)
+	remoteCommit := firstNonEmpty(
+		normalizeCommit(release.Commit),
+		normalizeCommit(release.TargetCommitish),
+		remoteTagSHA,
+	)
+	localCommit := firstNonEmpty(
+		normalizeCommit(currentCommit()),
+		localTagSHA,
+	)
+
+	// When both sides carry canonical dev-{run}-{yyyymmdd}-{sha} versions,
+	// identical commits are already up to date and different commits must move
+	// forward in run number so older dev builds cannot be replayed.
+	if remoteRun > 0 && localRun > 0 {
+		if remoteCommit != "" && localCommit != "" && remoteCommit == localCommit {
+			return false
+		}
+		return remoteRun > localRun
+	}
+
+	// Compatibility when both sides use numeric release versions.
 	if comparison, ok := compareReleaseVersions(release.Version, current); ok && comparison != 0 {
 		return comparison > 0
 	}
-	remoteCommit := normalizeCommit(release.Commit)
-	if remoteCommit == "" {
-		remoteCommit = normalizeCommit(release.TargetCommitish)
-	}
-	if localCommit := normalizeCommit(currentCommit()); remoteCommit != "" && localCommit != "" {
+
+	// Transitions between versioned builds (such as 0.4.6.2) and dev builds
+	// follow the commit SHA.
+	if remoteCommit != "" && localCommit != "" {
 		return remoteCommit != localCommit
 	}
 
-	remoteNum, remoteSHA := parseDevVersion(release.displayVersion())
-	localNum, localSHA := parseDevVersion(current)
-	if remoteSHA != "" && remoteSHA == localSHA {
-		return false
-	}
-	if remoteNum > 0 && localNum > 0 {
-		return remoteNum > localNum
-	}
 	// Refuse rather than risk an endless self-update loop.
 	u.logger.Warn("self_update_versions_incomparable",
 		zap.String("current", current),
@@ -677,8 +759,17 @@ func (u *Updater) isNewer(release releaseInfo, channel string) bool {
 	return false
 }
 
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if value != "" {
+			return value
+		}
+	}
+	return ""
+}
+
 func normalizeCommit(commit string) string {
-	commit = strings.TrimSpace(commit)
+	commit = strings.ToLower(strings.TrimSpace(commit))
 	if commit == "" || commit == "unknown" {
 		return ""
 	}
@@ -686,6 +777,15 @@ func normalizeCommit(commit string) string {
 		return commit[:7]
 	}
 	return commit
+}
+
+func isHexString(value string) bool {
+	for _, r := range value {
+		if (r < '0' || r > '9') && (r < 'a' || r > 'f') && (r < 'A' || r > 'F') {
+			return false
+		}
+	}
+	return value != ""
 }
 
 func compareReleaseVersions(a, b string) (int, bool) {
@@ -717,14 +817,26 @@ func parseReleaseVersion(version string) ([4]uint64, bool) {
 	return result, true
 }
 
-// parseDevVersion extracts the run number and commit from dev-{run}-{yyyymmdd}-{sha}.
+// parseDevVersion extracts the run number and normalized commit from dev-{run}-{yyyymmdd}-{sha}.
 func parseDevVersion(version string) (runNumber int, sha string) {
-	parts := strings.SplitN(version, "-", 4)
-	if len(parts) == 4 && parts[0] == "dev" {
-		n, _ := strconv.Atoi(parts[1])
-		return n, parts[3]
+	parts := strings.SplitN(strings.TrimSpace(version), "-", 4)
+	if len(parts) != 4 || parts[0] != "dev" || len(parts[2]) != 8 {
+		return 0, ""
 	}
-	return 0, ""
+	n, err := strconv.Atoi(parts[1])
+	if err != nil || n <= 0 {
+		return 0, ""
+	}
+	for _, r := range parts[2] {
+		if r < '0' || r > '9' {
+			return 0, ""
+		}
+	}
+	sha = normalizeCommit(parts[3])
+	if len(sha) < 7 || !isHexString(sha) {
+		return 0, ""
+	}
+	return n, sha
 }
 
 func targetName() string {
@@ -735,7 +847,7 @@ func targetName() string {
 	return name
 }
 
-func (u *Updater) download(ctx context.Context, cfg Config, release *releaseInfo) (string, error) {
+func (u *Updater) download(ctx context.Context, cfg Config, release *releaseInfo) (string, string, error) {
 	u.mu.Lock()
 	u.status.State = StateDownloading
 	u.status.Progress = progressDownloadStart
@@ -745,15 +857,23 @@ func (u *Updater) download(ctx context.Context, cfg Config, release *releaseInfo
 	target := targetName()
 	binaryAsset := release.asset(target)
 	if binaryAsset == nil {
-		return "", fmt.Errorf("no asset found for %s in release %s", target, release.TagName)
+		return "", "", fmt.Errorf("no asset found for %s in release %s", target, release.TagName)
 	}
 	checksumsAsset := release.asset(checksumsName)
 	if checksumsAsset == nil {
-		return "", fmt.Errorf("release %s is missing %s, refusing unverified update", release.TagName, checksumsName)
+		return "", "", fmt.Errorf("release %s is missing %s, refusing unverified update", release.TagName, checksumsName)
+	}
+	var manifestDigest string
+	if len(release.AssetDigests) > 0 {
+		var ok bool
+		manifestDigest, ok = release.AssetDigests[target]
+		if !ok {
+			return "", "", fmt.Errorf("version metadata does not contain asset %s", target)
+		}
 	}
 
 	if err := os.MkdirAll(cfg.DownloadDir, 0o755); err != nil {
-		return "", fmt.Errorf("create update dir: %w", err)
+		return "", "", fmt.Errorf("create update dir: %w", err)
 	}
 	finalPath := filepath.Join(cfg.DownloadDir, assetPrefix+sanitizePathPart(release.TagName))
 	tmpPath := finalPath + ".tmp"
@@ -763,16 +883,17 @@ func (u *Updater) download(ctx context.Context, cfg Config, release *releaseInfo
 
 	if err := u.downloadFile(dlCtx, resolveDownloadURL(cfg, binaryAsset.BrowserDownloadURL), tmpPath, binaryAsset.Size); err != nil {
 		_ = os.Remove(tmpPath)
-		return "", fmt.Errorf("download binary: %w", err)
+		return "", "", fmt.Errorf("download binary: %w", err)
 	}
 
 	u.mu.Lock()
 	u.status.Progress = progressVerifyStart
 	u.mu.Unlock()
 
-	if err := u.verifyChecksum(dlCtx, cfg, checksumsAsset, target, tmpPath); err != nil {
+	verifiedHash, err := u.verifyChecksum(dlCtx, cfg, checksumsAsset, target, manifestDigest, tmpPath)
+	if err != nil {
 		_ = os.Remove(tmpPath)
-		return "", err
+		return "", "", err
 	}
 
 	u.mu.Lock()
@@ -781,31 +902,34 @@ func (u *Updater) download(ctx context.Context, cfg Config, release *releaseInfo
 
 	if err := os.Rename(tmpPath, finalPath); err != nil {
 		_ = os.Remove(tmpPath)
-		return "", err
+		return "", "", err
 	}
 	u.logger.Info("self_update_downloaded", zap.String("version", release.displayVersion()), zap.String("path", finalPath))
-	return finalPath, nil
+	return finalPath, verifiedHash, nil
 }
 
-// verifyChecksum enforces the SHA256SUMS entry for target; a missing file,
-// missing entry or mismatch all fail the update.
-func (u *Updater) verifyChecksum(ctx context.Context, cfg Config, checksumsAsset *assetInfo, target, path string) error {
-	sums, err := u.fetchAsset(ctx, cfg, checksumsAsset, 64*1024)
+// verifyChecksum enforces the SHA256SUMS entry (and manifest asset binding
+// when present) for target; any missing file, missing entry or mismatch fails.
+func (u *Updater) verifyChecksum(ctx context.Context, cfg Config, checksumsAsset *assetInfo, target, manifestDigest, path string) (string, error) {
+	sums, err := u.fetchAsset(ctx, cfg, checksumsAsset, maxChecksumsSize)
 	if err != nil {
-		return fmt.Errorf("fetch %s: %w", checksumsName, err)
+		return "", fmt.Errorf("fetch %s: %w", checksumsName, err)
 	}
 	expected, err := sha256ForTarget(sums, target)
 	if err != nil {
-		return err
+		return "", err
+	}
+	if manifestDigest != "" && !strings.EqualFold(expected, manifestDigest) {
+		return "", fmt.Errorf("sha256 mismatch between %s and %s for %s", versionName, checksumsName, target)
 	}
 	actual, err := fileSHA256(path)
 	if err != nil {
-		return fmt.Errorf("compute sha256: %w", err)
+		return "", fmt.Errorf("compute sha256: %w", err)
 	}
 	if !strings.EqualFold(actual, expected) {
-		return fmt.Errorf("sha256 mismatch: expected %s, got %s", expected, actual)
+		return "", fmt.Errorf("sha256 mismatch: expected %s, got %s", expected, actual)
 	}
-	return nil
+	return strings.ToLower(expected), nil
 }
 
 // sha256ForTarget selects the line for target by exact bare file name; a
@@ -905,7 +1029,8 @@ func (u *Updater) downloadFile(ctx context.Context, url, destPath string, expect
 }
 
 // httpGet fetches url and returns up to limit bytes of the body along with
-// the status code. Network errors are returned; HTTP error statuses are not.
+// the status code. Network errors and oversized responses are returned; HTTP
+// error statuses are not.
 func (u *Updater) httpGet(ctx context.Context, url string, limit int64) ([]byte, int, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -916,8 +1041,14 @@ func (u *Updater) httpGet(ctx context.Context, url string, limit int64) ([]byte,
 		return nil, 0, err
 	}
 	defer resp.Body.Close()
-	body, err := io.ReadAll(io.LimitReader(resp.Body, limit))
-	return body, resp.StatusCode, err
+	body, err := io.ReadAll(io.LimitReader(resp.Body, limit+1))
+	if err != nil {
+		return nil, resp.StatusCode, err
+	}
+	if int64(len(body)) > limit {
+		return nil, resp.StatusCode, fmt.Errorf("response exceeds %d bytes", limit)
+	}
+	return body, resp.StatusCode, nil
 }
 
 func (u *Updater) fetchAsset(ctx context.Context, cfg Config, asset *assetInfo, limit int64) ([]byte, error) {
@@ -944,13 +1075,24 @@ func fileSHA256(path string) (string, error) {
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
-// applyUpdate swaps the running executable for newBinaryPath and re-executes
-// it in place (same PID, so service managers do not notice the restart).
-func (u *Updater) applyUpdate(newBinaryPath, tag string) error {
+// applyUpdate re-verifies newBinaryPath, swaps the running executable for it,
+// and re-executes it in place (same PID, so service managers do not notice the restart).
+func (u *Updater) applyUpdate(newBinaryPath, tag, expectedHash string) error {
 	u.mu.Lock()
 	u.status.State = StateApplying
 	u.status.Progress = progressApplying
 	u.mu.Unlock()
+
+	if expectedHash == "" {
+		return errors.New("missing expected binary sha256")
+	}
+	actualHash, err := fileSHA256(newBinaryPath)
+	if err != nil {
+		return fmt.Errorf("verify pending binary sha256: %w", err)
+	}
+	if !strings.EqualFold(actualHash, expectedHash) {
+		return fmt.Errorf("pending binary sha256 mismatch: expected %s, got %s", expectedHash, actualHash)
+	}
 
 	execPath, err := os.Executable()
 	if err != nil {

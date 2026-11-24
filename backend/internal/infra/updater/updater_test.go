@@ -378,6 +378,12 @@ func TestIsNewer(t *testing.T) {
 		{"dev commit differs", "dev-0001-20260101-aaaaaaa", "aaaaaaa", ChannelDev, releaseInfo{Commit: "bbbbbbbcafe"}, true},
 		{"dev same commit", "dev-0001-20260101-aaaaaaa", "aaaaaaa", ChannelDev, releaseInfo{Commit: "aaaaaaa1234"}, false},
 		{"dev run fallback", "dev-0001-20260101-aaaaaaa", "unknown", ChannelDev, releaseInfo{Version: "dev-0002-20260102-bbbbbbb"}, true},
+		{"dev run advances", "dev-0009-20261124-aaaaaaa", "aaaaaaa", ChannelDev, releaseInfo{Version: "dev-0010-20261124-bbbbbbb", Commit: "bbbbbbb1234"}, true},
+		{"dev older run rejected", "dev-0010-20261124-bbbbbbb", "bbbbbbb", ChannelDev, releaseInfo{Version: "dev-0009-20261124-aaaaaaa", Commit: "aaaaaaa1234"}, false},
+		{"dev rebuild same commit skipped", "dev-0009-20261124-aaaaaaa", "aaaaaaa", ChannelDev, releaseInfo{Version: "dev-0010-20261124-aaaaaaa", Commit: "aaaaaaa1234"}, false},
+		{"dev from versioned release switches on commit change", "0.4.6.2", "aaaaaaa", ChannelDev, releaseInfo{Version: "dev-0009-20261124-bbbbbbb", Commit: "bbbbbbb1234"}, true},
+		{"dev from versioned release skips same commit", "0.4.6.2", "aaaaaaa", ChannelDev, releaseInfo{Version: "dev-0009-20261124-aaaaaaa", Commit: "aaaaaaa1234"}, false},
+		{"stable from dev build upgrades", "dev-0009-20261124-aaaaaaa", "aaaaaaa", ChannelStable, releaseInfo{TagName: "v0.4.6.2"}, true},
 		{"stable fork revision", "0.4.6.2", "", ChannelStable, releaseInfo{TagName: "v0.4.6.10"}, true},
 		{"dev fork revision", "0.4.6.9", "", ChannelDev, releaseInfo{Version: "0.4.6.10"}, true},
 		{"dev older fork revision", "0.4.6.10", "aaaaaaa", ChannelDev, releaseInfo{Version: "0.4.6.9", Commit: "bbbbbbb"}, false},
@@ -499,4 +505,177 @@ func TestStartUpdateSwitchesStateBeforeReturning(t *testing.T) {
 	if final := u.Status().State; final != StateIdle {
 		t.Fatalf("final state = %s, want idle", final)
 	}
+}
+
+func TestReleaseNotesAcrossDirectAndProxySources(t *testing.T) {
+	const manifestNotes = "## Development build\n\n- feat: notes from manifest"
+	const proxyNotes = "stale proxy release body"
+
+	cases := []struct {
+		name      string
+		source    string
+		manifest  releaseVersionInfo
+		proxyBody string
+		wantNotes string
+	}{
+		{
+			name:   "direct github reads release_notes from manifest",
+			source: SourceGitHub,
+			manifest: releaseVersionInfo{
+				Version:      "dev-0009-20261124-bbbbbbb",
+				Commit:       "bbbbbbb000000000000000000000000000000000",
+				Tag:          DevReleaseTag,
+				ReleaseNotes: manifestNotes,
+			},
+			wantNotes: manifestNotes,
+		},
+		{
+			name:   "proxy prefers manifest release_notes over release body",
+			source: SourceProxy,
+			manifest: releaseVersionInfo{
+				Version:      "dev-0009-20261124-bbbbbbb",
+				Commit:       "bbbbbbb000000000000000000000000000000000",
+				Tag:          DevReleaseTag,
+				ReleaseNotes: manifestNotes,
+			},
+			proxyBody: proxyNotes,
+			wantNotes: manifestNotes,
+		},
+		{
+			name:   "proxy falls back to release body when manifest omits release_notes",
+			source: SourceProxy,
+			manifest: releaseVersionInfo{
+				Version: "dev-0009-20261124-bbbbbbb",
+				Commit:  "bbbbbbb000000000000000000000000000000000",
+				Tag:     DevReleaseTag,
+			},
+			proxyBody: proxyNotes,
+			wantNotes: proxyNotes,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			setTestVersion(t, "dev-0008-20261124-aaaaaaa", "aaaaaaa")
+			metadata, err := json.Marshal(tc.manifest)
+			if err != nil {
+				t.Fatal(err)
+			}
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				switch r.URL.Path {
+				case "/owner/repo/releases/download/" + DevReleaseTag + "/version.json",
+					"/download/owner/repo/" + DevReleaseTag + "/version.json":
+					_, _ = w.Write(metadata)
+				case "/api/releases/owner/repo/" + DevReleaseTag:
+					_ = json.NewEncoder(w).Encode(releaseInfo{
+						TagName:    DevReleaseTag,
+						Prerelease: true,
+						Body:       tc.proxyBody,
+						Assets: []assetInfo{{
+							Name:               "version.json",
+							BrowserDownloadURL: "https://github.com/owner/repo/releases/download/" + DevReleaseTag + "/version.json",
+						}},
+					})
+				default:
+					t.Errorf("unexpected path: %s", r.URL.Path)
+					http.NotFound(w, r)
+				}
+			}))
+			defer server.Close()
+
+			cfg := Config{Channel: ChannelDev, Source: tc.source, Repo: "owner/repo"}
+			if tc.source == SourceGitHub {
+				setTestGitHubBaseURL(t, server.URL)
+			} else {
+				cfg.ProxyBaseURL = server.URL
+			}
+
+			u := testUpdater(cfg, RestartHooks{})
+			if err := u.CheckOnly(context.Background()); err != nil {
+				t.Fatalf("CheckOnly: %v", err)
+			}
+			if status := u.Status(); !status.HasUpdate || status.ReleaseNotes != tc.wantNotes {
+				t.Fatalf("status = %+v, want update with notes %q", status, tc.wantNotes)
+			}
+		})
+	}
+}
+
+func TestManifestAssetBindingAndOversizedManifest(t *testing.T) {
+	binary := []byte("verified firecortex binary")
+	binaryHash := sha256Hex(binary)
+
+	t.Run("rejects mismatch between manifest assets and SHA256SUMS", func(t *testing.T) {
+		setTestVersion(t, "dev-0008-20261124-aaaaaaa", "aaaaaaa")
+		metadata, err := json.Marshal(releaseVersionInfo{
+			Version: "dev-0009-20261124-bbbbbbb",
+			Commit:  "bbbbbbb",
+			Tag:     DevReleaseTag,
+			Assets: map[string]string{
+				targetName(): sha256Hex([]byte("different build")),
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		sums := sha256SumsBody(map[string]string{targetName(): binaryHash})
+		prefix := "/owner/repo/releases/download/" + DevReleaseTag + "/"
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case prefix + "version.json":
+				_, _ = w.Write(metadata)
+			case prefix + targetName():
+				_, _ = w.Write(binary)
+			case prefix + "SHA256SUMS":
+				_, _ = w.Write([]byte(sums))
+			default:
+				http.NotFound(w, r)
+			}
+		}))
+		defer server.Close()
+		setTestGitHubBaseURL(t, server.URL)
+
+		dir := t.TempDir()
+		u := testUpdater(Config{Channel: ChannelDev, Repo: "owner/repo", DownloadDir: dir}, RestartHooks{})
+		u.performUpdate(context.Background())
+		if status := u.Status(); status.State != StateFailed || !strings.Contains(status.Error, "sha256 mismatch between version.json and SHA256SUMS") {
+			t.Fatalf("status = %+v, want manifest/checksum mismatch error", status)
+		}
+	})
+
+	t.Run("rejects oversized manifest", func(t *testing.T) {
+		setTestVersion(t, "dev-0008-20261124-aaaaaaa", "aaaaaaa")
+		oversized := strings.Repeat("a", maxManifestSize+10)
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			_, _ = w.Write([]byte(oversized))
+		}))
+		defer server.Close()
+		setTestGitHubBaseURL(t, server.URL)
+
+		u := testUpdater(Config{Channel: ChannelDev, Repo: "owner/repo"}, RestartHooks{})
+		if err := u.CheckOnly(context.Background()); err == nil || !strings.Contains(err.Error(), "exceeds") {
+			t.Fatalf("CheckOnly err = %v, want size limit error", err)
+		}
+	})
+
+	t.Run("applyUpdate rejects tampered pending binary before BeforeExec", func(t *testing.T) {
+		pending := filepath.Join(t.TempDir(), "firecortex-dev-latest")
+		if err := os.WriteFile(pending, []byte("tampered"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		beforeExecCalled := false
+		u := testUpdater(Config{}, RestartHooks{
+			BeforeExec: func(string) error {
+				beforeExecCalled = true
+				return nil
+			},
+		})
+		err := u.applyUpdate(pending, DevReleaseTag, binaryHash)
+		if err == nil || !strings.Contains(err.Error(), "pending binary sha256 mismatch") {
+			t.Fatalf("applyUpdate err = %v, want pending binary sha256 mismatch", err)
+		}
+		if beforeExecCalled {
+			t.Fatal("BeforeExec must not run when pending binary verification fails")
+		}
+	})
 }
