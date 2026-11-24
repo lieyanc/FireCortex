@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -87,7 +88,7 @@ func (s *stubHostOps) NewDockerClient(string) (managedports.DockerClient, error)
 type stubSetupInfra struct{}
 
 func (stubSetupInfra) ProbePostgres(context.Context, string) (managedports.PostgresProbeResult, error) {
-	return managedports.PostgresProbeResult{ServerVersion: "16", VectorAvailable: true}, nil
+	return managedports.PostgresProbeResult{ServerVersion: "18", VectorAvailable: true}, nil
 }
 func (stubSetupInfra) ProbeRedis(context.Context, managedports.RedisProbeInput) error { return nil }
 func (stubSetupInfra) InitDBAndAdmin(context.Context, managedports.InitDBAdminInput) (bool, error) {
@@ -105,7 +106,7 @@ func TestSetupServiceTokenAndApplyManagedFlow(t *testing.T) {
 		HTTPPort:             "8080",
 		ManagedNetwork:       "firecortex-network",
 		ManagedDataDir:       managedDir,
-		ManagedPostgresImage: "pgvector/pgvector:pg16",
+		ManagedPostgresImage: "pgvector/pgvector:pg18-trixie",
 		ManagedPostgresPort:  5432,
 		ManagedRedisImage:    "redis:7-alpine",
 		ManagedRedisPort:     6379,
@@ -175,10 +176,72 @@ func TestSetupServiceTokenAndApplyManagedFlow(t *testing.T) {
 	if _, err := os.Stat(cfgPath); err != nil {
 		t.Fatalf("expected config.json to be written: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(managedDir, dockermgr.ComposeFileName)); err != nil {
+	composeRaw, err := os.ReadFile(filepath.Join(managedDir, dockermgr.ComposeFileName))
+	if err != nil {
 		t.Fatalf("expected docker-compose.yml to be written: %v", err)
+	}
+	if !strings.Contains(string(composeRaw), `"${FIRECORTEX_POSTGRES_DATA_DIR}:/var/lib/postgresql"`) {
+		t.Fatalf("expected PG 18 compose volume mount, got:\n%s", composeRaw)
 	}
 	if _, err := os.Stat(svc.TokenFilePath()); !os.IsNotExist(err) {
 		t.Fatalf("expected temporary setup token file to be cleaned up, err=%v", err)
+	}
+}
+
+func TestSetupRejectsCrossMajorPGAdoptionAndAllowsMatchingImage(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, "config.json")
+	managedDir := filepath.Join(dir, "managed")
+	pgDir := filepath.Join(managedDir, "postgres", "pgdata")
+	if err := os.MkdirAll(pgDir, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(pgDir, "PG_VERSION"), []byte("16\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	svc, err := NewService(config.Config{
+		HTTPPort:             "8080",
+		ManagedNetwork:       "firecortex-network",
+		ManagedDataDir:       managedDir,
+		ManagedPostgresImage: config.DefaultManagedPostgresImage,
+		ManagedPostgresPort:  5432,
+		ManagedRedisImage:    "redis:7-alpine",
+		ManagedRedisPort:     6379,
+	}, cfgPath, Dependencies{
+		Host:  &stubHostOps{HostAdapter: dockermgr.NewHostOps(), client: &stubDockerClient{}},
+		Infra: stubSetupInfra{},
+	}, nil)
+	if err != nil {
+		t.Fatalf("NewService failed: %v", err)
+	}
+	defer svc.CleanupTokenFile()
+
+	// Adopting a PG 16 directory with default PG 18 image must be rejected.
+	_, err = svc.StartApply(t.Context(), ApplyInput{
+		DatabaseMode:        "managed",
+		CacheMode:           "memory",
+		DataDir:             managedDir,
+		AdoptExistingPGData: true,
+		Env:                 "dev",
+	})
+	if err == nil || !strings.Contains(err.Error(), "major version 16") {
+		t.Fatalf("expected major version mismatch error, got %v", err)
+	}
+
+	// Explicitly selecting matching pg16 image passes validation.
+	normalized, dirInfo, err := svc.validateAndNormalizeApply(ApplyInput{
+		DatabaseMode:        "managed",
+		CacheMode:           "memory",
+		DataDir:             managedDir,
+		PostgresImage:       "pgvector/pgvector:pg16",
+		AdoptExistingPGData: true,
+		Env:                 "dev",
+	})
+	if err != nil {
+		t.Fatalf("expected matching pg16 image to validate, got %v", err)
+	}
+	if normalized.PostgresImage != "pgvector/pgvector:pg16" || dirInfo.PGVersion != "16" {
+		t.Fatalf("unexpected validation output: image=%q pgVersion=%q", normalized.PostgresImage, dirInfo.PGVersion)
 	}
 }

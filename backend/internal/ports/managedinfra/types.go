@@ -30,7 +30,8 @@ const (
 	OptionalServiceRapidOCR  = "rapidocr"
 	RapidOCRContainerName    = "firecortex-rapidocr"
 
-	// 默认可选旁路服务镜像与端口。
+	// 默认核心与可选旁路服务镜像与端口。
+	DefaultPostgresImage  = "pgvector/pgvector:pg18-trixie"
 	DefaultTikaImage      = "apache/tika:3.2.3.0"
 	DefaultDoclingImage   = "ghcr.io/lieyanc/firecortex-docling:latest"
 	DefaultTesseractImage = "ghcr.io/lieyanc/firecortex-tesseract:latest"

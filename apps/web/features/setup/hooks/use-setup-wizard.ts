@@ -75,7 +75,7 @@ const INITIAL_FORM: SetupFormState = {
   postgresDataDir: "",
   redisDataDir: "",
   backupDir: "",
-  postgresImage: "pgvector/pgvector:pg16",
+  postgresImage: "pgvector/pgvector:pg18-trixie",
   postgresPort: 5432,
   postgresMemoryLimitMB: 0,
   redisImage: "redis:7-alpine",

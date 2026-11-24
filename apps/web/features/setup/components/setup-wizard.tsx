@@ -359,6 +359,9 @@ export function SetupWizard() {
                       {wizard.dirInspection.reason ? <p>{wizard.dirInspection.reason}</p> : null}
                       {wizard.dirInspection.valid ? (
                         <div className="font-mono text-[11px] text-muted-foreground">
+                          {wizard.dirInspection.pgVersion ? (
+                            <div>PostgreSQL: v{wizard.dirInspection.pgVersion}</div>
+                          ) : null}
                           <div>pgdata: {wizard.dirInspection.postgresDataDir}</div>
                           <div>backups: {wizard.dirInspection.backupDir}</div>
                           <div>redis: {wizard.dirInspection.redisDataDir}</div>

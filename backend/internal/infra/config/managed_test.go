@@ -107,6 +107,13 @@ func TestPrepareInitializedConfigValidatesAndPersists(t *testing.T) {
 		t.Fatalf("failed PrepareInitializedConfig must not create config.json, statErr=%v", statErr)
 	}
 
+	if got := DefaultManagedPostgresImage; got != "pgvector/pgvector:pg18-trixie" {
+		t.Fatalf("expected DefaultManagedPostgresImage pgvector/pgvector:pg18-trixie, got %q", got)
+	}
+	if got := templateConfig().Managed.Postgres.Image; got != DefaultManagedPostgresImage {
+		t.Fatalf("expected template managed.postgres.image %q, got %q", DefaultManagedPostgresImage, got)
+	}
+
 	dataRoot := filepath.Join(dir, "managed-root")
 	written, err := PrepareInitializedConfig(cfgPath, InitializedConfigInput{
 		Env:                    "prod",

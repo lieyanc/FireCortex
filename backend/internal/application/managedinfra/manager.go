@@ -551,6 +551,13 @@ func (m *Manager) runCoreServiceAction(
 		m.recordAudit(ctx, actorUserID, "infra.service.restart", "managed_service", serviceID, map[string]any{"container": containerName})
 		m.completeJob(jobID, action, serviceID, "Service restarted and healthy")
 	case "start":
+		if serviceID == managedports.CoreServicePostgres {
+			dirInfo := m.hostOps.InspectManagedRoot(cfg.EffectiveManagedDataDir(), cfg.ManagedPostgresDataDir, cfg.ManagedRedisDataDir, cfg.ManagedBackupDir)
+			if err := managedports.ValidatePostgresImageForDataVersion(cfg.ManagedPostgresImage, dirInfo.PGVersion); err != nil {
+				m.failJob(jobID, action, serviceID, "validate", err)
+				return
+			}
+		}
 		m.emitJobEvent(jobID, action, serviceID, "start", "Ensuring core container "+containerName+"...", 25, "running")
 		if err := m.ensureSingleCore(ctx, cfg, client, serviceID, jobID, action); err != nil {
 			m.failJob(jobID, action, serviceID, "start", err)
@@ -561,6 +568,11 @@ func (m *Manager) runCoreServiceAction(
 		m.completeJob(jobID, action, serviceID, "Core service started and healthy")
 	case "pull":
 		if serviceID == managedports.CoreServicePostgres {
+			dirInfo := m.hostOps.InspectManagedRoot(cfg.EffectiveManagedDataDir(), cfg.ManagedPostgresDataDir, cfg.ManagedRedisDataDir, cfg.ManagedBackupDir)
+			if err := managedports.ValidatePostgresImageForDataVersion(cfg.ManagedPostgresImage, dirInfo.PGVersion); err != nil {
+				m.failJob(jobID, action, serviceID, "validate", err)
+				return
+			}
 			m.emitJobEvent(jobID, action, serviceID, "backup", "Creating pre-upgrade PostgreSQL backup snapshot...", 10, "running")
 			if _, bErr := m.CreateBackup(ctx, actorUserID, "pre-upgrade"); bErr != nil {
 				m.failJob(jobID, action, serviceID, "backup", fmt.Errorf("pre-upgrade backup failed (upgrade aborted for safety): %w", bErr))

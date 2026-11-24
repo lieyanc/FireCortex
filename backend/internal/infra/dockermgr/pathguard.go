@@ -236,10 +236,128 @@ func inspectPGDataDir(pgDir string, knownManagedRoot bool) (status string, pgVer
 	}
 
 	// 允许目录里只含 lost+found（独立挂载的空 ext4 分区根目录）。
-	if len(entries) == 1 && entries[0].Name() == "lost+found" {
+	if len(entries) == 1 && entries[0].Name() == "lost+found" && entries[0].IsDir() {
 		return DirStatusEmpty, "", ""
 	}
+
+	// 支持 PostgreSQL 18+ 官方镜像的版本化目录结构（如 <pgdata>/18/docker/PG_VERSION）。
+	if detectedVersion, ok := inspectVersionedPGDataRoot(pgDir, entries, knownManagedRoot); ok {
+		return DirStatusAdoptablePGData, detectedVersion, ""
+	}
 	return DirStatusInvalid, "", fmt.Sprintf("postgres data dir %q is not empty and does not contain PG_VERSION; refusing to overwrite unrelated files", pgDir)
+}
+
+func inspectVersionedPGDataRoot(pgDir string, entries []os.DirEntry, knownManagedRoot bool) (string, bool) {
+	bestMajor := 0
+	bestVersion := ""
+	foundCluster := false
+
+	for _, entry := range entries {
+		name := entry.Name()
+		if name == "lost+found" && entry.IsDir() {
+			continue
+		}
+		if !entry.IsDir() {
+			if isAllowedPGHomeDotfile(name) {
+				continue
+			}
+			return "", false
+		}
+		major, ok := parsePGMajorDirName(name)
+		if !ok {
+			return "", false
+		}
+		verStr, ok := inspectVersionedPGDir(filepath.Join(pgDir, name), name, knownManagedRoot)
+		if !ok {
+			return "", false
+		}
+		foundCluster = true
+		if major > bestMajor {
+			bestMajor = major
+			bestVersion = verStr
+		}
+	}
+	if !foundCluster {
+		return "", false
+	}
+	return bestVersion, true
+}
+
+func inspectVersionedPGDir(verDir, dirMajorName string, knownManagedRoot bool) (string, bool) {
+	subEntries, err := os.ReadDir(verDir)
+	if errors.Is(err, os.ErrPermission) {
+		if knownManagedRoot {
+			return dirMajorName, true
+		}
+		return "", false
+	}
+	if err != nil || len(subEntries) == 0 {
+		return "", false
+	}
+
+	detected := ""
+	foundCluster := false
+	for _, sub := range subEntries {
+		name := sub.Name()
+		if name == "lost+found" && sub.IsDir() {
+			continue
+		}
+		if !sub.IsDir() {
+			return "", false
+		}
+		verBytes, verErr := os.ReadFile(filepath.Join(verDir, name, "PG_VERSION"))
+		switch {
+		case verErr == nil:
+			foundCluster = true
+			if trimmed := strings.TrimSpace(string(verBytes)); trimmed != "" {
+				detected = trimmed
+			} else if detected == "" {
+				detected = dirMajorName
+			}
+		case errors.Is(verErr, os.ErrPermission) && (knownManagedRoot || name == "docker"):
+			// PostgreSQL 将 PGDATA（如 <major>/docker）设为容器 UID 所有的 0700 权限，
+			// 非 root 运行的服务进程可能无法直接读取其内部 PG_VERSION。
+			foundCluster = true
+			if detected == "" {
+				detected = dirMajorName
+			}
+		default:
+			return "", false
+		}
+	}
+	if !foundCluster {
+		return "", false
+	}
+	if detected == "" {
+		detected = dirMajorName
+	}
+	return detected, true
+}
+
+func parsePGMajorDirName(name string) (int, bool) {
+	if name == "" || len(name) > 2 || name[0] == '0' {
+		return 0, false
+	}
+	v := 0
+	for i := 0; i < len(name); i++ {
+		if name[i] < '0' || name[i] > '9' {
+			return 0, false
+		}
+		v = v*10 + int(name[i]-'0')
+	}
+	if v < 9 || v > 99 {
+		return 0, false
+	}
+	return v, true
+}
+
+func isAllowedPGHomeDotfile(name string) bool {
+	switch name {
+	case ".psql_history", ".pgpass", ".bash_history", ".profile", ".bashrc":
+		return true
+	default:
+		return false
+	}
 }
 
 func nearestExistingDir(path string) string {

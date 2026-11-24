@@ -428,6 +428,10 @@ func EnsureStartupCoreServices(ctx context.Context, cfg config.Config, hostOps m
 	}
 
 	if cfg.ManagedPostgresEnabled {
+		dirInfo := hostOps.InspectManagedRoot(rootDir, cfg.ManagedPostgresDataDir, cfg.ManagedRedisDataDir, cfg.ManagedBackupDir)
+		if err := managedports.ValidatePostgresImageForDataVersion(cfg.ManagedPostgresImage, dirInfo.PGVersion); err != nil {
+			return err
+		}
 		user, password, dbName := ParsePostgresDSN(cfg.PostgresDSN)
 		pgCfg := managedports.PostgresContainerConfig{
 			Image:          cfg.ManagedPostgresImage,

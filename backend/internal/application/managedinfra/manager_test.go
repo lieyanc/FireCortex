@@ -13,15 +13,21 @@ import (
 )
 
 type stubManagerHostOps struct {
-	client managedports.DockerClient
-	synced int
+	client    managedports.DockerClient
+	synced    int
+	pgVersion string
 }
 
 func (s *stubManagerHostOps) NewDockerClient(string) (managedports.DockerClient, error) {
 	return s.client, nil
 }
 func (s *stubManagerHostOps) InspectManagedRoot(rawRoot, _, _, _ string) managedports.DirInspection {
-	return managedports.DirInspection{ResolvedRoot: rawRoot, Valid: true, Status: managedports.DirStatusManagedExisting}
+	return managedports.DirInspection{
+		ResolvedRoot: rawRoot,
+		Valid:        true,
+		Status:       managedports.DirStatusManagedExisting,
+		PGVersion:    s.pgVersion,
+	}
 }
 func (s *stubManagerHostOps) PrepareManagedDirs(rootDir, pgDir, redisDir, backupDir, servicesDir string) error {
 	for _, d := range []string{rootDir, pgDir, redisDir, backupDir, servicesDir} {
@@ -90,7 +96,7 @@ func TestManagerBackupCreateListRestoreAndCronMatch(t *testing.T) {
 		ManagedDataDir:              root,
 		ManagedNetwork:              "firecortex-network",
 		ManagedPostgresEnabled:      true,
-		ManagedPostgresImage:        "pgvector/pgvector:pg16",
+		ManagedPostgresImage:        "pgvector/pgvector:pg18-trixie",
 		ManagedPostgresPort:         5432,
 		ManagedBackupEnabled:        true,
 		ManagedBackupSchedule:       "0 3 * * *",
@@ -263,4 +269,63 @@ func TestSwitchBackValidatesManagedCredentialsBeforeWriting(t *testing.T) {
 	if _, err := mgr.DangerSwitchDatabase(t.Context(), 1, input); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestManagedPostgresBlocksMajorVersionMismatch(t *testing.T) {
+	root := t.TempDir()
+	cfg := config.Config{
+		Env:                    "dev",
+		DatabaseDriver:         "postgres",
+		PostgresDSN:            "postgres://firecortex:secret@127.0.0.1:5432/firecortex?sslmode=disable",
+		CacheDriver:            "memory",
+		ManagedDataDir:         root,
+		ManagedNetwork:         "firecortex-network",
+		ManagedPostgresEnabled: true,
+		ManagedPostgresImage:   "pgvector/pgvector:pg18-trixie",
+		ManagedPostgresPort:    5432,
+	}
+	docker := &fakeDockerClient{containers: map[string]*managedports.ContainerInfo{
+		managedports.PostgresContainerName: {ID: "pg-1", Name: managedports.PostgresContainerName, Running: true, Health: "healthy"},
+	}}
+	hostOps := &stubManagerHostOps{client: docker, pgVersion: "16"}
+	mgr := NewManager(ManagerDependencies{
+		Runtime:  config.NewRuntime(cfg),
+		HostOps:  hostOps,
+		Infra:    &switchProbe{},
+		Security: &stubSecurity{validPass: "admin"},
+	})
+
+	// Switching to managed mode with pg18 image over pg16 data directory must fail before touching Docker.
+	if _, err := mgr.DangerSwitchDatabase(t.Context(), 1, DangerSwitchDatabaseInput{
+		DatabaseMode:    "managed",
+		CacheMode:       "memory",
+		CurrentPassword: "admin",
+		ConfirmText:     ConfirmTextSwitchDatabase,
+	}); err == nil {
+		t.Fatal("expected DangerSwitchDatabase to reject pg18 image against pg16 data")
+	}
+	if len(docker.pulledImages) != 0 {
+		t.Fatalf("expected no image pulls on version mismatch, got %v", docker.pulledImages)
+	}
+
+	// Pull/recreate must fail validation before pulling or recreating the container.
+	snap, err := mgr.StartServiceAction(t.Context(), 1, managedports.CoreServicePostgres, "pull", ServiceActionOptions{})
+	if err != nil {
+		t.Fatalf("StartServiceAction failed unexpectedly: %v", err)
+	}
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		cur, ok := mgr.GetJob(snap.JobID)
+		if ok && cur.State != "running" {
+			if cur.State != "failed" {
+				t.Fatalf("expected pull job to fail on version mismatch, got %+v", cur)
+			}
+			if len(docker.pulledImages) != 0 {
+				t.Fatalf("expected pull job not to pull image on version mismatch, got %v", docker.pulledImages)
+			}
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatal("timed out waiting for pull validation job to fail")
 }

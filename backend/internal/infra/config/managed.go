@@ -15,7 +15,7 @@ const (
 	// DefaultManagedDataDir 是托管基础设施数据的默认根目录（相对 config.json 所在目录）。
 	DefaultManagedDataDir = "./data/managed"
 	// DefaultManagedPostgresImage 是默认托管的 PostgreSQL + pgvector 镜像。
-	DefaultManagedPostgresImage = "pgvector/pgvector:pg16"
+	DefaultManagedPostgresImage = "pgvector/pgvector:pg18-trixie"
 	// DefaultManagedRedisImage 是默认托管的 Redis 镜像。
 	DefaultManagedRedisImage = "redis:7-alpine"
 	// DefaultDockerSocketHost 是 Linux 宿主机默认的 Docker Engine Unix Socket 地址。

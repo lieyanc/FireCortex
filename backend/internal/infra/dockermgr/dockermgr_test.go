@@ -22,13 +22,13 @@ func TestRewriteImageWithMirror(t *testing.T) {
 		mirror string
 		want   string
 	}{
-		{"pgvector/pgvector:pg16", "", "pgvector/pgvector:pg16"},
+		{"pgvector/pgvector:pg18-trixie", "", "pgvector/pgvector:pg18-trixie"},
 		{"redis:7-alpine", "https://docker.m.daocloud.io/", "docker.m.daocloud.io/library/redis:7-alpine"},
-		{"pgvector/pgvector:pg16", "docker.m.daocloud.io", "docker.m.daocloud.io/pgvector/pgvector:pg16"},
+		{"pgvector/pgvector:pg18-trixie", "docker.m.daocloud.io", "docker.m.daocloud.io/pgvector/pgvector:pg18-trixie"},
 		{"docker.io/library/redis:7", "mirror.example.com", "mirror.example.com/library/redis:7"},
 		{"docker.io/redis:7", "mirror.example.com", "mirror.example.com/library/redis:7"},
 		{"ghcr.io/lieyanc/firecortex-rapidocr:latest", "mirror.example.com", "mirror.example.com/ghcr.io/lieyanc/firecortex-rapidocr:latest"},
-		{"mirror.example.com/pgvector/pgvector:pg16", "mirror.example.com", "mirror.example.com/pgvector/pgvector:pg16"},
+		{"mirror.example.com/pgvector/pgvector:pg18-trixie", "mirror.example.com", "mirror.example.com/pgvector/pgvector:pg18-trixie"},
 	}
 
 	for _, tc := range tests {
@@ -36,6 +36,79 @@ func TestRewriteImageWithMirror(t *testing.T) {
 			t.Errorf("RewriteImageWithMirror(%q, %q) = %q, want %q", tc.image, tc.mirror, got, tc.want)
 		}
 	}
+}
+
+func TestPostgresSpecLayoutByMajorVersion(t *testing.T) {
+	hasEnv := func(env []string, want string) bool {
+		for _, item := range env {
+			if item == want {
+				return true
+			}
+		}
+		return false
+	}
+	hasEnvPrefix := func(env []string, prefix string) bool {
+		for _, item := range env {
+			if strings.HasPrefix(item, prefix) {
+				return true
+			}
+		}
+		return false
+	}
+
+	t.Run("default empty image uses pg18-trixie layout and applies mirror", func(t *testing.T) {
+		spec := PostgresSpec(PostgresContainerConfig{
+			RegistryMirror: "docker.m.daocloud.io",
+			DataDir:        "/data/firecortex/postgres/pgdata",
+			Password:       "secret",
+		})
+		if spec.Image != "docker.m.daocloud.io/pgvector/pgvector:pg18-trixie" {
+			t.Fatalf("unexpected image %q", spec.Image)
+		}
+		if len(spec.Binds) != 1 || spec.Binds[0] != "/data/firecortex/postgres/pgdata:/var/lib/postgresql" {
+			t.Fatalf("unexpected binds %+v", spec.Binds)
+		}
+		if hasEnvPrefix(spec.Env, "PGDATA=") {
+			t.Fatalf("pg18 spec should not override PGDATA, got %+v", spec.Env)
+		}
+		if !hasEnv(spec.Env, "POSTGRES_INITDB_ARGS=--locale-provider=builtin --locale=C.UTF-8") {
+			t.Fatalf("pg18 spec missing builtin initdb args: %+v", spec.Env)
+		}
+	})
+
+	t.Run("pg17 keeps legacy mount and enables builtin initdb args", func(t *testing.T) {
+		spec := PostgresSpec(PostgresContainerConfig{
+			Image:    "pgvector/pgvector:pg17-bookworm",
+			DataDir:  "/data/firecortex/postgres/pgdata",
+			Password: "secret",
+		})
+		if len(spec.Binds) != 1 || spec.Binds[0] != "/data/firecortex/postgres/pgdata:/var/lib/postgresql/data" {
+			t.Fatalf("unexpected binds %+v", spec.Binds)
+		}
+		if !hasEnv(spec.Env, "PGDATA=/var/lib/postgresql/data") {
+			t.Fatalf("pg17 spec missing PGDATA: %+v", spec.Env)
+		}
+		if !hasEnv(spec.Env, "POSTGRES_INITDB_ARGS=--locale-provider=builtin --locale=C.UTF-8") {
+			t.Fatalf("pg17 spec missing builtin initdb args: %+v", spec.Env)
+		}
+	})
+
+	t.Run("pg16 keeps legacy mount without builtin initdb args", func(t *testing.T) {
+		spec := PostgresSpec(PostgresContainerConfig{
+			Image:    "pgvector/pgvector:pg16",
+			DataDir:  "/data/firecortex/postgres/pgdata",
+			Password: "secret",
+		})
+		if len(spec.Binds) != 1 || spec.Binds[0] != "/data/firecortex/postgres/pgdata:/var/lib/postgresql/data" {
+			t.Fatalf("unexpected binds %+v", spec.Binds)
+		}
+		if !hasEnv(spec.Env, "PGDATA=/var/lib/postgresql/data") {
+			t.Fatalf("pg16 spec missing PGDATA: %+v", spec.Env)
+		}
+		if hasEnvPrefix(spec.Env, "POSTGRES_INITDB_ARGS=") {
+			t.Fatalf("pg16 spec must not set PG 17+ builtin initdb args: %+v", spec.Env)
+		}
+	})
 }
 
 func TestPathGuardBlocksProtectedAndUnrelatedDirs(t *testing.T) {
@@ -101,6 +174,79 @@ func TestPathGuardBlocksProtectedAndUnrelatedDirs(t *testing.T) {
 			t.Fatalf("expected managed_existing after marker creation, got %+v", after)
 		}
 	})
+
+	t.Run("pg18 versioned layout is recognized as adoptable and managed", func(t *testing.T) {
+		root := filepath.Join(t.TempDir(), "managed")
+		pgDir := filepath.Join(root, "postgres", "pgdata")
+		clusterDir := filepath.Join(pgDir, "18", "docker")
+		if err := os.MkdirAll(clusterDir, 0o750); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(clusterDir, "PG_VERSION"), []byte("18\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(pgDir, ".psql_history"), []byte("\\dt\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+
+		res := InspectManagedRoot(root, "", "", "")
+		if !res.Valid || res.Status != DirStatusAdoptablePGData || res.PGVersion != "18" {
+			t.Fatalf("expected adoptable pgdata v18, got %+v", res)
+		}
+
+		if err := PrepareManagedDirs(root, pgDir, filepath.Join(root, "redis"), filepath.Join(root, "postgres", "backups"), filepath.Join(root, "services")); err != nil {
+			t.Fatalf("PrepareManagedDirs failed: %v", err)
+		}
+		after := InspectManagedRoot(root, "", "", "")
+		if !after.Valid || after.Status != DirStatusManagedExisting || !after.HasManagedMarker || after.PGVersion != "18" {
+			t.Fatalf("expected managed_existing v18 after marker creation, got %+v", after)
+		}
+
+		// Adding an unrelated sibling file must fail safety inspection.
+		if err := os.WriteFile(filepath.Join(pgDir, "random.txt"), []byte("nope"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		invalid := InspectManagedRoot(root, "", "", "")
+		if invalid.Valid || invalid.Status != DirStatusInvalid {
+			t.Fatalf("expected invalid status when unrelated file exists alongside pg18 dir, got %+v", invalid)
+		}
+	})
+
+	t.Run("pg18 versioned dir without PG_VERSION is rejected", func(t *testing.T) {
+		root := filepath.Join(t.TempDir(), "managed")
+		clusterDir := filepath.Join(root, "postgres", "pgdata", "18", "docker")
+		if err := os.MkdirAll(clusterDir, 0o750); err != nil {
+			t.Fatal(err)
+		}
+		res := InspectManagedRoot(root, "", "", "")
+		if res.Valid || res.Status != DirStatusInvalid {
+			t.Fatalf("expected invalid status when 18/docker has no PG_VERSION, got %+v", res)
+		}
+	})
+
+	t.Run("pg18 unreadable 0700 docker subdir is still recognized", func(t *testing.T) {
+		if os.Geteuid() == 0 {
+			t.Skip("root bypasses chmod 0000 permission checks")
+		}
+		root := filepath.Join(t.TempDir(), "managed")
+		pgDir := filepath.Join(root, "postgres", "pgdata")
+		clusterDir := filepath.Join(pgDir, "18", "docker")
+		if err := os.MkdirAll(clusterDir, 0o750); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(clusterDir, "PG_VERSION"), []byte("18\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chmod(clusterDir, 0o000); err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = os.Chmod(clusterDir, 0o750) }()
+
+		res := InspectManagedRoot(root, "", "", "")
+		if !res.Valid || res.Status != DirStatusAdoptablePGData || res.PGVersion != "18" {
+			t.Fatalf("expected adoptable pgdata v18 on EACCES docker subdir, got %+v", res)
+		}
+	})
 }
 
 func TestSyncComposeFilesPermissionsAndContent(t *testing.T) {
@@ -109,7 +255,7 @@ func TestSyncComposeFilesPermissionsAndContent(t *testing.T) {
 		Network:        "firecortex-network",
 		RegistryMirror: "docker.m.daocloud.io",
 		Postgres: &PostgresContainerConfig{
-			Image:         "pgvector/pgvector:pg16",
+			Image:         "pgvector/pgvector:pg18-trixie",
 			Port:          5432,
 			User:          "firecortex",
 			Password:      "pg$ecret",
@@ -136,7 +282,7 @@ func TestSyncComposeFilesPermissionsAndContent(t *testing.T) {
 		t.Fatalf("expected .env mode 0600, got %o", envInfo.Mode().Perm())
 	}
 	envContent, _ := os.ReadFile(envPath)
-	if !strings.Contains(string(envContent), "FIRECORTEX_POSTGRES_IMAGE=docker.m.daocloud.io/pgvector/pgvector:pg16") {
+	if !strings.Contains(string(envContent), "FIRECORTEX_POSTGRES_IMAGE=docker.m.daocloud.io/pgvector/pgvector:pg18-trixie") {
 		t.Fatalf("unexpected .env image line:\n%s", envContent)
 	}
 	if !strings.Contains(string(envContent), "FIRECORTEX_POSTGRES_PASSWORD='pg$ecret'") {
@@ -147,6 +293,8 @@ func TestSyncComposeFilesPermissionsAndContent(t *testing.T) {
 	for _, want := range []string{
 		"container_name: firecortex-postgres",
 		"container_name: firecortex-redis",
+		`POSTGRES_INITDB_ARGS: "--locale-provider=builtin --locale=C.UTF-8"`,
+		`"${FIRECORTEX_POSTGRES_DATA_DIR}:/var/lib/postgresql"`,
 		`"127.0.0.1:${FIRECORTEX_POSTGRES_PORT}:5432"`,
 		`"127.0.0.1:${FIRECORTEX_REDIS_PORT}:6379"`,
 		"mem_limit: 1024m",
@@ -157,6 +305,39 @@ func TestSyncComposeFilesPermissionsAndContent(t *testing.T) {
 			t.Fatalf("compose file missing %q:\n%s", want, composeContent)
 		}
 	}
+	if strings.Contains(string(composeContent), "PGDATA: /var/lib/postgresql/data") {
+		t.Fatalf("pg18 compose file must not force legacy PGDATA:\n%s", composeContent)
+	}
+
+	t.Run("legacy pg16 compose preserves /var/lib/postgresql/data layout", func(t *testing.T) {
+		legacyRoot := filepath.Join(t.TempDir(), "managed-pg16")
+		legacyComposePath, _, err := SyncComposeFiles(legacyRoot, ComposeState{
+			Network: "firecortex-network",
+			Postgres: &PostgresContainerConfig{
+				Image:    "pgvector/pgvector:pg16",
+				Port:     5432,
+				User:     "firecortex",
+				Password: "secret",
+				Database: "firecortex",
+				DataDir:  filepath.Join(legacyRoot, "postgres", "pgdata"),
+			},
+		})
+		if err != nil {
+			t.Fatalf("SyncComposeFiles legacy pg16 failed: %v", err)
+		}
+		legacyContent, _ := os.ReadFile(legacyComposePath)
+		for _, want := range []string{
+			"PGDATA: /var/lib/postgresql/data",
+			`"${FIRECORTEX_POSTGRES_DATA_DIR}:/var/lib/postgresql/data"`,
+		} {
+			if !strings.Contains(string(legacyContent), want) {
+				t.Fatalf("legacy compose file missing %q:\n%s", want, legacyContent)
+			}
+		}
+		if strings.Contains(string(legacyContent), "POSTGRES_INITDB_ARGS") {
+			t.Fatalf("pg16 compose file must not include PG 17+ builtin initdb args:\n%s", legacyContent)
+		}
+	})
 }
 
 func TestHTTPClientCoreDockerOperations(t *testing.T) {
@@ -218,7 +399,7 @@ func TestHTTPClientCoreDockerOperations(t *testing.T) {
 				"Health":  map[string]any{"Status": "healthy"},
 			},
 			"Config": map[string]any{
-				"Image":  "pgvector/pgvector:pg16",
+				"Image":  "pgvector/pgvector:pg18-trixie",
 				"Labels": map[string]string{ManagedLabelKey: "true", ServiceLabelKey: CoreServicePostgres},
 			},
 		})
@@ -254,7 +435,7 @@ func TestHTTPClientCoreDockerOperations(t *testing.T) {
 	}
 
 	var lastPct int
-	if err := client.PullImage(ctx, "pgvector/pgvector:pg16", func(p PullProgress) { lastPct = p.Percent }); err != nil {
+	if err := client.PullImage(ctx, "pgvector/pgvector:pg18-trixie", func(p PullProgress) { lastPct = p.Percent }); err != nil {
 		t.Fatalf("PullImage failed: %v", err)
 	}
 	if lastPct != 100 {
@@ -262,7 +443,7 @@ func TestHTTPClientCoreDockerOperations(t *testing.T) {
 	}
 
 	id, err := client.CreateContainer(ctx, PostgresSpec(PostgresContainerConfig{
-		Image:    "pgvector/pgvector:pg16",
+		Image:    "pgvector/pgvector:pg18-trixie",
 		Network:  "firecortex-network",
 		Port:     5432,
 		DataDir:  "/data/firecortex/postgres/pgdata",

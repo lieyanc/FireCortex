@@ -106,7 +106,7 @@ func TestEnsurePostgresAndRedisLifecycle(t *testing.T) {
 
 	err := EnsurePostgres(context.Background(), fake, managedports.ContainerSpec{
 		Name:    managedports.PostgresContainerName,
-		Image:   "pgvector/pgvector:pg16",
+		Image:   "pgvector/pgvector:pg18-trixie",
 		Network: "firecortex-network",
 	}, "firecortex", "firecortex", nil)
 	if err != nil {

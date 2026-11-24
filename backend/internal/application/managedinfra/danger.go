@@ -329,6 +329,10 @@ func (m *Manager) DangerSwitchDatabase(ctx context.Context, actorUserID uint, in
 		if err != nil {
 			return false, err
 		}
+		dirInfo := m.hostOps.InspectManagedRoot(cfg.EffectiveManagedDataDir(), cfg.ManagedPostgresDataDir, cfg.ManagedRedisDataDir, cfg.ManagedBackupDir)
+		if err := managedports.ValidatePostgresImageForDataVersion(cfg.ManagedPostgresImage, dirInfo.PGVersion); err != nil {
+			return false, err
+		}
 		if err := m.hostOps.PrepareManagedDirs(cfg.EffectiveManagedDataDir(), cfg.EffectiveManagedPostgresDataDir(), cfg.EffectiveManagedRedisDataDir(), cfg.EffectiveManagedBackupDir(), cfg.EffectiveManagedServicesDir()); err != nil {
 			return false, err
 		}

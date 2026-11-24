@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	managedports "github.com/lieyanc/FireCortex/backend/internal/ports/managedinfra"
 )
 
 const (
@@ -62,7 +64,8 @@ func renderComposeEnv(state ComposeState) []byte {
 	}
 	if state.Postgres != nil {
 		pg := state.Postgres
-		fmt.Fprintf(&buf, "FIRECORTEX_POSTGRES_IMAGE=%s\n", envEscape(RewriteImageWithMirror(pg.Image, state.RegistryMirror)))
+		pgImage := nonEmptyOr(pg.Image, managedports.DefaultPostgresImage)
+		fmt.Fprintf(&buf, "FIRECORTEX_POSTGRES_IMAGE=%s\n", envEscape(RewriteImageWithMirror(pgImage, state.RegistryMirror)))
 		fmt.Fprintf(&buf, "FIRECORTEX_POSTGRES_PORT=%d\n", portOrDefault(pg.Port, 5432))
 		fmt.Fprintf(&buf, "FIRECORTEX_POSTGRES_USER=%s\n", envEscape(nonEmptyOr(pg.User, "firecortex")))
 		fmt.Fprintf(&buf, "FIRECORTEX_POSTGRES_PASSWORD=%s\n", envEscape(pg.Password))
@@ -91,6 +94,8 @@ func renderComposeYAML(state ComposeState) []byte {
 	buf.WriteString("services:\n")
 
 	if state.Postgres != nil {
+		pgImage := nonEmptyOr(state.Postgres.Image, managedports.DefaultPostgresImage)
+		pgLayout := managedports.ResolvePostgresContainerLayout(pgImage)
 		buf.WriteString("  postgres:\n")
 		fmt.Fprintf(&buf, "    container_name: %s\n", PostgresContainerName)
 		buf.WriteString("    image: ${FIRECORTEX_POSTGRES_IMAGE}\n")
@@ -102,11 +107,16 @@ func renderComposeYAML(state ComposeState) []byte {
 		buf.WriteString("      POSTGRES_USER: ${FIRECORTEX_POSTGRES_USER}\n")
 		buf.WriteString("      POSTGRES_PASSWORD: ${FIRECORTEX_POSTGRES_PASSWORD}\n")
 		buf.WriteString("      POSTGRES_DB: ${FIRECORTEX_POSTGRES_DB}\n")
-		buf.WriteString("      PGDATA: /var/lib/postgresql/data\n")
+		if pgLayout.PGData != "" {
+			fmt.Fprintf(&buf, "      PGDATA: %s\n", pgLayout.PGData)
+		}
+		if pgLayout.InitDBArgs != "" {
+			fmt.Fprintf(&buf, "      POSTGRES_INITDB_ARGS: %q\n", pgLayout.InitDBArgs)
+		}
 		buf.WriteString("    ports:\n")
 		buf.WriteString("      - \"127.0.0.1:${FIRECORTEX_POSTGRES_PORT}:5432\"\n")
 		buf.WriteString("    volumes:\n")
-		buf.WriteString("      - \"${FIRECORTEX_POSTGRES_DATA_DIR}:/var/lib/postgresql/data\"\n")
+		fmt.Fprintf(&buf, "      - \"${FIRECORTEX_POSTGRES_DATA_DIR}:%s\"\n", pgLayout.MountTarget)
 		if state.Postgres.MemoryLimitMB > 0 {
 			fmt.Fprintf(&buf, "    mem_limit: %dm\n", state.Postgres.MemoryLimitMB)
 		}

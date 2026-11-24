@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	managedports "github.com/lieyanc/FireCortex/backend/internal/ports/managedinfra"
 )
 
 // RewriteImageWithMirror 根据可选的镜像加速前缀（Registry Mirror）改写待拉取的镜像地址。
 // 规则：
 //   - mirror 为空时原样返回；
 //   - Docker Hub 官方镜像（如 redis:7-alpine）改写为 <mirror>/library/redis:7-alpine；
-//   - Docker Hub 两段镜像（如 pgvector/pgvector:pg16）改写为 <mirror>/pgvector/pgvector:pg16；
+//   - Docker Hub 两段镜像（如 pgvector/pgvector:pg18-trixie）改写为 <mirror>/pgvector/pgvector:pg18-trixie；
 //   - 带显式域名（含 '.' 或 ':'，如 ghcr.io/...）的镜像若非 docker.io 且与 mirror 不同，
 //     则去掉 docker.io/ 前缀或保留其原始路径以便兼容多源代理。
 func RewriteImageWithMirror(image, mirror string) string {
@@ -62,9 +64,23 @@ func PostgresSpec(cfg PostgresContainerConfig) ContainerSpec {
 	if dbName == "" {
 		dbName = "firecortex"
 	}
-	image := RewriteImageWithMirror(cfg.Image, cfg.RegistryMirror)
-	if image == "" {
-		image = "pgvector/pgvector:pg16"
+	rawImage := strings.TrimSpace(cfg.Image)
+	if rawImage == "" {
+		rawImage = managedports.DefaultPostgresImage
+	}
+	image := RewriteImageWithMirror(rawImage, cfg.RegistryMirror)
+	layout := managedports.ResolvePostgresContainerLayout(rawImage)
+
+	env := []string{
+		"POSTGRES_USER=" + user,
+		"POSTGRES_PASSWORD=" + cfg.Password,
+		"POSTGRES_DB=" + dbName,
+	}
+	if layout.PGData != "" {
+		env = append(env, "PGDATA="+layout.PGData)
+	}
+	if layout.InitDBArgs != "" {
+		env = append(env, "POSTGRES_INITDB_ARGS="+layout.InitDBArgs)
 	}
 
 	return ContainerSpec{
@@ -72,14 +88,9 @@ func PostgresSpec(cfg PostgresContainerConfig) ContainerSpec {
 		Image:        image,
 		Network:      cfg.Network,
 		NetworkAlias: "postgres",
-		Env: []string{
-			"POSTGRES_USER=" + user,
-			"POSTGRES_PASSWORD=" + cfg.Password,
-			"POSTGRES_DB=" + dbName,
-			"PGDATA=/var/lib/postgresql/data",
-		},
+		Env:          env,
 		Binds: []string{
-			cfg.DataDir + ":/var/lib/postgresql/data",
+			cfg.DataDir + ":" + layout.MountTarget,
 		},
 		Ports: []PortBinding{
 			{

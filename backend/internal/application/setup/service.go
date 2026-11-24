@@ -563,6 +563,9 @@ func (s *Service) validateAndNormalizeApply(input ApplyInput) (ApplyInput, manag
 			if !out.AdoptExistingPGData {
 				return out, dirInfo, errors.New("existing PostgreSQL data detected in target directory; confirm safe adoption mode to continue")
 			}
+			if err := managedports.ValidatePostgresImageForDataVersion(out.PostgresImage, dirInfo.PGVersion); err != nil {
+				return out, dirInfo, err
+			}
 		}
 	}
 
