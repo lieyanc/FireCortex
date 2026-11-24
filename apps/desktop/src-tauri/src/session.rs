@@ -522,7 +522,8 @@ mod live {
     #[ignore = "requires FIRECORTEX_TEST_ORIGIN and FIRECORTEX_TEST_REFRESH_TOKEN"]
     async fn refresh_against_live_server_rotates_token() {
         let origin = std::env::var("FIRECORTEX_TEST_ORIGIN").expect("FIRECORTEX_TEST_ORIGIN");
-        let token = std::env::var("FIRECORTEX_TEST_REFRESH_TOKEN").expect("FIRECORTEX_TEST_REFRESH_TOKEN");
+        let token =
+            std::env::var("FIRECORTEX_TEST_REFRESH_TOKEN").expect("FIRECORTEX_TEST_REFRESH_TOKEN");
 
         let first = perform_refresh(&Effective::direct(), &origin, &token)
             .await
