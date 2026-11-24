@@ -14,9 +14,7 @@ fn main() {
             // session (content tabs)
             "get_server",
             "set_remote_server",
-            "set_local_server",
             "leave_server",
-            "local_sign_in",
             "store_session",
             "clear_session",
             "refresh_session",

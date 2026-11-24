@@ -177,14 +177,14 @@ pub fn on_event<R: Runtime>(app: &AppHandle<R>, id: &str) {
 }
 
 /// ⌘W: close the active tab. The last tab is kept — closing it would forget its
-/// server (token deleted, sidecar stopped) — and the window closes instead, as in
+/// server and delete its token — and the window closes instead, as in
 /// a browser.
 fn close_tab<R: Runtime>(app: &AppHandle<R>) {
     let snapshot = crate::tabs::snapshot(app);
     let Some(id) = snapshot.active.filter(|_| snapshot.tabs.len() > 1) else {
         return close_window(app);
     };
-    // `tabs::close` drives webviews and the sidecar: off the main thread, as the
+    // `tabs::close` drives webviews: off the main thread, as the
     // `tabs_close` command does.
     let app = app.clone();
     tauri::async_runtime::spawn(async move {

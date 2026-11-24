@@ -60,10 +60,7 @@
         "upgradeCode": "a7791a77-f6e8-52db-95c1-987f8afb9072",
         "language": "en-US"
       }
-    },
-    "externalBin": [
-      "binaries/firecortex-server"
-    ]
+    }
   },
   "plugins": {
     "updater": {

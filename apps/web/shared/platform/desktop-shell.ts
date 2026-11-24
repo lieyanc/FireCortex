@@ -8,7 +8,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 // the refresh token over once and can never read it back.
 
 export type ShellSessionError = {
-  kind: "network" | "http" | "storage" | "no_session" | "invalid_origin" | "sidecar" | "no_server" | "tabs";
+  kind: "network" | "http" | "storage" | "no_session" | "invalid_origin" | "no_server" | "tabs" | "policy";
   message: string;
   status?: number;
   errorCode?: string;
@@ -20,12 +20,12 @@ export function isShellSessionError(value: unknown): value is ShellSessionError 
 
 export type ShellCredentials = { accessToken: string; sessionID: string };
 
-export type ServerMode = "local" | "remote";
+export type ServerMode = "remote";
 
-/** The configured server. In local mode `origin` is the live sidecar address. */
+/** The configured remote server for this tab. */
 export type ServerInfo = { mode: ServerMode; origin: string };
 
-/** Configured server, or null on first run. Starts the local sidecar when needed. */
+/** Configured server, or null on first run. */
 export function getServer(): Promise<ServerInfo | null> {
   return invoke<ServerInfo | null>("get_server");
 }
@@ -33,16 +33,6 @@ export function getServer(): Promise<ServerInfo | null> {
 /** Use a remote server. Switching servers drops the previous session. */
 export function setRemoteServer(origin: string): Promise<ServerInfo> {
   return invoke<ServerInfo>("set_remote_server", { origin });
-}
-
-/** Use the bundled local server (SQLite + local storage). */
-export function setLocalServer(): Promise<ServerInfo> {
-  return invoke<ServerInfo>("set_local_server");
-}
-
-/** Local mode: sign in with the sidecar's one-time grant; the grant never reaches JS. */
-export function localSignIn(): Promise<ShellCredentials> {
-  return invoke<ShellCredentials>("local_sign_in");
 }
 
 /** Drop this tab's credential and return it to the setup screen. */

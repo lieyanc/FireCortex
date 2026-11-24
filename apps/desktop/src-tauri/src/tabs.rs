@@ -19,7 +19,6 @@ use tauri_plugin_opener::OpenerExt;
 use crate::distribution::Distribution;
 use crate::paths;
 use crate::session::{self, ServerMode};
-use crate::sidecar;
 
 pub const WINDOW_LABEL: &str = "main";
 pub const CHROME_LABEL: &str = "chrome";
@@ -42,6 +41,7 @@ pub struct Server {
 }
 
 impl Server {
+    #[cfg(test)]
     pub fn local() -> Self {
         Self {
             mode: ServerMode::Local,
@@ -54,7 +54,7 @@ impl Server {
             origin,
         }
     }
-    /// Keychain account. Local is a constant because the sidecar port changes per launch.
+    /// Keychain account for a server.
     pub fn keychain_key(&self) -> String {
         match self.mode {
             ServerMode::Local => "local".to_string(),
@@ -495,9 +495,13 @@ fn read_file<R: Runtime>(app: &AppHandle<R>) -> Result<TabsFile> {
                     return Ok(TabsFile::default());
                 }
             };
-            // Drop malformed remote entries rather than failing the whole launch.
+            // Drop legacy local tabs and malformed remote entries rather than failing launch.
             file.servers.retain(|s| match s.mode {
-                ServerMode::Local => true,
+                ServerMode::Local => {
+                    eprintln!("[tabs] dropping legacy local tab: local mode is not supported");
+                    let _ = session::forget(app, s);
+                    false
+                }
                 ServerMode::Remote => {
                     session::normalize_origin(&s.origin).as_deref() == Some(s.origin.as_str())
                 }
@@ -677,20 +681,17 @@ pub async fn unbind<R: Runtime>(app: &AppHandle<R>, id: &str) -> Result<()> {
         tab.server.take()
     };
     if let Some(server) = removed {
-        forget_server(app, &server).await?;
+        forget_server(app, &server)?;
     }
     changed(app)
 }
 
-/// Delete a server's credential and stop the sidecar if nothing else uses it.
-async fn forget_server<R: Runtime>(app: &AppHandle<R>, server: &Server) -> Result<()> {
+/// Delete a server's credential when nothing else references it.
+fn forget_server<R: Runtime>(app: &AppHandle<R>, server: &Server) -> Result<()> {
     if references(app, server) {
         return Ok(());
     }
     session::forget(app, server).map_err(|e| TabsError(e.message))?;
-    if server.mode == ServerMode::Local {
-        sidecar::stop(app).await;
-    }
     Ok(())
 }
 
@@ -710,7 +711,7 @@ pub async fn close<R: Runtime>(app: &AppHandle<R>, id: &str) -> Result<()> {
         webview.close()?;
     }
     if let Some(server) = removed.server {
-        forget_server(app, &server).await?;
+        forget_server(app, &server)?;
     }
 
     match next_active {
@@ -788,8 +789,10 @@ mod tests {
 
     #[test]
     fn a_server_is_shown_by_at_most_one_tab() {
-        let mut inner = inner_with(&[Some(Server::local()), None]);
-        assert!(inner.bind("tab-2", Server::local()).is_err());
+        let mut inner = inner_with(&[Some(Server::remote("https://first.example".into())), None]);
+        assert!(inner
+            .bind("tab-2", Server::remote("https://first.example".into()))
+            .is_err());
         assert!(inner
             .bind("tab-2", Server::remote("https://a.example".into()))
             .is_ok());
@@ -800,7 +803,9 @@ mod tests {
         assert!(inner
             .bind("tab-2", Server::remote("https://b.example".into()))
             .is_err());
-        assert!(inner.bind("tab-9", Server::local()).is_err());
+        assert!(inner
+            .bind("tab-9", Server::remote("https://c.example".into()))
+            .is_err());
     }
 
     #[test]
@@ -853,7 +858,7 @@ mod tests {
     fn only_bound_tabs_are_persisted_and_active_index_follows_them() {
         let mut inner = inner_with(&[
             None,
-            Some(Server::local()),
+            Some(Server::remote("https://first.example".into())),
             None,
             Some(Server::remote("https://a.example".into())),
         ]);

@@ -11,7 +11,6 @@ mod paths;
 mod policy;
 mod proxy;
 mod session;
-mod sidecar;
 mod tabs;
 mod tray;
 
@@ -38,12 +37,9 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
-        // Rust-side only: no `shell:*` permission is granted to the webview.
-        .plugin(tauri_plugin_shell::init())
         .manage(distribution)
         .manage(downloads::DownloadsState::default())
         .manage(oauth_loopback::LoopbackState::default())
-        .manage(sidecar::SidecarState::default())
         .manage(tabs::TabsState::default())
         .invoke_handler(tauri::generate_handler![
             distribution::get_distribution,
@@ -53,8 +49,6 @@ pub fn run() {
             proxy::set_network_proxy,
             session::get_server,
             session::set_remote_server,
-            session::set_local_server,
-            session::local_sign_in,
             session::leave_server,
             session::store_session,
             session::clear_session,
@@ -79,10 +73,8 @@ pub fn run() {
             // Plugins are set up first, so a second instance has already
             // handed over and exited by now.
             let paths = paths::AppPaths::resolve(app.handle(), portable.as_ref())?;
-            paths.reset_tmp();
             app.manage(paths);
-            // Before any webview or the sidecar exists: both take their proxy
-            // when they are created.
+            // Before any webview exists: webviews take their proxy when created.
             let proxy_policy = app
                 .state::<distribution::Distribution>()
                 .policy
@@ -101,10 +93,12 @@ pub fn run() {
         })
         .build(context)
         .expect("error while building FireCortex desktop")
-        .run(|app, event| match event {
-            tauri::RunEvent::Exit => sidecar::stop_blocking(app),
+        .run(|app, event| {
             #[cfg(target_os = "macos")]
-            tauri::RunEvent::Reopen { .. } => tray::show_main_window(app),
-            _ => {}
+            if let tauri::RunEvent::Reopen { .. } = event {
+                tray::show_main_window(app);
+            }
+            #[cfg(not(target_os = "macos"))]
+            let _ = (app, event);
         });
 }

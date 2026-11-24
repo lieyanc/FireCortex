@@ -3,21 +3,17 @@
 //   FireCortex-<version>-windows-<arch>-portable[-offline].zip
 //   └── FireCortex/
 //       ├── FireCortex.exe          the cargo binary (firecortex-desktop.exe), renamed
-//       ├── firecortex-server.exe   the local-mode sidecar
 //       ├── portable                marker that switches the app to portable mode
 //       ├── README.txt
 //       └── webview2/               offline variant only: WebView2 Fixed Version runtime
 //
-// Where the binaries come from after `tauri build` (verified against
+// Where the binary comes from after `tauri build` (verified against
 // tauri-bundler 2.9.4, used by @tauri-apps/cli 2.11.5):
 //   - target[/<triple>]/release/firecortex-desktop.exe is the *original*
 //     binary. The bundler patches the bundle type into it, signs it and packs
 //     it once per installer, then restores the unpatched, UNSIGNED original.
 //     So this exe reports no bundle type (the marker decides portable mode)
 //     and CI must sign it before packing.
-//   - binaries/firecortex-server-<triple>.exe is signed in place by the
-//     bundler when a certificate is configured, and is preferred over the
-//     copy tauri-build placed in target/ at compile time (never signed).
 //
 // The zip is written here (store/deflate, no ZIP64) rather than
 // with Compress-Archive: Windows PowerShell 5.1 writes backslash separators,
@@ -25,7 +21,7 @@
 //
 // Usage:
 //   node scripts/package-portable.mjs [--version <v>] [--webview2 <dir>] [--out-dir <dir>]
-//        [--exe <path>] [--sidecar <path>] [--target <rust-triple>]
+//        [--exe <path>] [--target <rust-triple>]
 // Prints the path of the zip it wrote.
 
 import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeSync } from "node:fs";
@@ -38,10 +34,8 @@ const srcTauri = resolve(here, "..", "src-tauri");
 
 export const ROOT_FOLDER = "FireCortex";
 export const APP_EXE = "FireCortex.exe";
-export const SIDECAR_EXE = "firecortex-server.exe";
 export const MARKER_FILE = "portable";
 export const WEBVIEW2_FOLDER = "webview2";
-const SIDECAR_STEM = "firecortex-server";
 const DEFAULT_TRIPLE = "x86_64-pc-windows-msvc";
 const WEBVIEW2_URL = "https://developer.microsoft.com/microsoft-edge/webview2/";
 
@@ -94,9 +88,8 @@ GETTING STARTED
 
 WHERE YOUR DATA IS
 - Everything is kept in the "data" folder next to "${APP_EXE}" (created on
-  first start): open tabs, the built-in local server's database and files,
-  and the browser profile (cookies, cache). Nothing is written to %APPDATA%
-  or %LOCALAPPDATA%.
+  first start): open tabs, network proxy settings, and the browser profile
+  (cookies, cache). Nothing is written to %APPDATA% or %LOCALAPPDATA%.
 - Sign-in tokens are NOT kept in that folder. They stay in the Windows
   Credential Manager of the current Windows user, never as plain text on
   disk. On another computer or Windows account you sign in again.
@@ -133,7 +126,7 @@ ${webviewZh}
 
 数据存放位置
 - 所有数据都保存在“${APP_EXE}”旁边的“data”文件夹中（首次启动时创建）：
-  已打开的标签页、内置本地服务器的数据库和文件、浏览器配置（Cookie、缓存）。
+  已打开的标签页、网络代理设置、浏览器配置（Cookie、缓存）。
   不会写入 %APPDATA% 或 %LOCALAPPDATA%。
 - 登录凭据不保存在该文件夹中，而是保存在当前 Windows 用户的“凭据管理器”里，
   绝不以明文形式写入磁盘。换一台电脑或 Windows 账户需要重新登录。
@@ -163,25 +156,16 @@ export function cargoBinaryName(cargoToml) {
   return name;
 }
 
-/** Locate the release exe and sidecar under src-tauri. */
+/** Locate the release exe under src-tauri. */
 export function findBuildOutputs(tauriDir, triple = DEFAULT_TRIPLE) {
   const binary = `${cargoBinaryName(readFileSync(join(tauriDir, "Cargo.toml"), "utf8"))}.exe`;
   const newest = (paths) =>
     paths.filter((p) => existsSync(p)).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0];
   const exe = newest([join(tauriDir, "target", triple, "release", binary), join(tauriDir, "target", "release", binary)]);
-  // First match wins: the bundler-signed source before tauri-build's copies.
-  const sidecar = [
-    join(tauriDir, "binaries", `${SIDECAR_STEM}-${triple}.exe`),
-    join(tauriDir, "target", triple, "release", SIDECAR_EXE),
-    join(tauriDir, "target", "release", SIDECAR_EXE),
-  ].find((p) => existsSync(p));
   if (!exe) {
     throw new Error(`no ${binary} under ${join(tauriDir, "target")}; run \`pnpm tauri build\` first`);
   }
-  if (!sidecar) {
-    throw new Error(`no ${SIDECAR_STEM} build for ${triple}; run \`pnpm build:sidecar\` first`);
-  }
-  return { exe, sidecar };
+  return { exe };
 }
 
 /**
@@ -216,12 +200,11 @@ function walk(dir) {
 }
 
 /** Zip entries in archive order: `{ name, source }`, `{ name, content }` or a directory `{ name }` ending in "/". */
-export function planEntries({ exe, sidecar, version, webview2 }) {
+export function planEntries({ exe, version, webview2 }) {
   const root = `${ROOT_FOLDER}/`;
   const entries = [
     { name: root },
     { name: `${root}${APP_EXE}`, source: exe },
-    { name: `${root}${SIDECAR_EXE}`, source: sidecar },
     { name: `${root}${MARKER_FILE}`, content: MARKER_TEXT },
     { name: `${root}README.txt`, content: readmeText(version, { offline: Boolean(webview2) }) },
   ];
@@ -336,7 +319,7 @@ export function writeZip(entries, outFile, { mtime = new Date() } = {}) {
 }
 
 export function parseArgs(argv) {
-  const known = new Set(["--version", "--webview2", "--out-dir", "--exe", "--sidecar", "--target"]);
+  const known = new Set(["--version", "--webview2", "--out-dir", "--exe", "--target"]);
   const options = {};
   for (let i = 0; i < argv.length; i += 2) {
     const flag = argv[i];
@@ -352,9 +335,8 @@ export function parseArgs(argv) {
 function main() {
   const options = parseArgs(process.argv.slice(2));
   const triple = options.target ?? DEFAULT_TRIPLE;
-  const found = options.exe && options.sidecar ? {} : findBuildOutputs(srcTauri, triple);
+  const found = options.exe ? {} : findBuildOutputs(srcTauri, triple);
   const exe = resolve(options.exe ?? found.exe);
-  const sidecar = resolve(options.sidecar ?? found.sidecar);
   const version = options.version ?? JSON.parse(readFileSync(join(srcTauri, "tauri.conf.json"), "utf8")).version;
   const webview2 = options.webview2 ? resolve(options.webview2) : undefined;
   const outDir = resolve(options.outDir ?? join(dirname(exe), "bundle", "portable"));
@@ -363,8 +345,8 @@ function main() {
   const mtime = Number.isFinite(epoch) && epoch > 0 ? new Date(epoch * 1000) : new Date();
 
   const outFile = join(outDir, portableAssetName(version, { arch: archFromTriple(triple), offline: Boolean(webview2) }));
-  const entries = planEntries({ exe, sidecar, version, webview2 });
-  console.error(`packing ${basename(exe)} as "${APP_EXE}", ${basename(sidecar)} as ${SIDECAR_EXE}${webview2 ? `, WebView2 from ${webview2}` : ""}`);
+  const entries = planEntries({ exe, version, webview2 });
+  console.error(`packing ${basename(exe)} as "${APP_EXE}"${webview2 ? `, WebView2 from ${webview2}` : ""}`);
   writeZip(entries, outFile, { mtime });
   console.log(outFile);
 }

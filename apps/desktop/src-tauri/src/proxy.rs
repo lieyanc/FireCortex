@@ -803,36 +803,6 @@ enum Destination {
     Https,
 }
 
-/// Variables for a child process. All spellings are set, empty ones included,
-/// so nothing inherited from this process survives: Go reads the upper-case
-/// name and falls back to the lower-case one, and on Windows both are one
-/// variable.
-pub fn child_env(effective: &Effective) -> Vec<(&'static str, String)> {
-    let address = |address: &Option<String>| {
-        address
-            .as_deref()
-            .map(|address| effective.address_with_credentials(address))
-            .unwrap_or_default()
-    };
-    let http = address(&effective.route.http);
-    let https = address(&effective.route.https);
-    let no_proxy = match effective.route.has_proxy() {
-        true => effective.route.bypass.clone(),
-        false => String::new(),
-    };
-    vec![
-        ("HTTP_PROXY", http.clone()),
-        ("http_proxy", http),
-        ("HTTPS_PROXY", https.clone()),
-        ("https_proxy", https),
-        ("NO_PROXY", no_proxy.clone()),
-        ("no_proxy", no_proxy),
-        // Go ignores it, but the backend's startup log reports it.
-        ("ALL_PROXY", String::new()),
-        ("all_proxy", String::new()),
-    ]
-}
-
 /// How the webviews are created. Fixed for the launch: WebView2 requires every
 /// webview sharing a profile to share its environment options, and none of the
 /// engines change proxy after creation.
@@ -967,9 +937,9 @@ impl WebviewProxy {
 
 // ---------- state ----------
 
-/// Read once at startup, like enterprise policy: the sidecar and the webviews
-/// take their proxy when they are created, so a saved change applies to the
-/// next launch, and the settings page says so.
+/// Read once at startup, like enterprise policy: webviews take their proxy when
+/// they are created, so a saved change applies to the next launch, and the
+/// settings page says so.
 pub struct ProxyState {
     file: PathBuf,
     identifier: String,
@@ -1418,34 +1388,10 @@ mod tests {
             Some("http://proxy.corp:3128")
         );
         assert!(!format!("{effective:?}").contains("p@ss"));
-        let env = child_env(&effective);
-        let http = &env
-            .iter()
-            .find(|(name, _)| *name == "HTTP_PROXY")
-            .unwrap()
-            .1;
-        assert_eq!(http, "http://alice:p%40ss%3Aw%2Frd@proxy.corp:3128/");
-    }
-
-    #[test]
-    fn child_env_overrides_every_inherited_spelling() {
-        let env = child_env(&Effective::direct());
-        for name in [
-            "HTTP_PROXY",
-            "http_proxy",
-            "HTTPS_PROXY",
-            "https_proxy",
-            "NO_PROXY",
-            "no_proxy",
-            "ALL_PROXY",
-            "all_proxy",
-        ] {
-            let value = &env.iter().find(|(key, _)| *key == name).unwrap().1;
-            assert!(value.is_empty(), "{name} must be cleared");
-        }
-        let env = child_env(&system("http://127.0.0.1:7890"));
-        let no_proxy = &env.iter().find(|(key, _)| *key == "NO_PROXY").unwrap().1;
-        assert_eq!(no_proxy, "localhost,127.0.0.0/8,::1");
+        assert_eq!(
+            effective.address_with_credentials("http://proxy.corp:3128"),
+            "http://alice:p%40ss%3Aw%2Frd@proxy.corp:3128/"
+        );
     }
 
     #[test]

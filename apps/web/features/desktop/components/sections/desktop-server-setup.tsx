@@ -13,48 +13,22 @@ import { CustomBrandAttribution } from "@/shared/components/powered-by-firecorte
 import { useDesktopDistribution } from "@/features/desktop/hooks/use-desktop-distribution";
 import { type DistributionPolicy, isPolicyError } from "@/shared/platform/desktop-distribution";
 import { isShellSessionError } from "@/shared/platform/desktop-shell";
-import { ensureLocalSession } from "@/shared/platform/desktop-session";
-import { commitLocalServer, commitRemoteServer, validateApiBaseUrl } from "@/shared/platform/server-address";
+import { commitRemoteServer, validateApiBaseUrl } from "@/shared/platform/server-address";
 import { fetchWithHeaderTimeout, isTimeoutError } from "@/shared/lib/fetch-timeout";
 
 // Desktop first-run screen, styled as a sibling of the login page:
-//   local   the bundled server, data on this machine, no account needed;
-//   remote  a FireCortex server you or your team operate.
-// Enterprise policy (enforced by the shell) can prefill or lock the address and
-// turn local mode off; this screen only reflects it.
+// connects this tab to a self-hosted FireCortex server.
+// Enterprise policy (enforced by the shell) can prefill or lock the address;
+// this screen only reflects it.
 
 const HEALTH_PATH = "/healthz";
 // An unreachable host can leave the probe pending for minutes; fail fast instead.
 const HEALTH_PROBE_TIMEOUT_MS = 10_000;
 
-type Step = "pick" | "remote";
-
 export function ServerSetup({ onConfigured }: { onConfigured: () => void }) {
   const t = useTranslations("desktopSetup");
   const { status, distribution } = useDesktopDistribution();
   const policy = distribution.policy;
-  // Without local mode there is nothing to pick: go straight to the address form.
-  const [pickedStep, setStep] = React.useState<Step>("pick");
-  const step: Step = policy.localModeAllowed ? pickedStep : "remote";
-  const [busy, setBusy] = React.useState(false);
-
-  const startLocal = React.useCallback(async () => {
-    setBusy(true);
-    try {
-      await commitLocalServer();
-      await ensureLocalSession();
-      onConfigured();
-    } catch (error) {
-      if (isAlreadyOpen(error)) {
-        toast.error(t("toasts.alreadyOpen"));
-      } else if (isPolicyError(error)) {
-        toast.error(t("toasts.localModeDisabled"));
-      } else {
-        toast.error(t("toasts.localStartFailed"), { description: describe(error) });
-      }
-      setBusy(false);
-    }
-  }, [onConfigured, t]);
 
   return (
     <main className="flex min-h-screen animate-in items-center justify-center px-4 py-8 text-foreground fade-in-0 duration-300">
@@ -63,38 +37,11 @@ export function ServerSetup({ onConfigured }: { onConfigured: () => void }) {
 
         <HeightTransition className="px-2">
           {status === "loading" ? (
-            // Policy decides which options exist; render them only once it is known.
+            // Policy decides whether the address is prefilled or locked; render once known.
             <div key="loading" className="pt-7" />
-          ) : step === "pick" ? (
-            <div key="pick" className="animate-in pt-7 fade-in-0 slide-in-from-bottom-1 duration-300">
-              <div className="space-y-2.5">
-                <Button
-                  type="button"
-                  className="h-9 w-full rounded-md bg-foreground text-sm font-semibold text-background shadow-none hover:bg-foreground/90"
-                  disabled={busy}
-                  onClick={() => void startLocal()}
-                >
-                  {busy ? <SpinnerLabel>{t("local.starting")}</SpinnerLabel> : t("local.action")}
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="h-9 w-full rounded-md border-0 bg-muted text-sm font-semibold text-foreground shadow-none hover:bg-muted/80"
-                  disabled={busy}
-                  onClick={() => setStep("remote")}
-                >
-                  {t("remote.action")}
-                </Button>
-              </div>
-            </div>
           ) : (
             <div key="remote" className="animate-in pt-7 fade-in-0 slide-in-from-bottom-1 duration-300">
-              <RemoteForm
-                labels={t}
-                policy={policy}
-                onBack={policy.localModeAllowed ? () => setStep("pick") : undefined}
-                onConfigured={onConfigured}
-              />
+              <RemoteForm labels={t} policy={policy} onConfigured={onConfigured} />
             </div>
           )}
         </HeightTransition>
@@ -108,13 +55,10 @@ export function ServerSetup({ onConfigured }: { onConfigured: () => void }) {
 function RemoteForm({
   labels,
   policy,
-  onBack,
   onConfigured,
 }: {
   labels: ReturnType<typeof useTranslations<"desktopSetup">>;
   policy: DistributionPolicy;
-  /** Absent when there is no other option to go back to. */
-  onBack?: () => void;
   onConfigured: () => void;
 }) {
   const locked = policy.serverUrlLocked;
@@ -181,7 +125,7 @@ function RemoteForm({
           name="server-url"
           autoFocus={!locked}
           readOnly={locked}
-          aria-describedby={locked || !policy.localModeAllowed ? "server-url-policy" : undefined}
+          aria-describedby={locked ? "server-url-policy" : undefined}
           inputMode="url"
           autoComplete="url"
           className="h-9 border-input/50"
@@ -194,10 +138,6 @@ function RemoteForm({
           <p id="server-url-policy" className="text-xs text-muted-foreground">
             {labels("policy.managed")}
           </p>
-        ) : !policy.localModeAllowed ? (
-          <p id="server-url-policy" className="text-xs text-muted-foreground">
-            {labels("policy.localModeDisabled")}
-          </p>
         ) : null}
       </div>
       <Button
@@ -207,17 +147,6 @@ function RemoteForm({
       >
         {busy ? <SpinnerLabel>{labels("remote.connecting")}</SpinnerLabel> : labels("remote.connect")}
       </Button>
-      {onBack ? (
-        <Button
-          type="button"
-          variant="ghost"
-          className="h-9 w-full text-xs text-muted-foreground shadow-none"
-          disabled={busy}
-          onClick={onBack}
-        >
-          {labels("back")}
-        </Button>
-      ) : null}
     </form>
   );
 }

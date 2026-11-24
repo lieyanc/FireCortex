@@ -25,7 +25,7 @@ function fixture(t, arch = "x86_64") {
   mkdirSync(temp);
   mkdirSync(join(app, "Contents", "MacOS"), { recursive: true });
   writeFileSync(join(app, "Contents", "Info.plist"), JSON.stringify({ LSMinimumSystemVersion: "12.0", CFBundleExecutable: "app" }));
-  for (const name of ["app", "firecortex-server"]) writeFileSync(join(app, "Contents", "MacOS", name), "fixture");
+  writeFileSync(join(app, "Contents", "MacOS", "app"), "fixture");
   writeFileSync(dmg, "fixture");
   execFileSync("tar", ["-czf", archive, "-C", source, "FireCortex.app"]);
   const stub = `#!${process.execPath}
@@ -58,8 +58,8 @@ switch (tool) {
     } else throw new Error('unexpected codesign operation');
     break;
   case 'plutil': console.log(JSON.parse(fs.readFileSync(file, 'utf8'))[args[args.indexOf('-extract') + 1]]); break;
-  case 'lipo': console.log(file.endsWith('/firecortex-server') ? env.TEST_SIDECAR_ARCH || env.TEST_ARCH : env.TEST_ARCH); break;
-  case 'vtool': console.log('    minos ' + (file.endsWith('/firecortex-server') ? env.TEST_SIDECAR_MINIMUM || '12.0' : '12.0')); break;
+  case 'lipo': console.log(env.TEST_APP_ARCH || env.TEST_ARCH); break;
+  case 'vtool': console.log('    minos ' + (env.TEST_APP_MINIMUM || '12.0')); break;
   case 'xcrun':
     if (env.TEST_MISSING_TICKET === kind) { console.error('missing notarization ticket'); process.exit(65); }
     break;
@@ -142,10 +142,10 @@ test("signature integrity, app team, stapled tickets and Gatekeeper failures sti
   }
 });
 
-test("the shipped sidecar must still match the architecture and declared minimum macOS", (t) => {
+test("the shipped app binary must match the architecture and declared minimum macOS", (t) => {
   for (const [extra, expected] of [
-    [{ TEST_SIDECAR_ARCH: "arm64" }, /expected x86_64/],
-    [{ TEST_SIDECAR_MINIMUM: "13.0" }, /requires macOS 13.0, but the app declares 12.0/],
+    [{ TEST_APP_ARCH: "arm64" }, /expected x86_64/],
+    [{ TEST_APP_MINIMUM: "13.0" }, /requires macOS 13.0, but the app declares 12.0/],
   ]) {
     const f = fixture(t);
     const result = f.run(extra);

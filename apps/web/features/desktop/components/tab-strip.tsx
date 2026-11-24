@@ -4,7 +4,7 @@ import * as React from "react";
 import { closestCenter, DndContext, type DragEndEvent, type Modifier, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove, horizontalListSortingStrategy, SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Copy, Globe, Laptop, Minus, Plus, Square, X } from "lucide-react";
+import { Copy, Globe, Minus, Plus, Square, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { cn } from "@/lib/utils";
@@ -186,7 +186,7 @@ function TabItem({
 }) {
   const t = useTranslations("desktopTabs");
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: tab.id });
-  const Icon = tab.server === null ? Plus : tab.server.mode === "local" ? Laptop : Globe;
+  const Icon = tab.server === null ? Plus : Globe;
   return (
     <div
       ref={setNodeRef}
@@ -250,7 +250,6 @@ function TabItem({
 
 function labelFor(tab: ShellTab, t: ReturnType<typeof useTranslations<"desktopTabs">>): string {
   if (!tab.server) return t("newTab");
-  if (tab.server.mode === "local") return t("local");
   try {
     return new URL(tab.server.origin).host;
   } catch {

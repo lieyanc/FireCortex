@@ -12,10 +12,9 @@ import { isPasswordPolicyValid } from "@/shared/auth/account-policy";
 import { normalizeAuthNextPath } from "@/shared/auth/local-path";
 import { beginProviderAuthorization } from "@/shared/auth/provider-bridge";
 import { resolveAccessToken } from "@/shared/auth/resolve-access-token";
-import { readAccessToken } from "@/shared/auth/session";
 import { isDesktopApp } from "@/shared/platform";
 import { openExternal } from "@/shared/platform/desktop-open";
-import { completeNativeSignIn, ensureLocalSession } from "@/shared/platform/desktop-session";
+import { completeNativeSignIn } from "@/shared/platform/desktop-session";
 import { useLocalizedErrorMessage } from "@/i18n/use-localized-error";
 import {
   DEFAULT_LOGIN_OPTIONS,
@@ -100,12 +99,7 @@ export function useAuthLoginPage({ nextPath }: UseAuthLoginPageInput) {
   React.useEffect(() => {
     let mounted = true;
     void resolveAccessToken()
-      .then(async (token) => {
-        // Local mode never shows a login form: an expired session is replaced by
-        // a fresh one from the shell's one-time grant.
-        if (!token && (await ensureLocalSession().catch(() => false))) {
-          token = readAccessToken();
-        }
+      .then((token) => {
         if (mounted && token) router.replace(resolvedNextPath);
       })
       .catch((): undefined => undefined);

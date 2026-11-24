@@ -77,7 +77,7 @@ export const FALLBACK_DISTRIBUTION: DistributionInfo = {
   policy: {
     defaultServerUrl: null,
     serverUrlLocked: false,
-    localModeAllowed: true,
+    localModeAllowed: false,
     autoUpdateDisabledByPolicy: false,
     proxyManagedByPolicy: false,
   },
@@ -130,7 +130,6 @@ export function hasActivePolicy(policy: DistributionPolicy): boolean {
   return (
     policy.defaultServerUrl !== null ||
     policy.serverUrlLocked ||
-    !policy.localModeAllowed ||
     policy.autoUpdateDisabledByPolicy ||
     policy.proxyManagedByPolicy
   );
@@ -139,9 +138,9 @@ export function hasActivePolicy(policy: DistributionPolicy): boolean {
 const POLICY_ERROR_PREFIX = "policy:";
 
 /**
- * True when `set_remote_server` / `set_local_server` rejected because enterprise
- * policy forbids the choice. The shell rejects with a string starting with
- * `policy:`; an object carrying such a message is accepted too.
+ * True when `set_remote_server` rejected because enterprise policy forbids the
+ * choice. The shell rejects with a string starting with `policy:`; an object
+ * carrying such a message is accepted too.
  */
 export function isPolicyError(error: unknown): boolean {
   const text = isString(error) ? error : isRecord(error) && isString(error.message) ? error.message : "";

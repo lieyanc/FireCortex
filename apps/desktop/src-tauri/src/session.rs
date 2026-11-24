@@ -11,22 +11,17 @@ use tauri::{AppHandle, Manager, Runtime, Webview};
 
 use crate::distribution::Distribution;
 use crate::proxy;
-use crate::sidecar;
 use crate::tabs::{self, Server};
 
 const CLIENT_PLATFORM_HEADER: &str = "X-Client-Platform";
 const REFRESH_PATH: &str = "/api/v1/auth/refresh";
-const LOCAL_EXCHANGE_PATH: &str = "/api/v1/auth/local/exchange";
 const HTTP_TIMEOUT: Duration = Duration::from_secs(15);
 const MAX_BODY_BYTES: u64 = 256 * 1024;
-
-/// Serialises `local_sign_in`; the local server is shared by all local tabs.
-static LOCAL_SIGN_IN: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionError {
-    /// "network" | "http" | "storage" | "no_session" | "invalid_origin" | "sidecar" | "no_server" | "tabs" | "policy"
+    /// "network" | "http" | "storage" | "no_session" | "invalid_origin" | "no_server" | "tabs" | "policy"
     pub kind: &'static str,
     pub message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -59,12 +54,6 @@ impl SessionError {
     /// `message` is one of the `policy::*` texts, which start with "policy: ".
     fn policy(message: &'static str) -> Self {
         Self::new("policy", message)
-    }
-}
-
-impl From<sidecar::SidecarError> for SessionError {
-    fn from(e: sidecar::SidecarError) -> Self {
-        Self::new("sidecar", e.0)
     }
 }
 
@@ -144,14 +133,17 @@ fn check_policy<R: Runtime>(app: &AppHandle<R>, server: &Server) -> Result<(), S
     .map_err(SessionError::policy)
 }
 
-/// Live origin for a server (starts the sidecar in local mode).
+/// Live origin for a remote server.
 async fn resolve_origin<R: Runtime>(
     app: &AppHandle<R>,
     server: &Server,
 ) -> Result<String, SessionError> {
     check_policy(app, server)?;
     match server.mode {
-        ServerMode::Local => Ok(sidecar::ensure_running(app).await?),
+        ServerMode::Local => Err(SessionError::new(
+            "invalid_origin",
+            "local mode is not supported",
+        )),
         ServerMode::Remote => Ok(server.origin.clone()),
     }
 }
@@ -214,7 +206,7 @@ fn delete_token<R: Runtime>(app: &AppHandle<R>, key: &str) -> Result<(), Session
 
 // ---------- commands ----------
 
-/// The calling tab's server, or null; local mode starts the sidecar if needed.
+/// The calling tab's server, or null.
 #[tauri::command]
 pub async fn get_server<R: Runtime>(
     app: AppHandle<R>,
@@ -249,21 +241,6 @@ pub async fn set_remote_server<R: Runtime>(
     Ok(ServerInfo {
         mode: ServerMode::Remote,
         origin: normalized,
-    })
-}
-
-/// Bind this tab to the bundled local server. Starts the sidecar and returns its origin.
-#[tauri::command]
-pub async fn set_local_server<R: Runtime>(
-    app: AppHandle<R>,
-    webview: Webview<R>,
-) -> Result<ServerInfo, SessionError> {
-    check_policy(&app, &Server::local())?;
-    tabs::bind(&app, webview.label(), Server::local())?;
-    let origin = sidecar::ensure_running(&app).await?;
-    Ok(ServerInfo {
-        mode: ServerMode::Local,
-        origin,
     })
 }
 
@@ -335,62 +312,6 @@ pub async fn refresh_session<R: Runtime>(
     }
 }
 
-/// Local mode sign-in: refresh the stored token, else redeem the sidecar's grant.
-#[tauri::command]
-pub async fn local_sign_in<R: Runtime>(
-    app: AppHandle<R>,
-    webview: Webview<R>,
-) -> Result<SessionCredentials, SessionError> {
-    let server = server_for(&webview).ok_or_else(SessionError::no_server)?;
-    if server.mode != ServerMode::Local {
-        return Err(SessionError::new(
-            "invalid_origin",
-            "local sign-in requires local mode",
-        ));
-    }
-    check_policy(&app, &server)?;
-    let key = server.keychain_key();
-    // Serialise: a concurrent caller would restart the sidecar mid-exchange.
-    let _guard = LOCAL_SIGN_IN.lock().await;
-    if let Some(token) = read_token(&app, &key)? {
-        match perform_refresh(
-            &proxy::effective(&app),
-            &sidecar::ensure_running(&app).await?,
-            &token,
-        )
-        .await
-        {
-            Ok(Refreshed {
-                credentials,
-                rotated_token,
-            }) => {
-                if let Some(rotated) = rotated_token {
-                    write_token(&app, &key, &rotated)?;
-                }
-                return Ok(credentials);
-            }
-            // A rejected token is dropped and replaced through a fresh grant.
-            Err(e) if e.status == Some(401) => delete_token(&app, &key)?,
-            Err(e) => return Err(e),
-        }
-    }
-    let (origin, grant) = sidecar::take_grant(&app).await?;
-    let Refreshed {
-        credentials,
-        rotated_token,
-    } = post_session(
-        &proxy::effective(&app),
-        &origin,
-        LOCAL_EXCHANGE_PATH,
-        &serde_json::json!({ "grant": grant }),
-    )
-    .await?;
-    let token = rotated_token
-        .ok_or_else(|| SessionError::new("http", "local exchange returned no refresh token"))?;
-    write_token(&app, &key, &token)?;
-    Ok(credentials)
-}
-
 #[derive(Debug)]
 pub(crate) struct Refreshed {
     pub credentials: SessionCredentials,
@@ -423,8 +344,7 @@ async fn post_session(
     let builder = reqwest::Client::builder()
         .timeout(HTTP_TIMEOUT)
         .redirect(reqwest::redirect::Policy::none());
-    // The local server is never reached through a proxy: the grant and the
-    // refresh token in these bodies must not leave the machine.
+    // Loopback servers are never reached through a proxy so refresh tokens stay local.
     let builder = match proxy::is_loopback(origin) {
         true => builder.no_proxy(),
         false => proxy::apply(builder, effective),

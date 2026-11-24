@@ -3,12 +3,12 @@
 # the updater archive (*.app.tar.gz). Run after the last repackaging and before
 # anything is uploaded; used by CI and build-signed.sh.
 #
-# The app binary and the server sidecar must be built for --arch and must not
-# require a newer macOS than the bundle declares (LSMinimumSystemVersion), so
-# the app never installs on a system where it or its local server cannot
-# start. The bundle must pass codesign; with a Developer ID
-# (APPLE_TEAM_ID, from apple-signing-env.sh) the app and the DMG must also be
-# signed by that team, carry a stapled notarization ticket and pass Gatekeeper.
+# The app binary must be built for --arch and must not require a newer macOS
+# than the bundle declares (LSMinimumSystemVersion), so the app never installs
+# on a system where it cannot start. The bundle must pass codesign; with a
+# Developer ID (APPLE_TEAM_ID, from apple-signing-env.sh) the app and the DMG
+# must also be signed by that team, carry a stapled notarization ticket and pass
+# Gatekeeper.
 #
 # Usage: verify-macos-bundle.sh --arch <arm64|x86_64> <file.dmg|file.app.tar.gz>...
 set -euo pipefail
@@ -99,16 +99,14 @@ verify_app() {
   minimum="$(plutil -extract LSMinimumSystemVersion raw -o - "$plist")" || fail "$plist has no LSMinimumSystemVersion"
   executable="$(plutil -extract CFBundleExecutable raw -o - "$plist")" || fail "$plist has no CFBundleExecutable"
 
-  # The app itself and the server sidecar (bundle.externalBin in tauri.conf.json).
-  for binary in "$app/Contents/MacOS/$executable" "$app/Contents/MacOS/firecortex-server"; do
-    [[ -f "$binary" ]] || fail "$binary is missing"
-    archs="$(lipo -archs "$binary" 2>/dev/null)" || fail "$binary is not a Mach-O executable"
-    [[ "$archs" == "$arch" ]] || fail "$binary is built for '$archs', expected $arch"
-    minos="$(vtool -show-build "$binary" | awk '$1 == "minos" { print $2; exit }')" || fail "cannot read the build version of $binary"
-    [[ -n "$minos" ]] || fail "$binary declares no minimum macOS"
-    version_le "$minos" "$minimum" || fail "$binary requires macOS $minos, but the app declares $minimum"
-    echo "  $(basename "$binary"): $archs, macOS $minos+"
-  done
+  binary="$app/Contents/MacOS/$executable"
+  [[ -f "$binary" ]] || fail "$binary is missing"
+  archs="$(lipo -archs "$binary" 2>/dev/null)" || fail "$binary is not a Mach-O executable"
+  [[ "$archs" == "$arch" ]] || fail "$binary is built for '$archs', expected $arch"
+  minos="$(vtool -show-build "$binary" | awk '$1 == "minos" { print $2; exit }')" || fail "cannot read the build version of $binary"
+  [[ -n "$minos" ]] || fail "$binary declares no minimum macOS"
+  version_le "$minos" "$minimum" || fail "$binary requires macOS $minos, but the app declares $minimum"
+  echo "  $(basename "$binary"): $archs, macOS $minos+"
 
   codesign --verify --deep --strict --verbose=2 "$app"
   if $signed; then

@@ -78,16 +78,13 @@ test("reads the cargo binary name from [package]", () => {
   assert.equal(cargoBinaryName(readFileSync(new URL("../src-tauri/Cargo.toml", import.meta.url), "utf8")), "firecortex-desktop");
 });
 
-test("finds the build outputs, preferring the bundler-signed sidecar", () => {
+test("finds the build outputs, preferring the newer target build", () => {
   const dir = scratch();
   try {
     writeFileSync(join(dir, "Cargo.toml"), `[package]\nname = "app-bin"\n`);
     assert.throws(() => findBuildOutputs(dir), /app-bin\.exe/);
     const plain = touch(join(dir, "target", "release", "app-bin.exe"));
-    const copied = touch(join(dir, "target", "release", "firecortex-server.exe"));
-    assert.deepEqual(findBuildOutputs(dir), { exe: plain, sidecar: copied });
-    const signed = touch(join(dir, "binaries", "firecortex-server-x86_64-pc-windows-msvc.exe"));
-    assert.equal(findBuildOutputs(dir).sidecar, signed);
+    assert.deepEqual(findBuildOutputs(dir), { exe: plain });
     // With both target layouts present, the newer build wins.
     const triple = touch(join(dir, "target", "x86_64-pc-windows-msvc", "release", "app-bin.exe"));
     utimesSync(plain, new Date(1_000_000), new Date(1_000_000));
@@ -116,14 +113,13 @@ test("packs the portable layout under one folder with a space in its name", () =
   const dir = scratch();
   try {
     const exe = touch(join(dir, "firecortex-desktop.exe"), "MZ app ".repeat(1000));
-    const sidecar = touch(join(dir, "server.exe"), "MZ server");
-    const out = writeZip(planEntries({ exe, sidecar, version: "1.2.3" }), join(dir, "out", portableAssetName("1.2.3")), {
+    const out = writeZip(planEntries({ exe, version: "1.2.3" }), join(dir, "out", portableAssetName("1.2.3")), {
       mtime: new Date(Date.UTC(2026, 0, 2, 3, 4, 6)),
     });
     const entries = readZip(out);
     assert.deepEqual(
       entries.map((e) => e.name),
-      ["FireCortex/", `FireCortex/${APP_EXE}`, "FireCortex/firecortex-server.exe", "FireCortex/portable", "FireCortex/README.txt"],
+      ["FireCortex/", `FireCortex/${APP_EXE}`, "FireCortex/portable", "FireCortex/README.txt"],
     );
     const byName = Object.fromEntries(entries.map((e) => [e.name, e]));
     assert.ok(byName["FireCortex/"].dirAttr);
@@ -134,7 +130,7 @@ test("packs the portable layout under one folder with a space in its name", () =
     assert.ok(!readme.includes("webview2\" folder"), "online package does not claim a bundled runtime");
 
     // Same inputs and timestamp: byte-identical archive.
-    const again = writeZip(planEntries({ exe, sidecar, version: "1.2.3" }), join(dir, "again.zip"), {
+    const again = writeZip(planEntries({ exe, version: "1.2.3" }), join(dir, "again.zip"), {
       mtime: new Date(Date.UTC(2026, 0, 2, 3, 4, 6)),
     });
     assert.deepEqual(readFileSync(again), readFileSync(out));
@@ -154,11 +150,10 @@ test("the offline variant carries the flattened WebView2 runtime", () => {
   const dir = scratch();
   try {
     const exe = touch(join(dir, "app.exe"));
-    const sidecar = touch(join(dir, "server.exe"));
     const cab = join(dir, "expanded", "Microsoft.WebView2.FixedVersionRuntime.140.0.1.0.x64");
     touch(join(cab, "msedgewebview2.exe"), "runtime");
     touch(join(cab, "Locales", "zh-CN.pak"), "pak");
-    const entries = planEntries({ exe, sidecar, version: "1.2.3", webview2: join(dir, "expanded") });
+    const entries = planEntries({ exe, version: "1.2.3", webview2: join(dir, "expanded") });
     const names = entries.map((e) => e.name);
     assert.ok(names.includes("FireCortex/webview2/"));
     assert.ok(names.includes("FireCortex/webview2/msedgewebview2.exe"));

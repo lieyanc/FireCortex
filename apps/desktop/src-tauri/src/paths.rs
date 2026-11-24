@@ -5,13 +5,11 @@
 // start (see `prepare_portable`).
 //
 // Portable layout:
-//   FireCortex.exe, firecortex-server.exe, portable (marker), README.txt
+//   FireCortex.exe, portable (marker), README.txt
 //   webview2/            optional Fixed Version WebView2 runtime
 //   data/instance-id     identity of this copy (keychain + single-instance)
 //   data/tabs.json       open tabs
 //   data/network.json    network proxy setting (the password is in the keychain)
-//   data/local/          bundled server (SQLite, uploads)
-//   data/tmp/            sidecar temp files, cleared on start
 //   data/webview/        WebView2 user data (cookies, cache, storage)
 
 use std::fs;
@@ -27,7 +25,6 @@ pub const BUNDLED_WEBVIEW2_DIR: &str = "webview2";
 const PORTABLE_DATA_DIR: &str = "data";
 const INSTANCE_ID_FILE: &str = "instance-id";
 const WEBVIEW_DIR: &str = "webview";
-const TMP_DIR: &str = "tmp";
 const INSTANCE_ID_LEN: usize = 16;
 
 /// A portable copy that passed the startup checks.
@@ -166,11 +163,8 @@ fn new_instance_id(data_dir: &Path) -> String {
 #[derive(Debug, Clone)]
 pub struct AppPaths {
     config_dir: PathBuf,
-    data_dir: PathBuf,
     /// `None` keeps Tauri's default WebView2 profile (installed builds).
     webview_dir: Option<PathBuf>,
-    /// Temp folder for child processes; `None` inherits the system one.
-    tmp_dir: Option<PathBuf>,
 }
 
 impl AppPaths {
@@ -182,9 +176,7 @@ impl AppPaths {
             Some(layout) => Self::portable(&layout.data_dir),
             None => Self {
                 config_dir: app.path().app_config_dir()?,
-                data_dir: app.path().app_data_dir()?,
                 webview_dir: None,
-                tmp_dir: None,
             },
         })
     }
@@ -192,20 +184,7 @@ impl AppPaths {
     fn portable(data_dir: &Path) -> Self {
         Self {
             config_dir: data_dir.to_path_buf(),
-            data_dir: data_dir.to_path_buf(),
             webview_dir: Some(data_dir.join(WEBVIEW_DIR)),
-            tmp_dir: Some(data_dir.join(TMP_DIR)),
-        }
-    }
-
-    /// Start every run with an empty temp folder. Only called by the primary
-    /// instance (after the single-instance check), before the sidecar starts.
-    pub fn reset_tmp(&self) {
-        if let Some(tmp) = &self.tmp_dir {
-            let _ = fs::remove_dir_all(tmp);
-            if let Err(e) = fs::create_dir_all(tmp) {
-                eprintln!("[paths] cannot create {}: {e}", tmp.display());
-            }
         }
     }
 }
@@ -219,19 +198,9 @@ pub fn config_dir<R: Runtime>(app: &AppHandle<R>) -> PathBuf {
     state(app).config_dir.clone()
 }
 
-/// Application data such as the bundled server's database.
-pub fn data_dir<R: Runtime>(app: &AppHandle<R>) -> PathBuf {
-    state(app).data_dir.clone()
-}
-
 /// WebView2 user data folder for every webview, when not Tauri's default.
 pub fn webview_dir<R: Runtime>(app: &AppHandle<R>) -> Option<PathBuf> {
     state(app).webview_dir.clone()
-}
-
-/// TMP/TEMP for child processes, when not the system default.
-pub fn tmp_dir<R: Runtime>(app: &AppHandle<R>) -> Option<PathBuf> {
-    state(app).tmp_dir.clone()
 }
 
 #[cfg(test)]
@@ -354,11 +323,9 @@ mod tests {
         let data = Path::new("/portable/FireCortex/data");
         let paths = AppPaths::portable(data);
         assert_eq!(paths.config_dir, data);
-        assert_eq!(paths.data_dir, data);
         assert_eq!(
             paths.webview_dir.as_deref(),
             Some(data.join("webview").as_path())
         );
-        assert_eq!(paths.tmp_dir.as_deref(), Some(data.join("tmp").as_path()));
     }
 }

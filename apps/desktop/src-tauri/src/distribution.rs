@@ -539,7 +539,7 @@ mod tests {
                 "policy": {
                     "defaultServerUrl": null,
                     "serverUrlLocked": false,
-                    "localModeAllowed": true,
+                    "localModeAllowed": false,
                     "autoUpdateDisabledByPolicy": false,
                     "proxyManagedByPolicy": false
                 }

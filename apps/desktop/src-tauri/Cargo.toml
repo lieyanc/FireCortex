@@ -38,13 +38,12 @@ reqwest = { version = "0.13", default-features = false, features = ["json", "rus
 # Process-wide TLS provider, installed once at startup (the updater would otherwise
 # install it lazily on first use, which is too late for an early session refresh).
 rustls = { version = "0.23", default-features = false, features = ["ring"] }
-tauri-plugin-shell = "2"
 tauri-plugin-single-instance = "2"
 # Native notifications: the webviews do not deliver Web Notifications.
 tauri-plugin-notification = "2"
 tokio = { version = "1", features = ["time", "macros", "rt-multi-thread"] }
 # Strips Windows verbatim (\\?\) prefixes from canonical paths before they reach
-# WebView2 or the sidecar. Already in the tree through tauri-utils.
+# WebView2. Already in the tree through tauri-utils.
 dunce = "1"
 
 

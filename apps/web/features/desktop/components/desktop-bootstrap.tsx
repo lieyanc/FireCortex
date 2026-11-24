@@ -7,12 +7,11 @@ import { toast } from "sonner";
 import { ServerSetup } from "@/features/desktop/components/sections/desktop-server-setup";
 import { isDesktopApp } from "@/shared/platform";
 import { leaveServer } from "@/shared/platform/desktop-shell";
-import { ensureLocalSession, initializeDesktopSession } from "@/shared/platform/desktop-session";
+import { initializeDesktopSession } from "@/shared/platform/desktop-session";
 
-// Desktop bootstrap: learn which server this install uses before any request is
-// made, and gate the app behind the setup screen until one is chosen. Local
-// mode also establishes the session here, so the app never shows a login form
-// for the bundled server. Browsers render children immediately.
+// Desktop bootstrap: learn which server this tab connects to before any request
+// is made, and gate the app behind the setup screen until one is chosen.
+// Browsers render children immediately.
 
 type State = "pending" | "setup" | "ready";
 
@@ -34,15 +33,12 @@ export function DesktopBootstrap({ children }: { children: React.ReactNode }) {
     void (async () => {
       try {
         const server = await initializeDesktopSession();
-        if (server?.mode === "local") {
-          await ensureLocalSession().catch(() => false);
-        }
         if (!cancelled) {
           setState(server ? "ready" : "setup");
         }
       } catch (error) {
-        // A configured server that cannot be started (the local sidecar failed)
-        // is dropped so the setup screen can bind this tab afresh.
+        // A configured server that cannot be resolved is dropped so the setup
+        // screen can bind this tab afresh.
         toast.error(tRef.current("toasts.bootstrapFailed"), { description: describe(error) });
         await leaveServer().catch(() => undefined);
         if (!cancelled) {

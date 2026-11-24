@@ -6,7 +6,7 @@
 //
 //   DefaultServerUrl   REG_SZ     prefilled server address
 //   LockServerUrl      REG_DWORD  1 = only DefaultServerUrl may be used
-//   DisableLocalMode   REG_DWORD  1 = no bundled local server
+//   DisableLocalMode   REG_DWORD  ignored (desktop builds are remote-only)
 //   DisableAutoUpdate  REG_DWORD  1 = no update checks at all
 //   ProxyMode          REG_SZ     system | direct | fixed_servers (Chrome's names)
 //   ProxyServer        REG_SZ     host:port, http://host:port or socks5://host:port
@@ -35,7 +35,6 @@ pub const UPDATES_DISABLED: &str = "policy: update checks are disabled by your a
 pub struct RawPolicy {
     pub default_server_url: Option<String>,
     pub lock_server_url: Option<bool>,
-    pub disable_local_mode: Option<bool>,
     pub disable_auto_update: Option<bool>,
     pub proxy_mode: Option<String>,
     pub proxy_server: Option<String>,
@@ -60,7 +59,6 @@ impl RawPolicy {
         RawPolicy {
             default_server_url: self.default_server_url.or(lower.default_server_url),
             lock_server_url: self.lock_server_url.or(lower.lock_server_url),
-            disable_local_mode: self.disable_local_mode.or(lower.disable_local_mode),
             disable_auto_update: self.disable_auto_update.or(lower.disable_auto_update),
             proxy_mode: proxy.0,
             proxy_server: proxy.1,
@@ -77,8 +75,7 @@ pub struct Policy {
     pub default_server_url: Option<String>,
     /// True only when LockServerUrl=1 AND a valid DefaultServerUrl is set.
     pub server_url_locked: bool,
-    /// False when DisableLocalMode=1, and also while the address is locked:
-    /// a lock means "only this server", which excludes the bundled one.
+    /// Always false: FireCortex desktop builds connect to remote servers only.
     pub local_mode_allowed: bool,
     pub auto_update_disabled_by_policy: bool,
     /// Enterprise proxy policy; `None` leaves the choice to the user.
@@ -117,7 +114,7 @@ impl Policy {
         Self {
             default_server_url,
             server_url_locked,
-            local_mode_allowed: raw.disable_local_mode != Some(true) && !server_url_locked,
+            local_mode_allowed: false,
             auto_update_disabled_by_policy: raw.disable_auto_update == Some(true),
             proxy_managed_by_policy: proxy.is_some(),
             proxy,
@@ -200,7 +197,6 @@ fn read_hive(hive: Hive) -> RawPolicy {
     RawPolicy {
         default_server_url: string("DefaultServerUrl"),
         lock_server_url: flag("LockServerUrl"),
-        disable_local_mode: flag("DisableLocalMode"),
         disable_auto_update: flag("DisableAutoUpdate"),
         proxy_mode: string("ProxyMode"),
         proxy_server: string("ProxyServer"),
@@ -217,16 +213,10 @@ fn read_hive(_hive: Hive) -> RawPolicy {
 mod tests {
     use super::*;
 
-    fn raw(
-        url: Option<&str>,
-        lock: Option<bool>,
-        local: Option<bool>,
-        update: Option<bool>,
-    ) -> RawPolicy {
+    fn raw(url: Option<&str>, lock: Option<bool>, update: Option<bool>) -> RawPolicy {
         RawPolicy {
             default_server_url: url.map(str::to_string),
             lock_server_url: lock,
-            disable_local_mode: local,
             disable_auto_update: update,
             ..RawPolicy::default()
         }
@@ -286,20 +276,15 @@ mod tests {
         let policy = Policy::from_raw(RawPolicy::default());
         assert_eq!(policy.default_server_url, None);
         assert!(!policy.server_url_locked);
-        assert!(policy.local_mode_allowed);
-        assert!(!policy.auto_update_disabled_by_policy);
+        assert!(!policy.local_mode_allowed);
         assert!(!policy.is_active());
+        assert!(!policy.auto_update_disabled_by_policy);
     }
 
     #[test]
     fn machine_wins_value_by_value() {
-        let machine = raw(Some("https://hklm.example"), None, Some(false), None);
-        let user = raw(
-            Some("https://hkcu.example"),
-            Some(true),
-            Some(true),
-            Some(true),
-        );
+        let machine = raw(Some("https://hklm.example"), None, Some(false));
+        let user = raw(Some("https://hkcu.example"), Some(true), Some(true));
         let merged = machine.over(user);
         assert_eq!(
             merged.default_server_url.as_deref(),
@@ -307,47 +292,34 @@ mod tests {
         );
         // Unset in HKLM: HKCU applies.
         assert_eq!(merged.lock_server_url, Some(true));
-        assert_eq!(merged.disable_auto_update, Some(true));
         // Explicit 0 in HKLM overrides 1 in HKCU.
-        assert_eq!(merged.disable_local_mode, Some(false));
+        assert_eq!(merged.disable_auto_update, Some(false));
     }
 
     #[test]
     fn lock_requires_a_valid_url() {
-        assert!(!Policy::from_raw(raw(None, Some(true), None, None)).server_url_locked);
+        assert!(!Policy::from_raw(raw(None, Some(true), None)).server_url_locked);
         assert!(
-            !Policy::from_raw(raw(Some("chat.example.com"), Some(true), None, None))
-                .server_url_locked
+            !Policy::from_raw(raw(Some("chat.example.com"), Some(true), None)).server_url_locked
         );
         assert!(
-            !Policy::from_raw(raw(Some("https://a.example/app"), Some(true), None, None))
+            !Policy::from_raw(raw(Some("https://a.example/app"), Some(true), None))
                 .server_url_locked
         );
-        let locked = Policy::from_raw(raw(
-            Some(" HTTPS://Chat.Example.com/ "),
-            Some(true),
-            None,
-            None,
-        ));
+        let locked = Policy::from_raw(raw(Some(" HTTPS://Chat.Example.com/ "), Some(true), None));
         assert!(locked.server_url_locked);
         assert_eq!(
             locked.default_server_url.as_deref(),
             Some("https://chat.example.com")
         );
         assert!(
-            !Policy::from_raw(raw(Some("https://a.example"), Some(false), None, None))
-                .server_url_locked
+            !Policy::from_raw(raw(Some("https://a.example"), Some(false), None)).server_url_locked
         );
     }
 
     #[test]
     fn lock_compares_normalised_origins() {
-        let policy = Policy::from_raw(raw(
-            Some("https://Chat.Example.com:443/"),
-            Some(true),
-            None,
-            None,
-        ));
+        let policy = Policy::from_raw(raw(Some("https://Chat.Example.com:443/"), Some(true), None));
         let ok = normalize_origin("https://chat.example.com").unwrap();
         assert_eq!(policy.check_remote(&ok), Ok(()));
         for other in [
@@ -358,22 +330,22 @@ mod tests {
             let other = normalize_origin(other).unwrap();
             assert_eq!(policy.check_remote(&other), Err(SERVER_LOCKED), "{other}");
         }
-        // A lock also excludes the bundled local server.
+        // A lock also reports SERVER_LOCKED for local mode.
         assert!(!policy.local_mode_allowed);
         assert_eq!(policy.check_local(), Err(SERVER_LOCKED));
     }
 
     #[test]
     fn unlocked_default_url_is_only_a_suggestion() {
-        let policy = Policy::from_raw(raw(Some("https://a.example"), None, None, None));
+        let policy = Policy::from_raw(raw(Some("https://a.example"), None, None));
         assert_eq!(policy.check_remote("https://b.example"), Ok(()));
-        assert_eq!(policy.check_local(), Ok(()));
+        assert_eq!(policy.check_local(), Err(LOCAL_MODE_DISABLED));
         assert!(policy.is_active());
     }
 
     #[test]
-    fn local_mode_can_be_disabled_alone() {
-        let policy = Policy::from_raw(raw(None, None, Some(true), None));
+    fn local_mode_is_always_disallowed() {
+        let policy = Policy::from_raw(raw(None, None, None));
         assert_eq!(policy.check_local(), Err(LOCAL_MODE_DISABLED));
         assert!(policy.allows(&Server::remote("https://a.example".into())));
         assert!(!policy.allows(&Server::local()));
