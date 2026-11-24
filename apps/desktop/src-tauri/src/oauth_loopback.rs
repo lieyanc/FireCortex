@@ -133,15 +133,15 @@ const LOGO_DARK: &str = include_str!("../../../web/public/logo-white.svg");
 const PAGE_STYLE: &str = r#"
 :root {
   color-scheme: light dark;
-  --background: oklch(97.86% 0.0027 106.45);
-  --foreground: oklch(0.3438 0.0269 95.7226);
-  --muted-foreground: oklch(0.6059 0.0075 97.4233);
+  --background: oklch(0.9800 0.0035 249.0000);
+  --foreground: oklch(0.2450 0.0160 250.0000);
+  --muted-foreground: oklch(0.5250 0.0140 250.0000);
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: oklch(23.89% 0.0019 106.54);
-    --foreground: oklch(0.8074 0.0142 93.0137);
-    --muted-foreground: oklch(0.7713 0.0169 99.0657);
+    --background: oklch(0.2050 0.0100 252.0000);
+    --foreground: oklch(0.8850 0.0080 249.0000);
+    --muted-foreground: oklch(0.7200 0.0120 250.0000);
   }
 }
 *, *::before, *::after { box-sizing: border-box; }

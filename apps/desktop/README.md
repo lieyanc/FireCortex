@@ -469,9 +469,9 @@ Use `pnpm build:app` while iterating: it relaxes LTO (~17 s link) and stops at t
 
 ## Icons
 
-`src-tauri/icons/mark.png` is the bare "D" mark (black on transparent). From it:
+`src-tauri/icons/mark.png` is the bare monochrome FireCortex flame mark (black on transparent). From it:
 `source.png` is the 1024² app icon on the macOS grid (824px rounded square in
-the theme's `--background` #f8f8f6, mark in `--foreground` #3d3929 at 82%, transparent margin) —
+the cool-light `#f7f9fb` theme surface with the `#018eee` blue-flame mark, transparent margin) —
 regenerate every platform size with
 `pnpm tauri icon src-tauri/icons/source.png --output src-tauri/icons` and
 delete the generated `android/` and `ios/` folders. `tray.png` is the 44px
