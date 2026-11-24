@@ -293,8 +293,9 @@ PostgreSQL + Redis 方案要求宿主机能访问这两个服务。Embedding、R
 ```bash
 docker run -d --name firecortex-postgres --restart unless-stopped \
   -e POSTGRES_USER=firecortex -e POSTGRES_PASSWORD=firecortex_2026 -e POSTGRES_DB=firecortex \
-  -p 127.0.0.1:5432:5432 -v firecortex-postgres-data:/var/lib/postgresql/data \
-  pgvector/pgvector:pg16
+  -e POSTGRES_INITDB_ARGS="--locale-provider=builtin --locale=C.UTF-8" \
+  -p 127.0.0.1:5432:5432 -v firecortex-postgres-data:/var/lib/postgresql \
+  pgvector/pgvector:pg18-trixie
 docker run -d --name firecortex-redis --restart unless-stopped \
   -p 127.0.0.1:6379:6379 -v firecortex-redis-data:/data \
   redis:7 redis-server --requirepass firecortex_2026
