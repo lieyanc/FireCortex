@@ -13621,7 +13621,7 @@ info:
   contact: {}
   description: FireCortex 后端 API 文档
   title: FireCortex API
-  version: "0.4.6"
+  version: "0.4.7"
 paths:
   /admin/announcements:
     get:

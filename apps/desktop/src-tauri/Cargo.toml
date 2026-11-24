@@ -1,6 +1,6 @@
 [package]
 name = "firecortex-desktop"
-version = "0.4.6"
+version = "0.4.7"
 description = "FireCortex desktop shell"
 authors = ["FireCortex"]
 edition = "2021"
