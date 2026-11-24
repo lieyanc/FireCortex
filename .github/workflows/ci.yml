@@ -110,7 +110,7 @@ jobs:
     if: needs.changes.outputs.api == 'true'
     runs-on: ubuntu-24.04
     env:
-      SIDECAR_TAGS: nopostgres,noredis,nos3,noswagger,nomsgpack,nootlp,sqlite
+      CGO_ENABLED: "0"
     defaults:
       run:
         working-directory: backend
@@ -124,18 +124,11 @@ jobs:
         run: node ../scripts/sync-version.mjs --check backend
       - name: Lint
         run: make lint
-      - name: Build (default and sidecar tag sets)
-        run: |
-          CGO_ENABLED=0 go build ./...
-          go build -tags sqlite ./...
-          go build -tags "$SIDECAR_TAGS" ./...
-      - name: Test
+      - name: Build (pure Go)
+        run: CGO_ENABLED=0 go build ./...
+      - name: Test (pure Go)
         # Go's test cache (persisted by setup-go) skips packages whose inputs did not change.
-        run: go test ./...
-      # Packages whose behavior differs under the sidecar tag set; keep the tags in sync with
-      # apps/desktop/scripts/build-sidecar.mjs.
-      - name: Test (sidecar tag set)
-        run: go test -tags "$SIDECAR_TAGS" ./internal/infra/observability/tracing/... ./internal/infra/openwebui/... ./internal/infra/persistence/...
+        run: CGO_ENABLED=0 go test ./...
 
   web:
     name: Web
@@ -196,13 +189,6 @@ jobs:
         run: node ../../../scripts/sync-version.mjs --check desktop
       - name: Release scripts
         run: node --test '../scripts/*.test.mjs'
-      # tauri-build copies bundle.externalBin eagerly, so a sidecar file must
-      # exist before any cargo command. Checks never run it, and the API job
-      # already compiles the real one, so a placeholder saves the cgo build here.
-      - name: Placeholder sidecar
-        run: |
-          mkdir -p binaries
-          touch "binaries/firecortex-server-$(rustc -vV | sed -n 's/^host: //p')"
       - name: Format
         run: cargo fmt --check
       - name: Clippy

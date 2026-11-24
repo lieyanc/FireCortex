@@ -35,8 +35,6 @@ jobs:
         with:
           target: ${{ env.TARGET }}
           source-sha: ${{ inputs.source-sha }}
-      - name: Build server sidecar
-        run: node apps/desktop/scripts/build-sidecar.mjs --target "$TARGET"
       - name: Import Windows code-signing certificate
         shell: pwsh
         env:
@@ -134,7 +132,6 @@ jobs:
           $root = "apps/desktop/src-tauri"
           $files = @(
             "$root/target/x86_64-pc-windows-msvc/release/firecortex-desktop.exe"
-            "$root/binaries/firecortex-server-x86_64-pc-windows-msvc.exe"
           )
           $files += Get-ChildItem "$root/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe", "$root/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi" |
             ForEach-Object FullName

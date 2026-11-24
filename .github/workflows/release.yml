@@ -59,12 +59,11 @@ jobs:
   test:
     name: Backend tests
     runs-on: ubuntu-24.04
+    env:
+      CGO_ENABLED: "0"
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-
-      - name: Install SQLite headers
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libsqlite3-dev
 
       - name: Set up Go
         uses: actions/setup-go@v6
@@ -74,7 +73,7 @@ jobs:
 
       - name: Run Go tests
         working-directory: backend
-        run: go test ./...
+        run: CGO_ENABLED=0 go test ./...
 
   frontend:
     name: Frontend export
@@ -249,6 +248,9 @@ jobs:
 
   release-prod:
     name: Publish release
+    permissions:
+      contents: write
+      actions: write
     needs:
       - meta
       - build
@@ -297,6 +299,14 @@ jobs:
           make_latest: true
           generate_release_notes: true
           files: release/*
+
+      - name: Start desktop builds for the tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh workflow run desktop-release.yml --ref "refs/tags/$RELEASE_TAG"
 
   cleanup-artifacts:
     name: Clean up old artifacts

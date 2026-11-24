@@ -40,8 +40,6 @@ jobs:
         with:
           target: ${{ env.TARGET }}
           source-sha: ${{ inputs.source-sha }}
-      - name: Build server sidecar
-        run: node apps/desktop/scripts/build-sidecar.mjs --target "$TARGET"
       - name: Configure Apple signing
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}

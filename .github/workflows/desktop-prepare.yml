@@ -84,26 +84,3 @@ jobs:
           if-no-files-found: error
           overwrite: true
           retention-days: 7
-
-  catalog:
-    name: Refresh catalog once
-    needs: resolve
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ github.sha }}
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: backend/go.mod
-          cache-dependency-path: backend/go.sum
-      - name: Refresh bundled catalog snapshots
-        working-directory: backend
-        run: go run ./cmd/catalog-snapshot -keep-on-error
-      - uses: actions/upload-artifact@v6
-        with:
-          name: desktop-catalog
-          path: backend/internal/infra/catalogdata/data
-          if-no-files-found: error
-          overwrite: true
-          retention-days: 7

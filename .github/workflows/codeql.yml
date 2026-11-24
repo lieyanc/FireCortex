@@ -16,6 +16,8 @@ jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
+    env:
+      CGO_ENABLED: "0"
     permissions:
       security-events: write
       packages: read

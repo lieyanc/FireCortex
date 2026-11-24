@@ -1,12 +1,12 @@
 name: Desktop build setup
-description: Restore target-specific toolchains and caches, and consume the shared web/catalog artifacts.
+description: Restore target-specific Rust/Node toolchains and caches, and consume the shared frontend artifact.
 
 inputs:
   target:
-    description: Rust target triple; also separates cross-compiled Go and Rust caches.
+    description: Rust target triple; isolates per-target Rust caches.
     required: true
   source-sha:
-    description: Immutable source commit used to refresh the Go compilation cache.
+    description: Immutable source commit verified against the checked-out HEAD.
     required: true
 
 runs:
@@ -32,29 +32,6 @@ runs:
       with:
         workspaces: apps/desktop/src-tauri
         shared-key: desktop-release-${{ inputs.target }}
-    - uses: actions/setup-go@v6
-      id: go
-      with:
-        go-version-file: backend/go.mod
-        cache: false
-    - name: Locate Go caches
-      id: go-paths
-      shell: bash
-      run: |
-        echo "build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
-        echo "modules=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
-    # Both macOS targets run on arm64, so key compiled packages by target
-    # triple; the source SHA refreshes builds while retaining dependency caches.
-    - name: Cache Go sidecar build
-      uses: actions/cache@v5
-      with:
-        path: |
-          ${{ steps.go-paths.outputs.build }}
-          ${{ steps.go-paths.outputs.modules }}
-        key: desktop-go-${{ runner.os }}-${{ inputs.target }}-${{ steps.go.outputs.go-version }}-${{ hashFiles('backend/go.sum') }}-${{ inputs.source-sha }}
-        restore-keys: |
-          desktop-go-${{ runner.os }}-${{ inputs.target }}-${{ steps.go.outputs.go-version }}-${{ hashFiles('backend/go.sum') }}-
-          desktop-go-${{ runner.os }}-${{ inputs.target }}-${{ steps.go.outputs.go-version }}-
     - name: Install desktop CLI
       shell: bash
       run: pnpm --filter @firecortex/desktop install --frozen-lockfile
@@ -63,13 +40,6 @@ runs:
       with:
         name: desktop-web
         path: apps/web/out
-    - name: Download catalog snapshots
-      uses: actions/download-artifact@v7
-      with:
-        name: desktop-catalog
-        path: backend/internal/infra/catalogdata/data
-    - name: Check C compiler and frontend
+    - name: Check frontend export
       shell: bash
-      run: |
-        gcc --version
-        test -f apps/web/out/index.html
+      run: test -f apps/web/out/index.html
