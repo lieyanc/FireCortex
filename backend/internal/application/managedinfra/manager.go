@@ -480,10 +480,10 @@ func (m *Manager) StartServiceAction(ctx context.Context, actorUserID uint, serv
 
 	cfg := m.snapshotConfig()
 	if serviceID == managedports.CoreServicePostgres && !cfg.ManagedPostgresEnabled {
-		return JobSnapshot{}, errors.New("PostgreSQL is not managed by FireCortex")
+		return JobSnapshot{}, errors.New("managed PostgreSQL is disabled")
 	}
 	if serviceID == managedports.CoreServiceRedis && (!cfg.ManagedRedisEnabled || !strings.EqualFold(cfg.CacheDriver, "redis")) {
-		return JobSnapshot{}, errors.New("Redis is not managed by FireCortex")
+		return JobSnapshot{}, errors.New("managed Redis is disabled")
 	}
 
 	jobID := m.createJob(action, serviceID)
