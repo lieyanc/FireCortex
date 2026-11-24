@@ -1,8 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { CircleArrowUp, RefreshCw, Save } from "lucide-react";
+import { CircleArrowUp, GitCommitHorizontal, RefreshCw, Save } from "lucide-react";
 import { toast } from "sonner";
 
 import { SettingsFieldEditor } from "@/features/admin/components/shared/settings-runtime-panel";
@@ -44,6 +45,20 @@ import { UPSTREAM_PROJECT } from "@/shared/config/upstream";
 import { useAuthSession } from "@/shared/auth/auth-session-context";
 import { useLocalizedErrorMessage } from "@/i18n/use-localized-error";
 import { cn } from "@/lib/utils";
+
+const AboutReleaseNotes = dynamic(
+  () => import("./about-release-notes").then((mod) => mod.AboutReleaseNotes),
+  {
+    ssr: false,
+    loading: () => (
+      <div aria-hidden="true" className="space-y-2 rounded-md border border-border/60 px-3 py-2.5">
+        <div className="h-3 w-2/5 animate-pulse rounded bg-muted" />
+        <div className="h-3 w-11/12 animate-pulse rounded bg-muted" />
+        <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
+      </div>
+    ),
+  },
+);
 
 type UpdateView =
   | "loading"
@@ -192,8 +207,11 @@ function UpdateDialog({
   const latestVersion = status?.latestVersion ? formatSystemVersion(status.latestVersion) : "";
   const channel = status ? t(`updateDialog.channels.${status.channel}`) : "";
   const busy = pendingAction !== null;
-  const showRelease = Boolean(status?.latestVersion && hasPendingSystemUpdate(status));
+  const showRelease = Boolean(status?.latestVersion && (hasPendingSystemUpdate(status) || view === "current"));
   const releaseNotes = status?.releaseNotes.trim() ?? "";
+  const showReleaseNotes = Boolean(
+    releaseNotes && (hasPendingSystemUpdate(status) || view === "current" || view === "failed"),
+  );
 
   const title = {
     loading: t("updateDialog.loadingTitle"),
@@ -299,7 +317,7 @@ function UpdateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-[420px]">
+      <DialogContent className={cn("gap-0 overflow-hidden p-0", showReleaseNotes ? "sm:max-w-[540px]" : "sm:max-w-[420px]")}>
         <DialogHeightTransition contentClassName="max-h-[min(86vh,760px)]">
           <DialogHeader className="shrink-0 px-4 py-4">
             <DialogTitle>{title}</DialogTitle>
@@ -360,12 +378,13 @@ function UpdateDialog({
               </p>
             ) : null}
 
-            {showRelease && releaseNotes ? (
+            {showReleaseNotes ? (
               <div className="space-y-1.5 text-xs">
-                <p className="text-muted-foreground">{t("updateDialog.releaseNotes")}</p>
-                <p className="max-h-48 overflow-y-auto rounded-md border border-border/60 px-3 py-2 leading-5 break-words whitespace-pre-wrap">
-                  {releaseNotes}
+                <p className="inline-flex items-center gap-1.5 text-muted-foreground">
+                  <GitCommitHorizontal className="size-3.5" />
+                  <span>{t("updateDialog.releaseNotes")}</span>
                 </p>
+                <AboutReleaseNotes notes={releaseNotes} label={t("updateDialog.releaseNotes")} />
               </div>
             ) : null}
 
@@ -374,7 +393,7 @@ function UpdateDialog({
             ) : null}
           </div>
 
-          <DialogFooter className="shrink-0 px-4 py-3">
+          <DialogFooter className="shrink-0 flex-wrap gap-2 px-4 py-3">
             <DialogClose asChild>
               <Button type="button" variant="ghost">
                 {t("updateDialog.close")}

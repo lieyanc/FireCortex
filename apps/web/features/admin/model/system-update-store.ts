@@ -58,7 +58,7 @@ let pendingLoad: Promise<void> | null = null;
 let pollTimer: ReturnType<typeof setTimeout> | null = null;
 let requestSequence = 0;
 let appliedSequence = 0;
-let baselineVersion = "";
+let baselineBuild = "";
 let follow: FollowState | null = null;
 let reloading = false;
 
@@ -124,15 +124,16 @@ function receiveStatus(status: AdminSystemUpdateStatus, sequence: number) {
   }
   appliedSequence = sequence;
 
-  if (!baselineVersion) {
-    baselineVersion = status.currentVersion;
-  } else if (status.currentVersion !== baselineVersion) {
+  const currentBuild = `${status.currentVersion}@${status.currentCommit}`;
+  if (!baselineBuild) {
+    baselineBuild = currentBuild;
+  } else if (currentBuild !== baselineBuild) {
     if (follow) {
       // 页面资源内嵌在二进制里，新版本上线后必须整页刷新。
       reloadPage();
       return;
     }
-    baselineVersion = status.currentVersion;
+    baselineBuild = currentBuild;
   }
 
   let displayed = status;
