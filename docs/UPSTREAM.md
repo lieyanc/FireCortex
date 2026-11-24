@@ -43,7 +43,7 @@ bash scripts/setup-git.sh --migrate-upstream-tags
 
 - `refs/upstream-tags/*` holds raw upstream tags (`v0.4.3`, `v0.4.6`, ...). Never run `git fetch upstream --tags` into `refs/tags/*` and never `git push origin --tags`.
 - `refs/tags/*` is reserved exclusively for FireCortex's own releases (`dev-latest` rolling prereleases and FireCortex `v*.*.*` release tags consumed by `.github/workflows/release.yml`).
-- FireCortex server versions append a positive revision to the integrated upstream tag. On the v0.4.6 baseline, `0.4.6.2` is followed by `0.4.6.3`. When the upstream baseline advances, start its revision at 1. Both server channels embed the four-part `VERSION`. The rolling dev release also records its commit. npm, Cargo and Tauri use the SemVer representation `0.4.6-fc.2`.
+- FireCortex server releases append a positive revision to the integrated upstream tag. On the v0.4.6 baseline, `0.4.6.2` is followed by `0.4.6.3`. When the upstream baseline advances, start its revision at 1. Stable `vX.Y.Z.N` releases embed the four-part `VERSION`, while rolling `dev-latest` prereleases built from `dev` embed `dev-{run}-{yyyymmdd}-{sha}` (and record the full commit, asset digests, and Markdown changelog in `version.json`). npm, Cargo and Tauri use the SemVer representation `0.4.6-fc.2`.
 
 ## Syncing a stable release
 

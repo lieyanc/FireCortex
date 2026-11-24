@@ -3,9 +3,9 @@ name: Release
 # Builds the single FireCortex binary (web UI embedded) per platform and
 # publishes the assets the built-in updater consumes:
 #   firecortex-{goos}-{goarch}, SHA256SUMS, version.json
-# The asset names, SHA256SUMS format, server version and the rolling
-# dev-latest tag are a protocol shared with backend/internal/infra/updater;
-# change both sides together.
+# The asset names, SHA256SUMS format, dev-{run}-{yyyymmdd}-{sha} vs release
+# version rules, and the rolling dev-latest tag are a protocol shared with
+# backend/internal/infra/updater; change both sides together.
 
 on:
   push:
@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 # Branch builds share the rolling dev-latest release: cancel an older run
 # before it can overwrite a newer one. Tag and PR runs are isolated by ref.
@@ -36,6 +36,7 @@ jobs:
       version: ${{ steps.meta.outputs.version }}
       commit: ${{ steps.meta.outputs.commit }}
       build_time: ${{ steps.meta.outputs.build_time }}
+      release_tag: ${{ steps.meta.outputs.release_tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -46,15 +47,27 @@ jobs:
           set -euo pipefail
           SHORT_SHA="${GITHUB_SHA::7}"
           BUILD_TIME="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          VERSION="$(< VERSION)"
+          FILE_VERSION="$(tr -d '[:space:]' < VERSION)"
           node scripts/sync-version.mjs --check backend
-          if [[ "${GITHUB_REF}" == refs/tags/v* && "${GITHUB_REF_NAME}" != "v${VERSION}" ]]; then
-            echo "tag ${GITHUB_REF_NAME} does not match VERSION file (${VERSION})" >&2
-            exit 1
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            if [[ "${GITHUB_REF_NAME}" != "v${FILE_VERSION}" ]]; then
+              echo "tag ${GITHUB_REF_NAME} does not match VERSION file (${FILE_VERSION})" >&2
+              exit 1
+            fi
+            VERSION="${FILE_VERSION}"
+            RELEASE_TAG="${GITHUB_REF_NAME}"
+          elif [[ "${GITHUB_REF}" == refs/heads/dev ]]; then
+            # dev-{run}-{yyyymmdd}-{sha}: parsed by the updater, keep the format.
+            VERSION="dev-$(printf '%04d' "${GITHUB_RUN_NUMBER}")-$(date -u +'%Y%m%d')-${SHORT_SHA}"
+            RELEASE_TAG="dev-latest"
+          else
+            VERSION="${FILE_VERSION}"
+            RELEASE_TAG=""
           fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "commit=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "commit=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
           echo "build_time=${BUILD_TIME}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
 
   test:
     name: Backend tests
@@ -177,16 +190,24 @@ jobs:
 
   release-dev:
     name: Publish dev-latest prerelease
+    permissions:
+      contents: write
     needs:
       - meta
       - build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/dev'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
 
       - name: Download binaries
         uses: actions/download-artifact@v7
@@ -195,55 +216,173 @@ jobs:
           path: release
           merge-multiple: true
 
-      - name: Add version metadata and license files
+      - name: Generate dev changelog before moving the rolling tag
+        env:
+          CGO_ENABLED: "0"
+          VERSION: ${{ needs.meta.outputs.version }}
+          COMMIT: ${{ needs.meta.outputs.commit }}
+          BUILD_TIME: ${{ needs.meta.outputs.build_time }}
         run: |
+          set -euo pipefail
+          # Keep release-notes.md outside release/ so release/* does not upload it as an asset.
+          (cd backend && CGO_ENABLED=0 go run ./cmd/release-notes \
+            -dir .. \
+            -repo "${GITHUB_REPOSITORY}" \
+            -version "${VERSION}" \
+            -commit "${COMMIT}" \
+            -base "refs/tags/dev-latest" \
+            -build-time "${BUILD_TIME}") > release-notes.md
+          cat release-notes.md
+
+      - name: Generate SHA256SUMS and version manifest
+        env:
+          VERSION: ${{ needs.meta.outputs.version }}
+          COMMIT: ${{ needs.meta.outputs.commit }}
+          BUILD_TIME: ${{ needs.meta.outputs.build_time }}
+          RELEASE_TAG: ${{ needs.meta.outputs.release_tag }}
+        run: |
+          set -euo pipefail
           # Apache-2.0 redistribution ships LICENSE and NOTICE with the binaries.
           cp LICENSE NOTICE release/
-          cat > release/version.json <<'EOF'
-          {
-            "version": "${{ needs.meta.outputs.version }}",
-            "commit": "${{ needs.meta.outputs.commit }}",
-            "build_time": "${{ needs.meta.outputs.build_time }}",
-            "tag": "dev-latest"
+          EXPECTED_ASSETS=(
+            firecortex-linux-amd64
+            firecortex-linux-arm64
+            firecortex-darwin-arm64
+          )
+          shopt -s nullglob
+          ACTUAL_ASSETS=(release/firecortex-*)
+          [[ ${#ACTUAL_ASSETS[@]} -eq ${#EXPECTED_ASSETS[@]} ]] || {
+            echo "unexpected release binary count: got ${#ACTUAL_ASSETS[@]}, expected ${#EXPECTED_ASSETS[@]}" >&2
+            exit 1
           }
-          EOF
-
-      - name: Generate SHA256SUMS
-        run: |
-          set -euo pipefail
-          cd release
-          for binary in firecortex-linux-amd64 firecortex-linux-arm64 firecortex-darwin-arm64; do
-            test -f "${binary}" || { echo "missing ${binary}" >&2; exit 1; }
+          for binary in "${EXPECTED_ASSETS[@]}"; do
+            test -f "release/${binary}" || { echo "missing release/${binary}" >&2; exit 1; }
           done
           # Bare file names, binaries only: the updater matches entries by exact name.
-          sha256sum firecortex-* > SHA256SUMS
-          cat SHA256SUMS
+          (cd release && sha256sum "${EXPECTED_ASSETS[@]}" > SHA256SUMS)
+          (cd release && sha256sum --check --status SHA256SUMS)
+          cat release/SHA256SUMS
 
-      - name: Refresh dev-latest tag and prerelease
+          ASSETS='{}'
+          while read -r DIGEST FILE_NAME EXTRA; do
+            FILE_NAME="${FILE_NAME#\*}"
+            [[ "${DIGEST}" =~ ^[0-9a-fA-F]{64}$ && -z "${EXTRA:-}" && -f "release/${FILE_NAME}" ]] || {
+              echo "invalid SHA256SUMS line: ${DIGEST} ${FILE_NAME}" >&2
+              exit 1
+            }
+            ASSETS="$(jq -cn --argjson assets "${ASSETS}" --arg name "${FILE_NAME}" --arg digest "${DIGEST,,}" '$assets + {($name):$digest}')"
+          done < release/SHA256SUMS
+
+          jq -n \
+            --arg version "${VERSION}" \
+            --arg commit "${COMMIT}" \
+            --arg build_time "${BUILD_TIME}" \
+            --arg tag "${RELEASE_TAG}" \
+            --argjson assets "${ASSETS}" \
+            --rawfile release_notes release-notes.md \
+            '{version:$version,commit:$commit,build_time:$build_time,tag:$tag,assets:$assets,release_notes:$release_notes}' \
+            > release/version.json
+          MANIFEST_BYTES="$(wc -c < release/version.json)"
+          [[ "${MANIFEST_BYTES}" -le 65536 ]] || {
+            echo "release/version.json exceeds 64 KiB (${MANIFEST_BYTES} bytes)" >&2
+            exit 1
+          }
+
+      - name: Stage and publish dev-latest prerelease
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.meta.outputs.version }}
+          COMMIT: ${{ needs.meta.outputs.commit }}
         run: |
           set -euo pipefail
-          release_id="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases" \
-            --jq '.[] | select(.tag_name == "dev-latest") | .id')"
-          git tag -f dev-latest "${GITHUB_SHA}"
+          # Concurrency ensures only one dev release job runs at a time, so any
+          # leftover staging draft came from a cancelled or failed earlier run.
+          orphan_drafts="$(gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/releases" \
+            | jq -r '.[][] | select(.draft == true and ((.tag_name // "") | startswith("dev-latest-draft-"))) | .id')"
+          while IFS= read -r orphan_id; do
+            if [[ -n "${orphan_id}" ]]; then
+              gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/${orphan_id}" >/dev/null 2>&1 || true
+            fi
+          done <<< "${orphan_drafts}"
+
+          old_ids="$(gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/releases" \
+            | jq -r '.[][] | select(.draft == false and .tag_name == "dev-latest") | .id')"
+
+          draft_tag="dev-latest-draft-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          published=0
+          cleanup_draft() {
+            if [[ "${published}" -ne 1 ]]; then
+              local stale_ids
+              stale_ids="$(gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/releases" 2>/dev/null \
+                | jq -r --arg tag "${draft_tag}" '.[][] | select(.draft == true and .tag_name == $tag) | .id' || true)"
+              while IFS= read -r stale_id; do
+                if [[ -n "${stale_id}" ]]; then
+                  gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/${stale_id}" >/dev/null 2>&1 || true
+                fi
+              done <<< "${stale_ids}"
+            fi
+          }
+          trap cleanup_draft EXIT
+
+          # Stage all assets onto a draft first so live dev-latest stays consistent
+          # during upload and never serves mixed-generation or stale assets.
+          gh release create "${draft_tag}" release/* \
+            --repo "${GITHUB_REPOSITORY}" \
+            --draft \
+            --prerelease \
+            --title "Dev Build · ${VERSION}" \
+            --notes-file release-notes.md \
+            --target "${COMMIT}"
+
+          draft_id="$(gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/releases" \
+            | jq -r --arg tag "${draft_tag}" '.[][] | select(.draft == true and .tag_name == $tag) | .id' | head -n 1)"
+          if [[ -z "${draft_id}" ]]; then
+            echo "failed to locate staged draft release ${draft_tag}" >&2
+            exit 1
+          fi
+
+          # Move the rolling tag only after every asset is uploaded, then swap
+          # the published release so published_at reflects this build.
+          git tag -f dev-latest "${COMMIT}"
           git push --force origin refs/tags/dev-latest
-          metadata=(--repo "${GITHUB_REPOSITORY}" --title "Dev build ${{ needs.meta.outputs.version }}"
-            --notes "Rolling build of ${GITHUB_SHA} from the dev branch." --prerelease --latest=false)
-          if [[ -z "${release_id}" ]]; then
-            gh release create dev-latest release/* "${metadata[@]}" --verify-tag
-          else
-            # Publish the discovery metadata after the binaries and checksums.
-            gh release upload dev-latest release/firecortex-* release/{LICENSE,NOTICE,SHA256SUMS} \
-              --repo "${GITHUB_REPOSITORY}" --clobber
-            gh release upload dev-latest release/version.json --repo "${GITHUB_REPOSITORY}" --clobber
-            gh release edit dev-latest "${metadata[@]}" --target "${GITHUB_SHA}"
-            assets="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets" --jq '.[].name')"
-            while IFS= read -r asset; do
-              if [[ -n "${asset}" && ! -f "release/${asset}" ]]; then
-                gh release delete-asset dev-latest "${asset}" --repo "${GITHUB_REPOSITORY}" --yes
+
+          while IFS= read -r old_id; do
+            [[ -n "${old_id}" ]] || continue
+            deleted=0
+            for attempt in 1 2 3 4 5; do
+              if output="$(gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/${old_id}" -i 2>&1)"; then
+                deleted=1
+                break
               fi
-            done <<< "${assets}"
+              if grep -Eq 'HTTP/[0-9.]+ 404|HTTP 404|Not Found' <<< "${output}"; then
+                deleted=1
+                break
+              fi
+              echo "delete previous dev-latest release ${old_id} attempt ${attempt} failed: ${output}" >&2
+              sleep $((attempt * 2))
+            done
+            if [[ "${deleted}" -ne 1 ]]; then
+              echo "failed to delete previous dev-latest release ${old_id}" >&2
+              exit 1
+            fi
+          done <<< "${old_ids}"
+
+          for attempt in 1 2 3 4 5; do
+            if output="$(gh api -X PATCH "repos/${GITHUB_REPOSITORY}/releases/${draft_id}" \
+              -f tag_name="dev-latest" \
+              -f target_commitish="${COMMIT}" \
+              -F draft=false \
+              -F prerelease=true \
+              -f make_latest="false" -i 2>&1)"; then
+              published=1
+              break
+            fi
+            echo "publish staged dev-latest release ${draft_id} attempt ${attempt} failed: ${output}" >&2
+            sleep $((attempt * 2))
+          done
+          if [[ "${published}" -ne 1 ]]; then
+            echo "failed to publish staged dev-latest release ${draft_id}" >&2
+            exit 1
           fi
 
   release-prod:
@@ -267,37 +406,67 @@ jobs:
           path: release
           merge-multiple: true
 
-      - name: Add version metadata and license files
-        run: |
-          # Apache-2.0 redistribution ships LICENSE and NOTICE with the binaries.
-          cp LICENSE NOTICE release/
-          cat > release/version.json <<'EOF'
-          {
-            "version": "${{ needs.meta.outputs.version }}",
-            "commit": "${{ needs.meta.outputs.commit }}",
-            "build_time": "${{ needs.meta.outputs.build_time }}",
-            "tag": "${{ github.ref_name }}"
-          }
-          EOF
-
-      - name: Generate SHA256SUMS
+      - name: Generate SHA256SUMS and version manifest
+        env:
+          VERSION: ${{ needs.meta.outputs.version }}
+          COMMIT: ${{ needs.meta.outputs.commit }}
+          BUILD_TIME: ${{ needs.meta.outputs.build_time }}
+          RELEASE_TAG: ${{ needs.meta.outputs.release_tag }}
         run: |
           set -euo pipefail
-          cd release
-          for binary in firecortex-linux-amd64 firecortex-linux-arm64 firecortex-darwin-arm64; do
-            test -f "${binary}" || { echo "missing ${binary}" >&2; exit 1; }
+          # Apache-2.0 redistribution ships LICENSE and NOTICE with the binaries.
+          cp LICENSE NOTICE release/
+          EXPECTED_ASSETS=(
+            firecortex-linux-amd64
+            firecortex-linux-arm64
+            firecortex-darwin-arm64
+          )
+          shopt -s nullglob
+          ACTUAL_ASSETS=(release/firecortex-*)
+          [[ ${#ACTUAL_ASSETS[@]} -eq ${#EXPECTED_ASSETS[@]} ]] || {
+            echo "unexpected release binary count: got ${#ACTUAL_ASSETS[@]}, expected ${#EXPECTED_ASSETS[@]}" >&2
+            exit 1
+          }
+          for binary in "${EXPECTED_ASSETS[@]}"; do
+            test -f "release/${binary}" || { echo "missing release/${binary}" >&2; exit 1; }
           done
-          sha256sum firecortex-* > SHA256SUMS
-          cat SHA256SUMS
+          (cd release && sha256sum "${EXPECTED_ASSETS[@]}" > SHA256SUMS)
+          (cd release && sha256sum --check --status SHA256SUMS)
+          cat release/SHA256SUMS
+
+          ASSETS='{}'
+          while read -r DIGEST FILE_NAME EXTRA; do
+            FILE_NAME="${FILE_NAME#\*}"
+            [[ "${DIGEST}" =~ ^[0-9a-fA-F]{64}$ && -z "${EXTRA:-}" && -f "release/${FILE_NAME}" ]] || {
+              echo "invalid SHA256SUMS line: ${DIGEST} ${FILE_NAME}" >&2
+              exit 1
+            }
+            ASSETS="$(jq -cn --argjson assets "${ASSETS}" --arg name "${FILE_NAME}" --arg digest "${DIGEST,,}" '$assets + {($name):$digest}')"
+          done < release/SHA256SUMS
+
+          jq -n \
+            --arg version "${VERSION}" \
+            --arg commit "${COMMIT}" \
+            --arg build_time "${BUILD_TIME}" \
+            --arg tag "${RELEASE_TAG}" \
+            --argjson assets "${ASSETS}" \
+            '{version:$version,commit:$commit,build_time:$build_time,tag:$tag,assets:$assets}' \
+            > release/version.json
+          MANIFEST_BYTES="$(wc -c < release/version.json)"
+          [[ "${MANIFEST_BYTES}" -le 65536 ]] || {
+            echo "release/version.json exceeds 64 KiB (${MANIFEST_BYTES} bytes)" >&2
+            exit 1
+          }
 
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: FireCortex ${{ github.ref_name }}
+          tag_name: ${{ needs.meta.outputs.release_tag }}
+          name: FireCortex ${{ needs.meta.outputs.release_tag }}
           prerelease: false
           make_latest: true
           generate_release_notes: true
+          fail_on_unmatched_files: true
           files: release/*
 
       - name: Start desktop builds for the tag
@@ -309,35 +478,67 @@ jobs:
           gh workflow run desktop-release.yml --ref "refs/tags/$RELEASE_TAG"
 
   cleanup-artifacts:
-    name: Clean up old artifacts
+    name: Keep artifacts from latest 3 runs
     needs:
       - build
       - release-dev
       - release-prod
-    if: ${{ always() && !cancelled() && needs.build.result == 'success' }}
+    if: ${{ always() && !cancelled() && github.event_name != 'pull_request' }}
     runs-on: ubuntu-24.04
     permissions:
       actions: write
       contents: read
+    concurrency:
+      group: release-artifact-cleanup
+      cancel-in-progress: false
     steps:
-      - name: Delete artifacts from previous completed runs
+      - name: Delete older artifacts from this workflow
         uses: actions/github-script@v7
         with:
           script: |
-            const { owner, repo } = context.repo;
+            const repo = context.repo;
+            const { data: current } = await github.rest.actions.getWorkflowRun({
+              ...repo,
+              run_id: context.runId,
+            });
             const artifacts = await github.paginate(
               github.rest.actions.listArtifactsForRepo,
-              { owner, repo, per_page: 100 },
+              { ...repo, per_page: 100 },
             );
-            const runStatus = new Map();
+            const byRun = new Map();
             for (const artifact of artifacts) {
               const runId = artifact.workflow_run?.id;
-              if (!runId || runId === context.runId) continue;
-              if (!runStatus.has(runId)) {
-                const { data: run } = await github.rest.actions.getWorkflowRun({ owner, repo, run_id: runId });
-                runStatus.set(runId, run.status);
+              if (!runId || artifact.expired) continue;
+              if (!byRun.has(runId)) byRun.set(runId, []);
+              byRun.get(runId).push(artifact);
+            }
+            const candidates = [];
+            for (const runId of byRun.keys()) {
+              const run = runId === current.id
+                ? current
+                : (await github.rest.actions.getWorkflowRun({ ...repo, run_id: runId })).data;
+              if (run.workflow_id !== current.workflow_id) continue;
+              // This run's consumers have finished; other active runs may still
+              // need their artifacts for tests, builds, or publishing.
+              if (run.id !== current.id && run.status !== 'completed') continue;
+              candidates.push(run);
+            }
+            candidates.sort((a, b) => b.run_number - a.run_number);
+            core.info(`Keeping artifact runs: ${candidates.slice(0, 3).map((run) => run.id).join(', ')}`);
+            for (const run of candidates.slice(3)) {
+              // A completed run may have been re-run since the initial list.
+              const { data: latest } = await github.rest.actions.getWorkflowRun({
+                ...repo,
+                run_id: run.id,
+              });
+              if (latest.id !== current.id && latest.status !== 'completed') continue;
+              if (latest.run_attempt !== run.run_attempt) continue;
+              for (const artifact of byRun.get(run.id)) {
+                core.info(`Deleting ${artifact.name} from run ${run.id}`);
+                try {
+                  await github.rest.actions.deleteArtifact({ ...repo, artifact_id: artifact.id });
+                } catch (error) {
+                  if (error.status !== 404) throw error;
+                }
               }
-              // Another queued or running release job may still need its artifacts.
-              if (runStatus.get(runId) !== 'completed') continue;
-              await github.rest.actions.deleteArtifact({ owner, repo, artifact_id: artifact.id });
             }
