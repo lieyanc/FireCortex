@@ -10,7 +10,8 @@
 #   scripts/build-binary.sh [--skip-frontend] [OUTPUT]
 #     OUTPUT           binary path (default: dist/firecortex)
 #     --skip-frontend  reuse an existing apps/web/out (CI builds it once)
-#   FIRECORTEX_SQLITE=1 scripts/build-binary.sh ...  # unsupported SQLite + CGO build
+#   GOOS=darwin GOARCH=arm64 scripts/build-binary.sh ...  # pure-Go cross-compile
+#   FIRECORTEX_SQLITE=1 scripts/build-binary.sh ...       # unsupported SQLite + CGO build
 #
 # Build metadata defaults to the VERSION file and git; CI overrides it with
 # the VERSION, COMMIT and BUILD_TIME environment variables. The updater
@@ -55,7 +56,8 @@ echo "==> Staging frontend into $embed_dir"
 reset_embed_dir
 cp -R "$frontend_out/." "$embed_dir/"
 
-echo "==> Building $output ($version, $commit)"
+target="$(go env GOOS)/$(go env GOARCH)"
+echo "==> Building $output ($target, $version, $commit)"
 pkg="github.com/lieyanc/FireCortex/backend/internal/shared/buildinfo"
 mkdir -p "$(dirname "$output")"
 (

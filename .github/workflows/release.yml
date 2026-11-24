@@ -31,14 +31,14 @@ concurrency:
 jobs:
   meta:
     name: Build metadata
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.meta.outputs.version }}
       commit: ${{ steps.meta.outputs.commit }}
       build_time: ${{ steps.meta.outputs.build_time }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Resolve version metadata
         id: meta
@@ -65,16 +65,16 @@ jobs:
 
   test:
     name: Backend tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install SQLite headers
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libsqlite3-dev
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
@@ -85,18 +85,18 @@ jobs:
 
   frontend:
     name: Frontend export
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
         with:
           version: 10.17.0
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -111,7 +111,7 @@ jobs:
         run: pnpm --filter @firecortex/web build
 
       - name: Upload export
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: frontend-out
           path: apps/web/out
@@ -120,7 +120,7 @@ jobs:
           retention-days: 3
 
   build:
-    name: Build ${{ matrix.target }}
+    name: Build ${{ matrix.goos }}-${{ matrix.goarch }}
     needs:
       - meta
       - test
@@ -128,51 +128,58 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # target must equal the updater's targetName(): {goos}-{goarch}.
+        # {goos}-{goarch} must equal the updater's targetName().
         # Official release binaries are pure Go (CGO_ENABLED=0, set in
-        # scripts/build-binary.sh), so there is no glibc floor; native runners
-        # remain only for simplicity.
+        # scripts/build-binary.sh), so every target cross-compiles cleanly on
+        # Linux without native platform runners.
         include:
-          - target: linux-amd64
-            runner: ubuntu-22.04
-          - target: linux-arm64
-            runner: ubuntu-22.04-arm
-          - target: darwin-arm64
-            runner: macos-14
-    runs-on: ${{ matrix.runner }}
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: darwin
+            goarch: arm64
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
 
       - name: Download frontend export
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: frontend-out
           path: apps/web/out
 
       - name: Build binary
         env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
           VERSION: ${{ needs.meta.outputs.version }}
           COMMIT: ${{ needs.meta.outputs.commit }}
           BUILD_TIME: ${{ needs.meta.outputs.build_time }}
         run: |
           set -euo pipefail
-          BIN="dist/firecortex-${{ matrix.target }}"
+          TARGET="${GOOS}-${GOARCH}"
+          BIN="dist/firecortex-${TARGET}"
           bash scripts/build-binary.sh --skip-frontend "${BIN}"
-          # The updater picks the asset by the running binary's GOOS/GOARCH.
-          [[ "$(go env GOOS)-$(go env GOARCH)" == "${{ matrix.target }}" ]]
+          # Verify the compiled binary's embedded build metadata matches the
+          # pure-Go GOOS/GOARCH target expected by the updater.
+          INFO="$(go version -m "${BIN}")"
+          grep -Fxq $'\tbuild\tCGO_ENABLED=0' <<< "${INFO}"
+          grep -Fxq $'\tbuild\tGOOS='"${GOOS}" <<< "${INFO}"
+          grep -Fxq $'\tbuild\tGOARCH='"${GOARCH}" <<< "${INFO}"
 
       - name: Upload binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
-          name: firecortex-${{ matrix.target }}
-          path: dist/firecortex-${{ matrix.target }}
+          name: firecortex-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/firecortex-${{ matrix.goos }}-${{ matrix.goarch }}
           if-no-files-found: error
           retention-days: 3
 
@@ -182,15 +189,15 @@ jobs:
       - meta
       - build
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Download binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           pattern: firecortex-*
           path: release
@@ -244,13 +251,13 @@ jobs:
       - meta
       - build
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           pattern: firecortex-*
           path: release
@@ -296,7 +303,7 @@ jobs:
       - release-dev
       - release-prod
     if: ${{ always() && !cancelled() && needs.build.result == 'success' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       actions: write
       contents: read
