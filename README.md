@@ -31,7 +31,7 @@ FireCortex is a self-hosted AI workspace built around one idea: a single chat bo
 
 FireCortex is derived from [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat) v0.4.6 and inherits its production-grade foundation: multi-provider access, files and RAG, MCP tools, billing, identity, audit, and a lightweight single-runtime deployment. <!-- rebrand:keep -->
 
-> **Support scope:** This independently maintained FireCortex fork prioritizes server deployments. Official releases build as pure Go (`CGO_ENABLED=0`) and support **PostgreSQL + pgvector** only (with Redis or in-memory cache). SQLite deployments and the desktop application are **not supported by default**; upstream SQLite/desktop code is retained only for self-built `-tags sqlite` binaries and desktop local mode, with no support guarantee.
+> **Support scope:** FireCortex ships a pure-Go (`CGO_ENABLED=0`) single-binary server for **PostgreSQL + pgvector** (with Redis or in-memory cache) and a **remote-only** Desktop client (`apps/desktop`) that connects to a self-hosted FireCortex server. SQLite server deployments and desktop local mode (bundled SQLite sidecar) are **not supported**; SQLite code stays behind opt-in `-tags sqlite` / `cgo` build tags only and is never built in CI.
 
 ## Roadmap
 
@@ -155,7 +155,7 @@ The backend keeps clear internal boundaries: `backend/cmd/server` is the executa
 - Node.js 20.9 or newer for development (release builds and CI use Node.js 24).
 - pnpm 10.17.0, normally enabled through Corepack.
 - Go 1.26.8 for backend development.
-- A C compiler and SQLite headers (`libsqlite3-dev` on Debian/Ubuntu) are only needed when running backend tests (`go test`) or building an unsupported SQLite binary (`FIRECORTEX_SQLITE=1`).
+- No C compiler or CGO is needed for development, default pure-Go builds/tests (`CGO_ENABLED=0`), or Desktop builds. A C compiler and SQLite headers (`libsqlite3-dev` on Debian/Ubuntu) are only needed if you explicitly opt into an unsupported SQLite binary (`FIRECORTEX_SQLITE=1`) or `cgo`-tagged SQLite tests.
 - PostgreSQL with pgvector and Redis for the default development configuration.
 
 Running a release binary needs none of these toolchain prerequisites (PostgreSQL with pgvector is required; Redis is optional when using single-process in-memory cache). The default development configuration uses PostgreSQL and Redis.
@@ -231,7 +231,7 @@ The frontend is exported as static files, so `pnpm build` writes the browser art
 
 ### Binary Deployment
 
-> **Support scope:** Official release binaries are built for server deployments (`CGO_ENABLED=0`, PostgreSQL + pgvector only). SQLite deployment and the desktop app are not supported by default; SQLite code is retained only for self-built `-tags sqlite` binaries and desktop local mode, with no support guarantee.
+> **Support scope:** Official server binaries are built as pure Go (`CGO_ENABLED=0`, PostgreSQL + pgvector only). Desktop packages (`apps/desktop`) connect to remote FireCortex servers only (no bundled local SQLite server). SQLite server deployment is unsupported by default and only available via self-built `-tags sqlite` binaries with no support guarantee.
 
 FireCortex ships as a single self-contained binary. The web UI is embedded in the executable, and one process serves both the API and the UI on `server.http_port` (default `8080`). Each [GitHub Release](https://github.com/lieyanc/FireCortex/releases) provides:
 
@@ -240,10 +240,11 @@ FireCortex ships as a single self-contained binary. The web UI is embedded in th
 | `firecortex-linux-amd64` | Linux x86-64 (static pure-Go binary) |
 | `firecortex-linux-arm64` | Linux ARM64 (static pure-Go binary) |
 | `firecortex-darwin-arm64` | macOS on Apple silicon |
-| `SHA256SUMS` | SHA-256 checksums for the binaries |
+| `SHA256SUMS` | SHA-256 checksums for the server binaries |
 | `version.json` | Release metadata used by the built-in updater |
+| `FireCortex-<version>-{macos,linux,windows}-*` + `desktop-SHA256SUMS` + `latest.json` | Remote-only Desktop client packages attached on stable `v*.*.*` releases (macOS arm64/x64, Linux x64, Windows x64) |
 
-Stable releases are published from `vX.Y.Z` tags. Every push to the `dev` branch also publishes a rolling prerelease under the `dev-latest` tag. Windows server builds and desktop packages are not built or released by default.
+Stable releases are published from `vX.Y.Z.N` tags (server binaries plus remote-only Desktop packages). Every push to the `dev` branch also publishes a rolling server prerelease under the `dev-latest` tag. Windows server binaries are not built.
 
 Choose a configuration profile first:
 
@@ -254,7 +255,7 @@ Choose a configuration profile first:
 
 The example files are partial overlays: they contain only the keys that the profile changes, and the server fills in everything else from its built-in template on startup.
 
-SQLite deployment (`config.sqlite.example.json`) is not supported by default: official release binaries exclude the SQLite driver and return an error if `database.driver` is set to `sqlite`. SQLite is only available in self-built `-tags sqlite` binaries and desktop local mode, with no support guarantee.
+SQLite deployment (`config.sqlite.example.json`) is not supported by default: official release binaries exclude the SQLite driver and return an error if `database.driver` is set to `sqlite`. SQLite is only available in self-built `-tags sqlite` binaries, with no support guarantee.
 
 #### 1. Install the Binary
 
@@ -575,7 +576,7 @@ Authentication, registration, conversation settings, model option policies, file
 
 When SSRF protection is enabled in production, administrator-saved model, MCP, Embedding, OIDC/OAuth2, and custom Turnstile endpoints are authorized locally by exact origin (`scheme + host + port`) and do not require entries in the global allowlist. Model, MCP, and Embedding redirects retain standard compatibility: public cross-origin targets are allowed, while private cross-origin targets must match `SSRF_ALLOWED_HOSTS` or `SSRF_ALLOWED_CIDRS`; OIDC/OAuth2 and Turnstile keep their stricter identity boundary. Generated media is downloaded, validated, and stored by the backend: a private artifact URL inherits trust only when it has the same origin as the selected model endpoint; public cross-origin artifact URLs remain subject to the strict public-network policy, and private cross-origin artifact URLs are blocked. The global allowlist also remains available for deployment-level integrations that cannot be tied to an administrator-saved endpoint, such as selected GeoIP or extraction deployments. Link-local, multicast, unspecified, and known metadata targets always remain blocked. Invalid allowlist entries stop backend startup, and global allowlist changes require a restart.
 
-### OAuth callbacks for Web, App, and Desktop (desktop not supported by this fork by default)
+### OAuth callbacks for Web, App, and Desktop
 
 Set `PUBLIC_API_BASE_URL` to the externally reachable API origin before enabling the provider auth bridge. For every OIDC/OAuth2 provider, register the server callback shown in the admin provider dialog:
 

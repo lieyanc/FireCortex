@@ -1,6 +1,6 @@
 # Windows deployment
 
-> **Fork support notice:** The desktop client is **unsupported by default** in this server-first FireCortex fork and is not built automatically on releases. Packages are produced only when the `Desktop Release` workflow is manually triggered via `workflow_dispatch` (using the `sqlite` tag for the local sidecar).
+> **Support scope:** FireCortex Desktop is a **remote-only** client connecting to a self-hosted FireCortex server (no bundled local server or SQLite sidecar). Desktop packages are built and attached automatically on stable `v*.*.*` releases, and can also be triggered manually via `Desktop Release` (`workflow_dispatch`).
 
 For IT administrators deploying FireCortex Desktop to managed Windows machines. For how the app is built and how each distribution form behaves, see [`apps/desktop/README.md`](../../apps/desktop/README.md#windows-distribution).
 
@@ -17,7 +17,7 @@ For IT administrators deploying FireCortex Desktop to managed Windows machines. 
 
 - Windows 10 or later (x64). Windows Server 2016+ works but needs the WebView2 runtime.
 - **Microsoft Edge WebView2 Runtime.** Built into Windows 10 21H1+ and Windows 11. The setup and MSI download it when it is missing, which fails offline — deploy the [Evergreen Standalone Installer](https://developer.microsoft.com/microsoft-edge/webview2/) first on offline machines, or use the offline portable zip.
-- A FireCortex server reachable from the client (unless users run the built-in local server).
+- A FireCortex server reachable from the client.
 
 ## Verify what you deploy
 
@@ -59,10 +59,10 @@ The app reads `HKLM\SOFTWARE\Policies\FireCortex\Chat` and `HKCU\SOFTWARE\Polici
 | Policy | Registry value | Effect |
 | --- | --- | --- |
 | Default server address | `DefaultServerUrl` (REG_SZ) | Prefills the server address on the setup screen. Use an `http(s)` origin without a path, e.g. `https://chat.example.com`. |
-| Allow only the default server | `LockServerUrl` (REG_DWORD 1) | Users can only connect to `DefaultServerUrl` (ignored when that is not set). Also disables the built-in local server. Previously saved tabs for other servers are removed together with their stored sign-in. |
-| Disable the built-in local server | `DisableLocalMode` (REG_DWORD 1) | Users cannot run the bundled local server. |
+| Allow only the default server | `LockServerUrl` (REG_DWORD 1) | Users can only connect to `DefaultServerUrl` (ignored when that is not set). Previously saved tabs for other servers are removed together with their stored sign-in. |
+| Disable the built-in local server | `DisableLocalMode` (REG_DWORD 1) | No-op (retained in ADMX for backwards compatibility; FireCortex Desktop is always remote-only). |
 | Disable update checks | `DisableAutoUpdate` (REG_DWORD 1) | No update checks or notifications in any package. |
-| Configure the network proxy | `ProxyMode` (REG_SZ `system`, `direct` or `fixed_servers`), `ProxyServer` (REG_SZ), `ProxyBypassList` (REG_SZ) | Replaces the user's proxy choice for the local server's requests, the app's own requests and the app window. `fixed_servers` needs `ProxyServer` (`host:port`, `http://host:port` or `socks5://host:port`; no credentials). The bypass list takes host names, `*.example.com`, addresses and ranges (`192.168.*`, `10.0.0.0/8`); this computer is always reached directly. The hive that sets `ProxyMode` decides all three values. |
+| Configure the network proxy | `ProxyMode` (REG_SZ `system`, `direct` or `fixed_servers`), `ProxyServer` (REG_SZ), `ProxyBypassList` (REG_SZ) | Replaces the user's proxy choice for the app's own requests and the app window. `fixed_servers` needs `ProxyServer` (`host:port`, `http://host:port` or `socks5://host:port`; no credentials). The bypass list takes host names, `*.example.com`, addresses and ranges (`192.168.*`, `10.0.0.0/8`); this computer is always reached directly. The hive that sets `ProxyMode` decides all three values. |
 
 The app enforces these itself; the UI only shows them (read-only address, hidden options, "managed by your organization").
 

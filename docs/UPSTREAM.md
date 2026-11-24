@@ -69,8 +69,9 @@ After resolving conflicts (never squash or rebase across the merge commit):
 bash scripts/rebrand.sh --check        # no upstream brand tokens slipped in
 pnpm install                           # regenerate lockfile and workspace names
 pnpm api:generate                      # regenerate Swagger docs and TS API contract
-cd backend && CGO_ENABLED=0 go build ./... && go build -tags sqlite ./... && go test ./...
+cd backend && CGO_ENABLED=0 go build ./... && CGO_ENABLED=0 go test ./... && make lint
 cd .. && pnpm --filter @firecortex/web lint && pnpm --filter @firecortex/web typecheck
+node --test apps/desktop/scripts/*.test.mjs
 ```
 
 Then merge `sync/upstream-v0.4.7` into `dev` with `git merge --no-ff`.
@@ -125,8 +126,8 @@ When upstream adds or changes a config field, port it by hand: add the key to `t
 
 ## Fork policy
 
-FireCortex prioritizes server deployments (PostgreSQL + pgvector only, pure Go `CGO_ENABLED=0`). SQLite deployments and the desktop application are unsupported by default:
+FireCortex ships a pure-Go (`CGO_ENABLED=0`) single-binary server (PostgreSQL + pgvector only) and a **remote-only** Desktop client (`apps/desktop`) with zero CGO compilation anywhere in CI:
 
-- **SQLite stays behind the `sqlite` build tag.** The gating files are `backend/internal/infra/persistence/sqlite_driver*.go`, `backend/internal/infra/openwebui/sqlite_source*.go`, `backend/internal/infra/persistence/sqlitevec/register_*.go`, and `backend/internal/infra/persistence/dberror/sqlite_*.go`. Upstream syncs must not reintroduce untagged SQLite or CGO imports into the default build; CI's `CGO_ENABLED=0 go build ./...` check guards this.
-- **Desktop releases are manual.** `.github/workflows/release.yml` must not automatically dispatch `.github/workflows/desktop-release.yml`; desktop builds run only via explicit `workflow_dispatch` (with `-tags ...,sqlite` for the sidecar).
-- **Keep `config.sqlite.example.json`.** It remains in the repository as referenced above for `-tags sqlite` opt-in builds, while documentation points server deployments to `config.full.example.json`.
+- **SQLite stays behind the `sqlite` / `cgo` build tags and out of CI.** The gating files are `backend/internal/infra/persistence/sqlite_driver*.go`, `backend/internal/infra/openwebui/sqlite_source*.go`, `backend/internal/infra/persistence/sqlitevec/register_*.go`, and `backend/internal/infra/persistence/dberror/sqlite_*.go`, and CGO-dependent SQLite tests are tagged `//go:build cgo`. Upstream syncs must not reintroduce untagged SQLite or CGO imports into the default build or tests; CI runs strictly with `CGO_ENABLED=0` (`ci.yml`, `release.yml`, and `codeql.yml`).
+- **Desktop is remote-only (no sidecar / no local mode).** `apps/desktop` ships only the Tauri 2 shell and `apps/web/out` to connect to a self-hosted FireCortex server; `bundle.externalBin`, `build-sidecar.mjs`, `src-tauri/src/sidecar.rs`, and `tauri-plugin-shell` are intentionally removed so Desktop requires neither Go nor CGO. On `v*.*.*` stable tags, `.github/workflows/release.yml` publishes the pure-Go single-binary server releases and dispatches `.github/workflows/desktop-release.yml` to build and attach desktop installers (manual `workflow_dispatch` also works).
+- **Keep `config.sqlite.example.json`.** It remains in the repository for local opt-in `FIRECORTEX_SQLITE=1` experimentation only, while documentation points server deployments to `config.full.example.json`.

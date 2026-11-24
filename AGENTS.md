@@ -8,10 +8,11 @@ This file is the authoritative rulebook for AI coding agents working in **FireCo
 
 FireCortex is a heavily rebranded, independently maintained **server-first** fork of **DEEIX Chat** (`https://github.com/DEEIX-AI/DEEIX-Chat`, currently synced through `v0.4.6`; see `docs/UPSTREAM.md`).
 
-- **Supported deployment (default):** Single self-contained, pure-Go (`CGO_ENABLED=0`) server binary (`scripts/build-binary.sh` / `pnpm build:binary`) serving the statically exported Next.js web UI (`apps/web/out` embedded into `backend/internal/webui/dist`) backed by **PostgreSQL + pgvector** (with Redis or single-process memory cache).
+- **Supported deployment & client targets (default):**
+  - **Server:** Single self-contained, pure-Go (`CGO_ENABLED=0`) server binary (`scripts/build-binary.sh` / `pnpm build:binary`) serving the statically exported Next.js web UI (`apps/web/out` embedded into `backend/internal/webui/dist`) backed by **PostgreSQL + pgvector** (with Redis or single-process memory cache).
+  - **Desktop (`apps/desktop`):** Remote-only Tauri 2 desktop client connecting to a self-hosted FireCortex server (no bundled local server sidecar, no local SQLite mode, no Go/CGO build dependency). Stable server releases (`v*.*.*`) automatically dispatch `.github/workflows/desktop-release.yml` to build and attach desktop packages; manual `workflow_dispatch` is also supported.
 - **Opt-in / unsupported by default:**
-  - **SQLite** stays strictly behind the `sqlite` / `cgo` build tags (`FIRECORTEX_SQLITE=1` / `-tags sqlite`). Never introduce untagged `go-sqlite3`, `sqlite-vec`, or CGO imports into default builds.
-  - **Desktop app (`apps/desktop`)** is retained from upstream only for manual `workflow_dispatch` builds. Never re-enable automatic dispatch of `.github/workflows/desktop-release.yml` from `.github/workflows/release.yml`.
+  - **SQLite** stays strictly behind the `sqlite` / `cgo` build tags (`FIRECORTEX_SQLITE=1` / `-tags sqlite`), and CGO-dependent SQLite backend tests carry `//go:build cgo`. Never introduce untagged `go-sqlite3`, `sqlite-vec`, or CGO imports into default builds, and **never run CGO compilation in CI**.
   - **Docker app images** are intentionally dropped. Do not add an application `Dockerfile`, root `docker-compose*.yml`, or main-application container image workflows. Optional extraction sidecars under `deploy/services/` stay as-is and may publish prebuilt sidecar-only images via `.github/workflows/sidecar-images.yml` for FireCortex's built-in Docker infrastructure manager (`managedinfra`).
 - **Configuration:** FireCortex uses `config.json` backed by embedded `backend/internal/infra/config/template.json` (not upstream's `config.yaml`). Whenever adding or changing a config field, update `template.json` and `fileConfig` in matching field order (`TestTemplateMatchesFileConfig` enforces this) and update `config*.example.json` overlays if needed.
 
@@ -113,17 +114,15 @@ When the user only wants specific upstream features/fixes without merging the wh
 
 Run every check relevant to the files you touched:
 
-- **Backend (Go):**
+- **Backend (Go, pure Go / zero CGO):**
   ```bash
   cd backend
   CGO_ENABLED=0 go build ./...                                                   # MUST pass (pure-Go default)
-  go build -tags sqlite ./...                                                    # opt-in SQLite build
-  go build -tags nopostgres,noredis,nos3,noswagger,nomsgpack,nootlp,sqlite ./... # desktop sidecar tags
-  go vet ./...
-  go tool deadcode -tags sqlite ./...                                            # all Go code must be reachable
-  go test ./...
+  CGO_ENABLED=0 go vet ./...
+  CGO_ENABLED=0 go tool deadcode -tags sqlite ./...                              # all Go code must be reachable
+  CGO_ENABLED=0 go test ./...
+  make lint                                                                      # runs gofmt, vet, staticcheck, deadcode with CGO_ENABLED=0
   ```
-  *Local environment tip:* If the host lacks system `libsqlite3-dev` (`sqlite3.h` missing during CGO builds/tests), copy `sqlite3-binding.h` → `sqlite3.h` and `sqlite3ext.h` from `$(cd backend && go list -m -f '{{.Dir}}' github.com/mattn/go-sqlite3)` into a temp directory and export `CGO_CFLAGS="-O2 -g -I<temp-dir>"`.
 - **API contracts & versions:**
   ```bash
   pnpm api:check       # regenerate first via `pnpm api:generate` if backend HTTP/Swagger changed
@@ -134,9 +133,12 @@ Run every check relevant to the files you touched:
   pnpm --filter @firecortex/web typecheck
   pnpm --filter @firecortex/web check:arch
   ```
-- **Desktop workflow tests** (when touching `.github/workflows/*` or `apps/desktop/scripts/*`):
+- **Desktop & workflow tests** (when touching `.github/workflows/*`, `.github/actions/desktop-setup/*`, or `apps/desktop/*`):
   ```bash
   node --test apps/desktop/scripts/*.test.mjs
+  (cd apps/desktop/src-tauri && cargo fmt --check)
+  # When platform WebView/GTK dev libraries are available:
+  (cd apps/desktop/src-tauri && cargo clippy --all-targets -- -D warnings && cargo test --lib)
   ```
 - **Branding & commit compliance:**
   ```bash

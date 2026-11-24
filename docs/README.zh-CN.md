@@ -31,7 +31,7 @@ FireCortex 是一个可自托管的 AI 工作台，核心理念只有一个：�
 
 FireCortex 基于 [DEEIX Chat](https://github.com/DEEIX-AI/DEEIX-Chat) v0.4.6 二次开发，继承其生产级基础能力：多上游模型接入、文件与 RAG、MCP 工具、计费、身份、审计以及轻量的单运行时部署。 <!-- rebrand:keep -->
 
-> **支持范围：** 本独立维护的分支优先面向服务端部署。官方发布版以纯 Go（`CGO_ENABLED=0`）构建，仅支持 **PostgreSQL + pgvector**（缓存支持 Redis 或内存缓存）；**默认不支持 SQLite 部署方式与桌面版**。SQLite 与桌面端相关代码仅保留给自编译的 `-tags sqlite` 构建及桌面端本地模式，不提供支持保证。
+> **支持范围：** FireCortex 官方发布纯 Go（`CGO_ENABLED=0`）单二进制服务端（仅支持 **PostgreSQL + pgvector**，缓存支持 Redis 或内存缓存），以及**仅连远程服务端的桌面客户端**（`apps/desktop`，不内置本地 SQLite 服务器）。SQLite 服务端部署与桌面端本地模式不受支持；SQLite 代码仅保留在 opt-in 的 `-tags sqlite` / `cgo` build tag 之后，CI 全程不执行 CGO 编译。
 
 ## 路线图
 
@@ -155,7 +155,7 @@ flowchart TB
 - Node.js 20.9 或更高版本，用于开发（发布构建和 CI 使用 Node.js 24）。
 - pnpm 10.17.0，通常通过 Corepack 启用。
 - Go 1.26.8，用于后端开发。
-- C 编译器和 SQLite 头文件（Debian/Ubuntu 上为 `libsqlite3-dev`），仅在运行后端测试（`go test`）或自编译不受支持的 SQLite 版本（`FIRECORTEX_SQLITE=1`）时需要。
+- 日常开发、默认纯 Go 构建与测试（`CGO_ENABLED=0`）以及桌面端构建均**不需要** C 编译器或 CGO；仅在显式自编译不受支持的 SQLite 二进制（`FIRECORTEX_SQLITE=1`）或运行 `cgo` 标记的 SQLite 测试时，才需要 C 编译器和 SQLite 头文件（Debian/Ubuntu 上为 `libsqlite3-dev`）。
 - 带 pgvector 的 PostgreSQL 和 Redis，用于默认开发配置。
 
 运行发布版二进制不需要以上工具链依赖（需要配合带 pgvector 的 PostgreSQL；单进程使用内存缓存时 Redis 为可选项）。默认开发配置使用 PostgreSQL 和 Redis。
@@ -231,19 +231,20 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8080
 
 ### 二进制部署
 
-> **支持范围：** 官方发布二进制面向服务端部署构建（`CGO_ENABLED=0`，仅支持 PostgreSQL + pgvector）。默认不支持 SQLite 部署方式和桌面版；SQLite 相关代码仅保留给自编译的 `-tags sqlite` 构建及桌面端本地模式，不提供支持保证。
+> **支持范围：** 官方服务端二进制以纯 Go（`CGO_ENABLED=0`）构建，仅支持 PostgreSQL + pgvector；桌面端（`apps/desktop`）仅保留连接远程服务端模式（无内置本地 SQLite 服务器）。默认不支持 SQLite 服务端部署，相关代码仅保留给自编译的 `-tags sqlite` 二进制，不提供支持保证。
 
-FireCortex 以单个自包含二进制文件发布。Web 界面嵌入在可执行文件中，同一个进程在 `server.http_port`（默认 `8080`）上同时提供 API 和界面。每个 [GitHub Release](https://github.com/lieyanc/FireCortex/releases) 包含：
+FireCortex 服务端以单个自包含二进制文件发布。Web 界面嵌入在可执行文件中，同一个进程在 `server.http_port`（默认 `8080`）上同时提供 API 和界面。每个 [GitHub Release](https://github.com/lieyanc/FireCortex/releases) 包含：
 
 | 文件 | 平台 |
 | --- | --- |
 | `firecortex-linux-amd64` | Linux x86-64（纯 Go 静态链接二进制） |
 | `firecortex-linux-arm64` | Linux ARM64（纯 Go 静态链接二进制） |
 | `firecortex-darwin-arm64` | Apple 芯片 macOS |
-| `SHA256SUMS` | 各二进制文件的 SHA-256 校验和 |
+| `SHA256SUMS` | 各服务端二进制文件的 SHA-256 校验和 |
 | `version.json` | 内置更新器使用的发布元数据 |
+| `FireCortex-<version>-{macos,linux,windows}-*` + `desktop-SHA256SUMS` + `latest.json` | 正式版 `v*.*.*` 随附发布的远程版桌面客户端安装包（macOS arm64/x64、Linux x64、Windows x64） |
 
-正式版由 `vX.Y.Z` 标签发布。每次推送到 `dev` 分支还会在 `dev-latest` 标签下滚动发布一个预发布版本。默认不构建或发布 Windows 服务端与桌面端安装包。
+正式版由 `vX.Y.Z.N` 标签发布（单二进制服务端 + 远程版桌面客户端）。每次推送到 `dev` 分支还会在 `dev-latest` 标签下滚动发布服务端预发布版本。不构建 Windows 服务端二进制。
 
 先选择配置方案：
 
@@ -254,7 +255,7 @@ FireCortex 以单个自包含二进制文件发布。Web 界面嵌入在可执�
 
 示例文件是部分覆盖片段：只包含该方案需要修改的配置项，其余配置由服务启动时从内置模板补全。
 
-本分支默认不支持 SQLite 部署（`config.sqlite.example.json`）：官方发布二进制未编译 SQLite 驱动，将 `database.driver` 设为 `sqlite` 会直接报错。SQLite 仅可用于自编译 `-tags sqlite` 二进制及桌面端本地模式，不提供支持保证。
+本分支默认不支持 SQLite 部署（`config.sqlite.example.json`）：官方发布二进制未编译 SQLite 驱动，将 `database.driver` 设为 `sqlite` 会直接报错。SQLite 仅可用于自编译 `-tags sqlite` 二进制，不提供支持保证。
 
 #### 1. 安装二进制文件
 
@@ -575,7 +576,7 @@ journalctl -u firecortex -e
 
 生产环境启用 SSRF 防护后，管理员保存的模型、MCP、Embedding、OIDC/OAuth2 和自定义 Turnstile endpoint 均按精确 origin（协议、主机和端口）获得局部授权，不需要加入全局白名单。模型、MCP 与 Embedding 保留标准重定向兼容性：跨 origin 的公网目标可以继续访问，跨 origin 的私网目标必须命中 `SSRF_ALLOWED_HOSTS` 或 `SSRF_ALLOWED_CIDRS`；OIDC/OAuth2 与 Turnstile 继续维持更严格的身份边界。模型生成的图片或视频由后端下载、校验并转存：私网制品 URL 只有与本次选中的模型 endpoint 同 origin 时才继承该局部信任；跨 origin 的公网制品仍按严格公网策略下载，跨 origin 的私网制品会被拦截。全局白名单也继续用于无法绑定管理员保存 endpoint 的部署级集成，例如部分 GeoIP 或提取服务部署。链路本地、组播、未指定地址和已知云元数据目标始终禁止。白名单配置不合法会阻止后端启动；全局白名单修改后需重启生效。
 
-### Web、App 与桌面端 OAuth 回调（本分支默认不支持桌面端与多端客户端）
+### Web、App 与桌面端 OAuth 回调
 
 启用第三方授权桥前，请先把 `PUBLIC_API_BASE_URL` 配置为外部可访问的 API 地址。每个 OIDC/OAuth2 身份源都应登记后台身份源弹窗展示的服务器回调：
 

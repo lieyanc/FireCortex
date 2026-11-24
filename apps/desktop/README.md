@@ -1,6 +1,6 @@
 # apps/desktop
 
-> **Fork support notice:** The desktop app is **unsupported by default** in this server-first FireCortex fork and is not built on release tags. To build desktop packages manually, trigger the `Desktop Release` workflow via `workflow_dispatch` (the sidecar is built with the explicit `sqlite` tag).
+> **Support scope:** FireCortex Desktop is supported in **remote-server mode only** (connecting to a self-hosted FireCortex server). It does not bundle a local Go/SQLite sidecar and requires neither Go nor CGO to build. Stable `v*.*.*` releases automatically dispatch `Desktop Release` to build and attach desktop packages; manual `workflow_dispatch` is also supported.
 
 Tauri 2 shell around the `@firecortex/web` build. It contains **no business logic**:
 windows, tray, deep links, auto-update and OS keychain access only. If a feature
@@ -15,9 +15,8 @@ apps/web (Next.js static export — the same bundle the Go server serves)
         ▼
 apps/desktop/src-tauri (Rust)
         ├── tabs               src/tabs.rs       one window, one webview per server, tab strip webview
-        ├── sidecar            src/sidecar.rs    bundled Go server for local mode (loopback, SQLite)
         ├── session            src/session.rs    server choice + keychain + refresh (token never exposed to JS)
-        ├── proxy              src/proxy.rs      network proxy: OS settings or the app's own, for sidecar, shell and webviews
+        ├── proxy              src/proxy.rs      network proxy: OS settings or the app's own, for shell and webviews
         ├── tray               src/tray.rs       show / quit, left click restores the window
         ├── menu               src/menu.rs       macOS menu bar: File ▸ Close Tab ⌘W / Close Window ⇧⌘W
         ├── OAuth loopback     src/oauth_loopback.rs  RFC 8252 receiver on 127.0.0.1:<ephemeral>
@@ -36,8 +35,7 @@ webview would never receive.
 No request leaves a tab before its server is known: the webview origin
 (`tauri.localhost`) answers every unknown path with `index.html`, so a request
 addressed to it would never reach an API. Branding is therefore loaded from the
-tab's server once it is bound, and again when that origin changes (the local
-sidecar restarted on another port); an unbound tab keeps the built-in branding.
+tab's server once it is bound; an unbound tab keeps the built-in branding.
 
 ## Tabs: one webview per server
 
@@ -45,9 +43,9 @@ The window is a plain `Window` with child webviews (Tauri `unstable`):
 
 ```
 ┌─ chrome (38px) ── /desktop/tabs ── tab strip, drag region ───────────┐
-├─ tab-1 ── /chat ── bound to local ───────────────────────────────────┤
-├─ tab-2 ── /chat ── bound to https://chat.example.com  (hidden)       │
-└─ tab-3 ── /chat ── unbound → setup screen             (hidden)       ┘
+├─ tab-1 ── /chat ── bound to https://chat.example.com                 │
+├─ tab-2 ── /chat ── bound to https://staging.example.com  (hidden)    │
+└─ tab-3 ── /chat ── unbound → setup screen                (hidden)    ┘
 ```
 
 Tabs enter at `/chat`: under the static export the root route is only a
@@ -58,8 +56,7 @@ sit on the strip; Windows is undecorated and the strip draws the caption buttons
 (tao keeps edge resizing, the shadow and the maximized inset); Linux keeps the
 system bar, since undecorated GTK varies by window manager. On Windows and macOS
 close hides the window and the app stays behind the tray — a second launch
-focuses the running copy (`tauri-plugin-single-instance`) rather than starting
-another sidecar on the same database. On Linux close quits: a tray icon is not
+focuses the running copy (`tauri-plugin-single-instance`). On Linux close quits: a tray icon is not
 guaranteed there, so a hidden window could be unreachable.
 
 Because one window holds every tab, macOS gets its own menu bar
@@ -67,8 +64,7 @@ Because one window holds every tab, macOS gets its own menu bar
 turned into a hide a stray ⌘W would make the whole app disappear instead of
 closing a tab. The menu replaces that binding the way browsers do — ⌘W closes
 the tab that is showing and ⇧⌘W the window — with one deviation: the last tab is
-never closed, since closing it would forget its server (token deleted, sidecar
-stopped). ⌘W there closes the window instead, and the item says so: with a
+never closed, since closing it would forget its server and delete its token. ⌘W there closes the window instead, and the item says so: with a
 single tab File reads `Close Window ⌘W`, with more it reads `Close Tab ⌘W` and
 adds `Close Window ⇧⌘W`. The red traffic light and the tray still close/hide the
 window.
@@ -83,8 +79,9 @@ Every tab is a full instance of the web app with its own DOM, caches, SSE
 connections and in-memory session, so the app never has to model "several
 servers at once". A tab is bound to at most one server; two tabs never share a
 server (opening one that is already open activates its tab). Closing a tab
-forgets that server: its refresh token is deleted and the sidecar stops when
-the last local tab goes. Bound tabs are restored on launch from `tabs.json`.
+forgets that server and deletes its refresh token. Bound tabs are restored on
+launch from `tabs.json` (any legacy `local` entries from older profiles are
+dropped and their stored credentials removed).
 
 Session commands resolve their server from the *calling webview's label*, so a
 tab can only ever touch its own credential. `build.rs` declares the app ACL
@@ -106,8 +103,8 @@ created on first click. A tab hidden for 30 minutes has its webview discarded
 from the keychain. Tabs can be reordered by dragging; order is persisted.
 
 `pnpm dev` runs with `tauri.dev.conf.json`, which swaps the identifier to
-`com.firecortex.desktop.dev`: the dev build gets its own config dir, keychain
-service and local database, so it never disturbs an installed copy.
+`com.firecortex.desktop.dev`: the dev build gets its own config dir and keychain
+service, so it never disturbs an installed copy.
 
 Storage (localStorage) is shared across tabs on purpose: it holds UI
 preferences such as theme and fonts, which should follow the user, not the
@@ -120,51 +117,18 @@ shows download UI, so the shell emits `downloads:finished` to the tab that
 started one and the page shows a toast (`desktop-download-notifier.tsx`). The
 webview gets no filesystem permission for this: Rust picks the path.
 
-## Two ways to run
+## Remote-server connection model
 
-| | Local | Remote |
-| --- | --- | --- |
-| Server | the Go server bundled as a sidecar, started by the shell | a FireCortex deployment the user points the app at |
-| Data | SQLite + local files under the app data dir (`local/`) | on that server |
-| Account | one passwordless owner, signed in via a one-time grant from the sidecar handshake | the server's accounts, password or OAuth |
-| Network | `127.0.0.1:<ephemeral>` only; port changes each launch | whatever the user pinned |
-| Keychain key | `refresh-token:local` | `refresh-token:<origin>` |
+FireCortex Desktop connects to one or more self-hosted FireCortex servers (one
+tab per server). It does not ship a bundled local server or SQLite sidecar:
 
-Both modes run **the same server code with the same security policy**: local
-mode is the SQLite deployment profile with per-install secrets, production
-validation, and a CORS allowlist limited to the webview. Nothing in the API is
-weaker locally. The only local-only endpoint is `POST /api/v1/auth/local/exchange`,
-which is mounted solely in local mode and accepts a grant that (a) is printed once
-on the sidecar's stdout, (b) is single-use, (c) expires in two minutes, and
-(d) is consumed by Rust — the webview never sees it.
-
-Sign-out in a local tab has no login page to return to, so it maps to
-"leave server": the tab drops its credential and returns to the setup screen.
-
-### Sidecar lifecycle
-
-`src/sidecar.rs` spawns `firecortex-server --local --data-dir <app-data>/local`
-through `tauri-plugin-shell` (Rust side only; the webview has no shell
-permission). The server binds a loopback port, prints one JSON line
-(`{"type":"ready","origin":…,"grant":…}`) to stdout, and logs to stderr. The
-shell waits up to 30 s for that line, forwards stderr to its own log, restarts
-the process on demand if it exits, and kills it on app exit.
-
-Binary: `scripts/build-sidecar.mjs` builds `backend/cmd/server` for the current
-Rust target triple into `src-tauri/binaries/` (git-ignored). `pnpm dev` and
-`pnpm build` run it first; CI runs it once per matrix leg because SQLite links
-through cgo. The script downloads `go-sqlite3` itself and takes the SQLite
-headers sqlite-vec needs from that module, so a fresh runner without a system
-SQLite works. To check the Windows build from macOS:
-
-```bash
-brew install mingw-w64
-CC=x86_64-w64-mingw32-gcc node scripts/build-sidecar.mjs --target x86_64-pc-windows-msvc
-```
-
-Which features the local server offers is declared by `GET /api/v1/capabilities`
-and enforced by the server (`404 feature.disabled`); the web app renders from
-those flags and never checks the platform. See `docs/ARCHITECTURE.md` §4.
+- **Server:** any reachable FireCortex server URL (`http://` or `https://`),
+  entered on the first-run setup screen (or prefilled/locked by Windows
+  enterprise policy).
+- **Accounts & data:** managed entirely by the connected server; capabilities
+  and feature flags are declared by `GET /api/v1/capabilities`.
+- **Keychain key:** `refresh-token:<origin>`, stored per server in the OS
+  credential store.
 
 ## Network proxy
 
@@ -175,9 +139,8 @@ optional sign-in, or no proxy.
 
 | Consumer | How it gets the proxy |
 | --- | --- |
-| Bundled server (local mode) | `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` on the child process, every spelling set so nothing inherited survives. The server keeps its contract: proxy settings only ever come from its environment, and in local mode the shell is its deployer. |
 | Shell requests (session refresh, update checks) | `proxy::apply` on each reqwest client. Loopback origins are always direct. |
-| Webviews | Windows: WebView2 `--proxy-server` / `--proxy-bypass-list` / `--no-proxy-server`. macOS and Linux follow the OS: a per-webview proxy needs macOS 14, and Tauri gives WebKitGTK no bypass list, so even the local server's loopback traffic would go to the proxy. |
+| Webviews | Windows: WebView2 `--proxy-server` / `--proxy-bypass-list` / `--no-proxy-server`. macOS and Linux follow the OS: a per-webview proxy needs macOS 14, and Tauri gives WebKitGTK no bypass list. |
 
 Where the proxy comes from, highest first: enterprise policy (`ProxyMode` and
 friends, below), the app setting, the process's `HTTP(S)_PROXY` / `ALL_PROXY`,
@@ -185,14 +148,14 @@ then the OS — Windows through `WinHttpGetIEProxyConfigForCurrentUser`, macOS
 through the dynamic store (`SCDynamicStoreCopyProxies`); Linux has no OS source
 besides the environment.
 
-The OS bypass lists are translated, because Go and reqwest read `NO_PROXY`
-syntax only: `127.*` / `192.168.*` become CIDR blocks, `*.corp` becomes
-`.corp`, macOS's `169.254/16` is padded. `<local>` (dotless host names) has no
-equivalent and is dropped. Loopback is always added.
+The OS bypass lists are translated, because reqwest reads `NO_PROXY` syntax
+only: `127.*` / `192.168.*` become CIDR blocks, `*.corp` becomes `.corp`,
+macOS's `169.254/16` is padded. `<local>` (dotless host names) has no equivalent
+and is dropped. Loopback is always added.
 
 Deliberate limits:
 
-- **PAC and WPAD are not applied** to the shell or the bundled server: there is
+- **PAC and WPAD are not applied** to the shell's own HTTP requests: there is
   no proxy address to hand over. The settings page says so; the webviews still
   use the script, through the OS.
 - **An unreachable proxy is not bypassed.** Requests fail as they do in the
@@ -200,10 +163,10 @@ Deliberate limits:
   user or the administrator chose.
 - **The webviews never get proxy credentials.** Neither engine takes them up
   front and Tauri forwards no sign-in prompt, so a manual proxy that needs a
-  password leaves the window on the OS settings; the shell and the bundled
-  server use the password.
-- **Changes apply at the next launch.** The sidecar and the webviews take their
-  proxy when they are created; the page shows "restart required" and a button.
+  password leaves the window on the OS settings; the shell's own requests use
+  the password.
+- **Changes apply at the next launch.** The webviews take their proxy when they
+  are created; the page shows "restart required" and a button.
 
 The setting is stored in `network.json` next to `tabs.json`; the password in the
 keychain (see [Keychain entries](#keychain-entries)).
@@ -221,13 +184,13 @@ cannot read it. The desktop shell reproduces that property in Rust:
 | Readable by page script | no | no — `store_session` is write-once, there is no read command |
 | Server address | page origin | bound per tab, persisted in `tabs.json`; closing the tab drops that session |
 
-The shell never routes a request to a loopback server through a proxy, so the
-local-mode grant and the refresh token stay on the machine.
+The shell never routes a request to a loopback server through a proxy, so
+refresh tokens targeting a local development server stay on the machine.
 
 The webview holds the refresh token exactly once, in the login response, and
 hands it to `store_session` immediately. After that the only session commands
-are `refresh_session` (returns an access token), `local_sign_in` (local tabs:
-refresh or redeem the sidecar grant), `clear_session` and `leave_server`. A script injected into the page — from a malicious message,
+are `refresh_session` (returns an access token), `clear_session` and
+`leave_server`. A script injected into the page — from a malicious message,
 a shared conversation, another user's profile — therefore gets the same
 short-lived access it would get in a browser, not the long-lived credential,
 and cannot redirect the credential to a server it controls.
@@ -268,10 +231,9 @@ step, because MSI versions must be numeric. Build the setup only
 `node scripts/release-config.mjs --channel beta` prints the `--config` argument.
 
 The macOS app requires macOS 12 (`bundle.macOS.minimumSystemVersion`, which
-becomes `LSMinimumSystemVersion`; Go 1.26 supports nothing older). Tauri builds
-the Rust binary for it, and `build-sidecar.mjs` passes the same version to cgo;
-otherwise the sidecar would require the macOS of the build machine, and local
-mode would not start on older systems that can still install the app.
+becomes `LSMinimumSystemVersion`). Tauri builds the Rust binary for that
+minimum deployment target, and `verify-macos-bundle.sh` checks the shipped
+executable against it.
 
 Building is not enough to ship: macOS packages must be **notarized** and Windows
 packages **code-signed**, otherwise users cannot install them. Signing keys and
@@ -357,20 +319,21 @@ verification live in that platform's file.
 
 | Workflow | Responsibility |
 | --- | --- |
-| [`desktop-prepare.yml`](../../.github/workflows/desktop-prepare.yml) | Verify the run's source commit and tag, check version consistency, then build the frontend and refresh catalog snapshots once, in parallel. |
+| [`desktop-prepare.yml`](../../.github/workflows/desktop-prepare.yml) | Verify the run's source commit and tag, check version consistency, and build the frontend once. |
 | [`desktop-macos.yml`](../../.github/workflows/desktop-macos.yml) | Build arm64 natively and cross-compile x64 on ARM `macos-26` runners; sign the app, create the final DMG and updater archive, then verify both. |
-| [`desktop-linux.yml`](../../.github/workflows/desktop-linux.yml) | Build x64 sidecar/executable, bundle deb/AppImage and verify the Wayland library exclusion. |
-| [`desktop-windows.yml`](../../.github/workflows/desktop-windows.yml) | Build x64 sidecar/executable, sign and verify NSIS/MSI/portable packages, and attest their provenance. |
+| [`desktop-linux.yml`](../../.github/workflows/desktop-linux.yml) | Build the x64 desktop executable, bundle deb/AppImage and verify the Wayland library exclusion. |
+| [`desktop-windows.yml`](../../.github/workflows/desktop-windows.yml) | Build the x64 desktop executable, sign and verify NSIS/MSI/portable packages, and attest their provenance. |
 
 The four native jobs run in parallel after preparation. Shared toolchain/cache
 setup lives in [the desktop-setup action](../../.github/actions/desktop-setup/action.yml).
-The frontend and catalog are downloaded as workflow artifacts; native jobs
-disable Tauri's frontend build hook, so they never rebuild the shared frontend.
+The frontend is downloaded as a workflow artifact; native jobs disable Tauri's
+frontend build hook, so they never rebuild the shared frontend, and no Go or
+CGO toolchain is needed.
 Compilation, bundling, notarization and verification have separate steps. Rust
 `--timings` reports are retained as `desktop-timings-*` artifacts for seven days.
 The shipped Rust optimization profile, including fat LTO, is unchanged.
 
-Release-tag runs dispatch `desktop-release.yml` on the **release tag**. Every
+Release-tag runs (`release.yml`) dispatch `desktop-release.yml` on the **release tag**. Every
 job checks out the run's immutable `github.sha`; source inputs are verified
 against that commit and cannot select code from a different ref. Tag code writes
 only to its own cache scope, keeping the default branch and other tags isolated.
@@ -379,8 +342,8 @@ the same tag reuse its caches. Successive tags cannot restore caches written by
 each other, so their first native builds may need recompilation. Publication
 verifies the tag has not moved, and Windows provenance records the matching
 workflow and desktop source commits. Rust is pinned in the setup action, and
-Rust/Go cache keys include the target triple so the two macOS targets sharing
-ARM runners cannot overwrite one another's cache. Dependency changes or cache
+Rust cache keys include the target triple so the two macOS targets sharing ARM
+runners cannot overwrite one another's cache. Dependency changes or cache
 eviction can also cause rebuilds.
 
 To build an existing tag containing these workflows and scripts:
@@ -432,22 +395,21 @@ deployment assignments and must never change. MSI versions are numeric, so
 ```text
 FireCortex/
   FireCortex.exe            signed app
-  firecortex-server.exe     signed sidecar (local mode)
   portable                  marker: its presence switches the app to portable mode
   README.txt
   data/                     created on first run
     instance-id             identity of this copy
-    webview/  tmp/  ...     WebView2 profile, sidecar temp files, tabs, local-mode data
+    webview/  ...           WebView2 profile, tabs, network proxy settings
 ```
 
 - **Detection**: the `portable` marker next to the exe decides; the same binary
   runs as an installed app without it. Kind precedence is marker → debug build
   → Tauri bundle type.
 - **Data stays in the folder.** All app-owned paths go through
-  `src-tauri/src/paths.rs`, including the WebView2 profile and the sidecar's
-  temp directory. If `data/` is not writable the app shows an error and exits;
-  it never falls back to `%APPDATA%`. Temp files WebView2 itself writes to the
-  system `%TEMP%` are the one exception.
+  `src-tauri/src/paths.rs`, including the WebView2 profile. If `data/` is not
+  writable the app shows an error and exits; it never falls back to `%APPDATA%`.
+  Temp files WebView2 itself writes to the system `%TEMP%` are the one
+  exception.
 - **Credentials stay in Windows Credential Manager**, never in `data/`, so a lost
   USB drive does not leak sign-ins; moving to another machine means signing in
   again. Each copy runs under `com.firecortex.desktop.portable-<instance-id>`,
@@ -476,8 +438,8 @@ only reflects it.
 | Value | Type | Effect |
 | --- | --- | --- |
 | `DefaultServerUrl` | REG_SZ | Prefilled server address on the setup screen. |
-| `LockServerUrl` | REG_DWORD `1` | Only `DefaultServerUrl` may be used (requires a valid `DefaultServerUrl`); also disables local mode. Saved tabs for other servers are dropped with their credentials. |
-| `DisableLocalMode` | REG_DWORD `1` | The bundled local server cannot be used. |
+| `LockServerUrl` | REG_DWORD `1` | Only `DefaultServerUrl` may be used (requires a valid `DefaultServerUrl`). Saved tabs for other servers are dropped with their credentials. |
+| `DisableLocalMode` | REG_DWORD `1` | No-op (retained in ADMX for backwards compatibility; FireCortex Desktop is always remote-only). |
 | `DisableAutoUpdate` | REG_DWORD `1` | No update checks in any form. |
 | `ProxyMode` | REG_SZ `system` / `direct` / `fixed_servers` | Replaces the user's proxy choice ([Network proxy](#network-proxy)). The hive that sets it decides `ProxyServer` and `ProxyBypassList` too. |
 | `ProxyServer` | REG_SZ | `host:port`, `http://host:port` or `socks5://host:port`, for `fixed_servers`. No credentials; an invalid value makes the policy ignored. |
@@ -492,7 +454,6 @@ What a local `pnpm build` costs once caches are warm, and where it goes:
 
 | Step | Unchanged | Changed | Notes |
 | --- | --- | --- | --- |
-| Go sidecar | ~3 s | ~20 s | Go build cache; `-tags nopostgres,noredis,nos3,noswagger,nomsgpack,nootlp,sqlite` enables SQLite for local mode while compiling out unused drivers and the OTLP trace exporter. cgo needs a C compiler and SQLite headers; `build-sidecar.mjs` takes the headers from the `go-sqlite3` module so Windows works without a system SQLite |
 | Web (`next build`) | **0.3 s** | ~35 s | runs through `turbo`, so an untouched frontend is a cache hit |
 | Rust app crate | ~1 s | ~60 s | recompiles whenever `out/` changed (assets are embedded); fat LTO, the shipped profile |
 | `.app` | ~1 s | | |
@@ -505,9 +466,6 @@ building a compressed DMG only to decompress, replace the app and recompress it.
 The updater tarball is created from the same final app and then signed with the
 updater key. Both packages go through `verify-macos-bundle.sh` before staging.
 Use `pnpm build:app` while iterating: it relaxes LTO (~17 s link) and stops at the `.app`.
-
-Every `no*` tag has an `*_off.go` counterpart that returns a clear error if the
-config selects a driver that was compiled out.
 
 ## Icons
 
@@ -533,9 +491,9 @@ app icon.
 RFC 3161 timestamping on Windows. CI imports the Windows certificate into the
 runner's store and passes its thumbprint as `bundle.windows.certificateThumbprint`
 through `--config` (tauri-cli has no environment variable for it). The bundler
-signs the exe inside each installer and the sidecar; the portable exe is signed
-separately with signtool. A CI step then requires a valid Authenticode signature
-on the setup, MSI, portable exe and sidecar whenever a certificate is configured.
+signs the exe inside each installer; the portable exe is signed separately with
+signtool. A CI step then requires a valid Authenticode signature on the setup,
+MSI, and portable exe whenever a certificate is configured.
 
 CI chooses the external macOS provider when all four `SIGN_AND_NOTARIZE_*`
 secrets are set, even if Apple credentials also exist. Tauri only ad-hoc signs
@@ -548,8 +506,8 @@ removes its keychain when app bundling finishes.
 
 On macOS, `scripts/verify-macos-bundle.sh` checks the app as it ships, inside the
 final DMG and inside the updater archive, before CI uploads the DMG: the app
-binary and the sidecar must be built for the leg's architecture and must not
-require a newer macOS than the app declares, and the bundle must pass
+binary must be built for the leg's architecture and must not require a newer
+macOS than the app declares, and the bundle must pass
 `codesign --verify --deep --strict`. With a Developer ID it also requires the
 certificate's team id on the app and the DMG, a stapled notarization ticket on
 both, and a Gatekeeper assessment of `Notarized Developer ID`.

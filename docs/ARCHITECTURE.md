@@ -1,6 +1,6 @@
 # 多端架构
 
-> **分支支持范围说明：** 本独立维护的 FireCortex 分支优先面向服务端部署（默认仅支持 PostgreSQL 的纯 Go 构建）；SQLite 部署方式与桌面端默认不受支持，相关代码与架构文档保留自上游多端能力，桌面端不再随发版自动构建或发布。
+> **分支支持范围说明：** 本独立维护的 FireCortex 分支支持**单二进制纯 Go 服务端**（`CGO_ENABLED=0`，PostgreSQL + pgvector）与**仅连远程服务端的桌面客户端**（`apps/desktop`，不内置本地服务器 sidecar、不依赖 CGO）。SQLite 服务端部署与桌面端本地模式不受支持，后端相关代码仅隔离在 `sqlite` / `cgo` build tag 之后以降低后续上游同步冲突，CI 全程不执行任何 CGO 编译。
 
 本文档定义 FireCortex 的仓库结构、各端职责边界、共享代码规则与安全约束。新增客户端（桌面、移动）必须遵循本文档；与本文档冲突的实现视为架构违规。
 
@@ -40,22 +40,18 @@ apps/*  →  packages/core  →  packages/api-contract  →  backend/docs/swagge
 | 端 | 定位 | 功能范围 | 不做什么 |
 |---|---|---|---|
 | Web (`apps/web`) | 完整产品 | 全部功能，包括 Admin | — |
-| 桌面 (`apps/desktop`) | Web 的安装版，可**本地独立运行**或连接服务器，**多标签页**同时连多个服务器 | Web 全部功能 + 托盘、自动更新、系统 keychain、OAuth 回环、内置本地服务器（sidecar）、每服务器一个 webview 的标签页 | **不写任何业务 UI 或业务逻辑**。Tauri 工程只包含 Rust 壳、窗口、托盘、更新器、sidecar 进程管理与会话命令 |
+| 桌面 (`apps/desktop`) | Web 的安装版，**仅连接远程 FireCortex 服务端**，**多标签页**同时连多个服务器 | Web 全部功能 + 托盘、自动更新、系统 keychain、OAuth 回环、代理设置、每服务器一个 webview 的标签页 | **不写任何业务 UI 或业务逻辑，不内置本地服务器（sidecar）**。Tauri 工程只包含 Rust 壳、窗口、托盘、更新器与会话命令 |
 | 移动 (`apps/mobile`) | 消费端 | 聊天、会话、文件上传、相机/语音、推送通知、账户设置 | 不做 Admin、账单后台、知识库管理、MCP/Skill 配置 |
 
 原则：如果发现要在桌面工程里写聊天逻辑，说明 Web 端缺了一个抽象；如果发现移动端和 Web 端各写了一份"什么时候该登出"，说明 `packages/core` 缺了一个模块。
 
-### 本地模式（桌面端内置服务器）
+### 远程连接模式（FireCortex 桌面端说明）
 
-桌面端把 Go 后端作为 sidecar 打进安装包，用户可以不部署任何东西直接使用。设计约束：
+上游曾支持在桌面安装包内通过 CGO/SQLite 捆绑 Go sidecar（本地模式）。在 FireCortex 分支中，桌面端**仅保留连接远程服务端模式**：
 
-- **同一份后端代码、同一套安全策略。** 本地模式 = SQLite 部署方案 + 按安装实例生成的密钥（0600）+ `Env=prod` 的全部生产校验。后端只新增 `--local --data-dir` 两个标志和一个仅在本地模式挂载的 grant 兑换端点，不存在任何"本地就放宽"的分支。
-- **只监听回环、端口随机。** 父进程通过 stdout 上的一行握手 JSON 拿到端口与一次性登录 grant；stdout 之后不再写任何东西（日志走 stderr）。
-- **grant 单次、两分钟、只在 Rust 手里。** 桌面壳用它换会话并把 refresh token 存入 keychain，webview 从头到尾看不到 grant。要拿新 grant 只能重启 sidecar 进程——这是刻意的，grant 不可通过网络签发。
-- **本地用户无密码。** `PasswordEnabled=false`，密码登录对它天然不可用；也不会触发首次登录引导。
-- **模式切换即登出。** 本地与远程各自一个 keychain 条目，切换时删除另一方，token 不会被重放到另一家运营方。
-- **功能边界由服务器声明，客户端不判断平台。** 本地模式没有对象的功能（账号管理、权限组、公告、身份提供商、账户安全、计费门禁、内容审核）由 `GET /api/v1/capabilities` 声明为关闭，对应端点返回 `404 feature.disabled`，前端据此隐藏入口；用量计量保留。桌面端连远程服务器时能力来自远程，与 Web 端完全一致。详见第 4 节「服务器能力声明」。
-- **代理由桌面壳决定，经环境变量交给后端。** 后端"代理只来自部署环境"的约定不变：本地模式下桌面壳就是部署方，它把解析出的代理（企业策略 → 应用设置 → 进程环境变量 → 系统设置）写成 `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` 交给 sidecar，后端不读系统代理、不新增代理配置项。回环地址永不经代理。详见 `apps/desktop/README.md`「Network proxy」。
+- 安装包只包含 Tauri 2 Rust 壳与 `apps/web/out` 静态构建产物，不再打包 `firecortex-server` sidecar，也不依赖 `tauri-plugin-shell`、Go 或 CGO。
+- 首次启动直接进入远程服务器地址配置页；历史配置中遗留的 `local` 标签页会在启动时自动丢弃并清理对应凭据。
+- 后端源码中保留的 `--local` 标志与能力声明体系（`GET /api/v1/capabilities`）用于保持与上游同步的低冲突兼容性；在 FireCortex 服务端模式下全部能力默认开启，CI 全程以 `CGO_ENABLED=0` 构建和测试。
 
 ### 多标签页（桌面端）
 
@@ -63,7 +59,7 @@ apps/*  →  packages/core  →  packages/api-contract  →  backend/docs/swagge
 
 - 一个标签页最多绑定一个服务器；两个标签页不会指向同一个服务器（再开一次 = 切到已有的那页）。
 - 会话命令按**调用方 webview 的 label** 找服务器，标签页只能碰自己的凭据。同源 `BroadcastChannel` 在桌面端禁用，避免一个服务器的 token 同步到另一个。
-- 关闭标签页 = 忘记该服务器：删 refresh token；最后一个本地标签页关闭时停 sidecar。
+- 关闭标签页 = 忘记该服务器：删除对应的 refresh token。
 - 标签栏页面 `/desktop/tabs` 是壳 UI，走同一套设计系统，但只拿到 `tabs_*` 命令；内容标签页拿不到。
 
 ## 3. 共享代码规则
@@ -145,21 +141,20 @@ apps/*  →  packages/core  →  packages/api-contract  →  backend/docs/swagge
 
 - 根目录 `VERSION` 是唯一版本号来源。`scripts/sync-version.mjs` 的 `targets` 表列出所有需要同步的文件；新增客户端只需在表里加一项（如 `tauri.conf.json`、`app.json`）。
 - `node scripts/sync-version.mjs --check` 在 `predev` / `prebuild` 与 CI 中执行，版本不同步即失败。
-- 一次 tag 触发全部构建：Web → Docker 镜像（现有）；桌面 → 三平台矩阵 + 签名 + updater manifest；移动 → EAS Build。
-- Windows 桌面端同一套签名二进制产出三种形态：按用户安装的 NSIS setup（自动更新）、按机器安装的 MSI（企业部署，应用内不更新）、便携版 zip（数据随程序目录，只提示新版本）。形态由 Rust 在启动时判定（`portable` 标记 → bundle 类型），前端只读 `get_distribution`。企业策略（默认服务器、锁定服务器、禁用本地模式、禁用更新）读注册表并由 Rust 强制执行；详见 `apps/desktop/README.md` 与 `deploy/windows/README.md`。每个发布附带 `SHA256SUMS` 与 GitHub 构建来源证明。
-- Docker 镜像内静态产物路径固定为 `/app/frontend/out`，与 `FRONTEND_DIST_DIR` 及现有部署配置兼容；仓库内构建路径为 `apps/web/out`。
+- 一次 `v*.*.*` 正式版 tag 触发：单二进制纯 Go 服务端构建发布（[release.yml](../.github/workflows/release.yml)），并自动派发 [desktop-release.yml](../.github/workflows/desktop-release.yml) 构建四目标远程版桌面端（macOS arm64/x64、Linux x64、Windows x64）并附加到同一个 Release（含签名与 updater manifest）；也可随时手动 `workflow_dispatch` 触发桌面端构建。
+- Windows 桌面端同一套签名二进制产出三种形态：按用户安装的 NSIS setup（自动更新）、按机器安装的 MSI（企业部署，应用内不更新）、便携版 zip（数据随程序目录，只提示新版本）。形态由 Rust 在启动时判定（`portable` 标记 → bundle 类型），前端只读 `get_distribution`。企业策略（默认服务器、锁定服务器、禁用更新、网络代理）读注册表并由 Rust 强制执行；详见 `apps/desktop/README.md` 与 `deploy/windows/README.md`。每个发布附带 `desktop-SHA256SUMS` 与 GitHub 构建来源证明。
 
 ## 7. CI 门禁
 
 ```text
-PR:   pnpm check（所有包 lint + typecheck + 桌面 cargo check）
-      pnpm test（所有包）
-      pnpm api:check（后端 Swagger 变了必须重新生成）
-Tag:  单二进制服务端发布（CGO_ENABLED=0，PostgreSQL only）
-      桌面四目标构建（macOS arm64/x64、Linux、Windows）仅通过 Desktop Release 手动触发（workflow_dispatch），不再随默认发布执行；sidecar 构建需显式传 sqlite tag
+PR:   API     CGO_ENABLED=0：版本检查 + make lint（gofmt/vet/staticcheck/deadcode）+ go build + go test
+      Web     pnpm turbo run check / test / build（含 API contract 检查）
+      Desktop 版本检查 + 发布脚本单测 + cargo fmt / clippy / test（无需 Go / sidecar / CGO）
+Tag:  单二进制服务端发布（CGO_ENABLED=0，PostgreSQL only，内嵌 apps/web/out）
+      自动派发 Desktop Release 构建四目标远程版桌面客户端（无 sidecar、无 CGO）并上传至同一 Release
 ```
 
-`turbo.json` 已按包声明依赖，新增 `apps/*` 或 `packages/*` 会自动纳入 `pnpm check` / `pnpm test`。`apps/desktop` 的 `check` 脚本会运行 `cargo check`，因此 PR 阶段即可发现 Rust 侧编译错误，而不必等到发布。
+`turbo.json` 已按包声明依赖，新增 `apps/*` 或 `packages/*` 会自动纳入 `pnpm check` / `pnpm test`。`apps/desktop` 的 `check` 脚本直接运行 `cargo check`（不再编译 Go sidecar），CI 全流程不含任何 CGO 编译。
 
 ## 8. 落地顺序
 
@@ -167,6 +162,6 @@ Tag:  单二进制服务端发布（CGO_ENABLED=0，PostgreSQL only）
 
 1. ✅ 目录重构：`frontend/` → `apps/web/`，建立 `packages/core` 骨架与隔离守卫。
 2. ✅ 鉴权状态机进 core：`createAuthClient(host)` 承载并发去重、revision 守卫、401→续期→重试→终态清理；Web 端只剩 `apps/web/shared/auth/auth-client.ts` 这一个 host 适配文件。API 地址改为 `resolveApiBaseUrl` 三级解析（运行时覆盖 → 构建期变量 → 页面 origin），`registerRuntimeApiBaseURLResolver()` 是桌面端的接入点。
-3. ✅ 桌面端落地：`apps/desktop`（Tauri 2）加载 `apps/web/out`；后端按 `X-Client-Platform` 经响应体投递 refresh token；`apps/web` 的平台层负责服务器地址持久化、keychain 适配与首次启动的服务器设置页；`AuthHost.onSessionRefreshed` 统一处理轮换写回；`deploy/` 与后端默认值已加入 Tauri webview Origin。
-4. ✅ 桌面端构建流水线（上游继承，当前分支改为仅通过 `.github/workflows/desktop-release.yml` 的 `workflow_dispatch` 手动构建，且 sidecar 显式使用 `sqlite` build tag；PR 阶段仍保留 `cargo check`）。
+3. ✅ 桌面端落地：`apps/desktop`（Tauri 2）加载 `apps/web/out`，仅保留远程服务端连接模式；后端按 `X-Client-Platform` 经响应体投递 refresh token；`apps/web` 的平台层负责服务器地址持久化、keychain 适配与首次启动的远程服务器连接页；`AuthHost.onSessionRefreshed` 统一处理轮换写回；后端默认值已内置放行 Tauri webview Origin。
+4. ✅ 桌面端无 CGO 发布流水线：移除 sidecar/SQLite 打包后，`.github/workflows/release.yml` 在 `v*.*.*` 正式版 tag 自动派发 `.github/workflows/desktop-release.yml` 构建四目标远程版桌面安装包并附加至 Release，同时保留 `workflow_dispatch` 手动触发。
 5. 移动端立项时再做第二次抽取与 `apps/mobile`；`X-Client-Platform: mobile` 与 `packages/core` 已为它预留。
