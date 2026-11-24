@@ -5,6 +5,7 @@ import { appendFileSync, readdirSync, readFileSync, writeFileSync } from "node:f
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { packageVersion } from "../../../scripts/fork-version.mjs";
 import { releaseAssets, releasePlatforms, requireFile } from "./collect-release-assets.mjs";
 import { formatChecksums, hashFile } from "./release-checksums.mjs";
 
@@ -36,7 +37,7 @@ export function releaseManifest({ version, tag, repository, directory, date = ne
   for (const name of present) {
     if (!allowed.has(name)) throw new Error(`unexpected release asset: ${name}`);
   }
-  return { manifest: { version, notes: "", pub_date: date, platforms }, files: files.sort() };
+  return { manifest: { version: packageVersion(version), notes: "", pub_date: date, platforms }, files: files.sort() };
 }
 
 export async function assembleRelease(options) {

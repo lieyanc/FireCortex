@@ -4,8 +4,8 @@
 //   - assets are named firecortex-{goos}-{goarch};
 //   - every release carries a single SHA256SUMS file in sha256sum's native
 //     "<hash>  <bare file name>" format plus a version.json metadata file;
-//   - stable releases are vX.Y.Z tags, the dev channel follows the rolling
-//     DevReleaseTag prerelease whose versions look like dev-{run}-{yyyymmdd}-{sha}.
+//   - product versions are X.Y.Z.N; stable tags add a v prefix and the dev
+//     channel publishes the same version and its commit under DevReleaseTag.
 package updater
 
 import (
@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -637,11 +638,21 @@ func (u *Updater) isNewer(release releaseInfo, channel string) bool {
 		return true
 	}
 	if channel == ChannelStable {
-		return semverGreater(release.TagName, current)
+		comparison, ok := compareReleaseVersions(release.TagName, current)
+		if !ok {
+			// Legacy dev builds can switch to a versioned stable release.
+			run, _ := parseDevVersion(current)
+			_, valid := parseReleaseVersion(release.TagName)
+			return run > 0 && valid
+		}
+		return comparison > 0
 	}
 
-	// Dev builds follow commits rather than ordering: a force-push or rerun
-	// makes run numbers unreliable, but a different commit always means news.
+	// Use the product revision when available. Multiple dev builds of the
+	// same revision, and migrations from legacy builds, follow the commit.
+	if comparison, ok := compareReleaseVersions(release.Version, current); ok && comparison != 0 {
+		return comparison > 0
+	}
 	remoteCommit := normalizeCommit(release.Commit)
 	if remoteCommit == "" {
 		remoteCommit = normalizeCommit(release.TargetCommitish)
@@ -677,27 +688,33 @@ func normalizeCommit(commit string) string {
 	return commit
 }
 
-func semverGreater(a, b string) bool {
-	av := parseSemver(a)
-	bv := parseSemver(b)
-	for i := range av {
-		if av[i] != bv[i] {
-			return av[i] > bv[i]
-		}
+func compareReleaseVersions(a, b string) (int, bool) {
+	av, okA := parseReleaseVersion(a)
+	bv, okB := parseReleaseVersion(b)
+	if !okA || !okB {
+		return 0, false
 	}
-	return false
+	return slices.Compare(av[:], bv[:]), true
 }
 
-func parseSemver(s string) [3]int {
-	var result [3]int
-	s = strings.TrimPrefix(strings.TrimSpace(s), "v")
-	for i, part := range strings.SplitN(s, ".", 3) {
-		if idx := strings.IndexAny(part, "-+"); idx >= 0 {
-			part = part[:idx]
-		}
-		result[i], _ = strconv.Atoi(part)
+func parseReleaseVersion(version string) ([4]uint64, bool) {
+	var result [4]uint64
+	core := strings.TrimPrefix(strings.TrimSpace(version), "v")
+	if end := strings.IndexAny(core, "-+"); end >= 0 {
+		core = core[:end]
 	}
-	return result
+	parts := strings.Split(core, ".")
+	if len(parts) != 3 && len(parts) != 4 {
+		return result, false
+	}
+	for i, part := range parts {
+		n, err := strconv.ParseUint(part, 10, 64)
+		if err != nil {
+			return result, false
+		}
+		result[i] = n
+	}
+	return result, true
 }
 
 // parseDevVersion extracts the run number and commit from dev-{run}-{yyyymmdd}-{sha}.

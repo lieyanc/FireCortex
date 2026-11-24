@@ -13,7 +13,7 @@ import (
 )
 
 // @title FireCortex API
-// @version 0.4.7
+// @version 0.4.6.2
 // @description FireCortex 后端 API 文档
 // @BasePath /api/v1
 // @securityDefinitions.apikey BearerAuth

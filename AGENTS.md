@@ -51,6 +51,7 @@ Write code assuming future upstream feature syncs will happen:
   - `rerere.enabled = true` and `rerere.autoupdate = true`.
 
 ### Branches & tags
+- **Server versions:** Set `VERSION` to `X.Y.Z.N`. The first three numbers match the upstream stable tag currently integrated (see `docs/UPSTREAM.md`). Increment only the positive FireCortex revision for each version bump on that baseline (for example `0.4.6.2` → `0.4.6.3`). Start at revision 1 after syncing a newer upstream version. Run `pnpm api:generate` to synchronize manifests and contracts.
 - `dev` — Primary integration branch. Pushing to `origin/dev` updates the rolling `dev-latest` prerelease.
 - `main` — Stable release branch promoted from verified `dev`.
 - `upstream-rebranded` — Mechanical rebrand snapshots of upstream tags ONLY. **Never hand-edit, rebase, squash, or force-push this branch.** Always push `upstream-rebranded` to `origin` after running `scripts/sync-upstream.sh`.

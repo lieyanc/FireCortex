@@ -1161,7 +1161,7 @@ checksum = "ef25905e51abafe4dcea6c15fec58c57b601cdbd0ee53d22ea1d3016c587d39b"
 
 [[package]]
 name = "firecortex-desktop"
-version = "0.4.7"
+version = "0.4.6-fc.2"
 dependencies = [
  "dunce",
  "gtk",

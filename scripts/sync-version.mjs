@@ -2,6 +2,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { packageVersion } from "./fork-version.mjs";
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const args = process.argv.slice(2);
 const checkOnly = args.includes("--check");
@@ -50,8 +52,9 @@ if (!validModes.has(mode)) {
 
 const version = readFileSync(join(repoRoot, "VERSION"), "utf8").trim();
 
-if (!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(version)) {
-  throw new Error(`Invalid VERSION value: ${version}`);
+const manifestVersion = packageVersion(version);
+if (manifestVersion === version) {
+  throw new Error(`Expected upstream X.Y.Z plus a positive FireCortex revision in VERSION, received ${version}`);
 }
 
 const mismatches = [];
@@ -81,7 +84,7 @@ function replaceOrThrow(content, pattern, replacement, label) {
 function syncPackageVersion(...pathSegments) {
   const packageFile = join(repoRoot, ...pathSegments, "package.json");
   const packageJson = JSON.parse(readFileSync(packageFile, "utf8"));
-  packageJson.version = version;
+  packageJson.version = manifestVersion;
   writeIfChanged(packageFile, `${JSON.stringify(packageJson, null, 2)}\n`);
 }
 
@@ -89,7 +92,7 @@ function syncPackageVersion(...pathSegments) {
 function syncTauriConfig(...pathSegments) {
   const manifestFile = join(repoRoot, ...pathSegments);
   const manifest = JSON.parse(readFileSync(manifestFile, "utf8"));
-  manifest.version = version;
+  manifest.version = manifestVersion;
   writeIfChanged(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
 }
 
@@ -104,7 +107,7 @@ function syncCargoVersion(...pathSegments) {
     throw new Error(`Unable to update ${manifestFile} package version`);
   }
   const start = packageSection + versionLine.index;
-  const next = `${content.slice(0, start)}version = "${version}"${content.slice(start + versionLine[0].length)}`;
+  const next = `${content.slice(0, start)}version = "${manifestVersion}"${content.slice(start + versionLine[0].length)}`;
   writeIfChanged(manifestFile, next);
   syncCargoLockVersion(join(dirname(manifestFile), "Cargo.lock"), packageName);
 }
@@ -118,7 +121,7 @@ function syncCargoLockVersion(lockFile, packageName) {
     // version and every dependency checksum must remain pinned as before.
     if (name !== packageName || /^source\s*=/mu.test(entry)) return entry;
     matches++;
-    return replaceOrThrow(entry, /^version = "[^"]+"/mu, `version = "${version}"`, `${lockFile} root package version`);
+    return replaceOrThrow(entry, /^version = "[^"]+"/mu, `version = "${manifestVersion}"`, `${lockFile} root package version`);
   }).join("");
   if (matches !== 1) throw new Error(`Expected one local ${packageName} package in ${lockFile}`);
   writeIfChanged(lockFile, next);

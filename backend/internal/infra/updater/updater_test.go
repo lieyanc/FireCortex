@@ -378,6 +378,10 @@ func TestIsNewer(t *testing.T) {
 		{"dev commit differs", "dev-0001-20260101-aaaaaaa", "aaaaaaa", ChannelDev, releaseInfo{Commit: "bbbbbbbcafe"}, true},
 		{"dev same commit", "dev-0001-20260101-aaaaaaa", "aaaaaaa", ChannelDev, releaseInfo{Commit: "aaaaaaa1234"}, false},
 		{"dev run fallback", "dev-0001-20260101-aaaaaaa", "unknown", ChannelDev, releaseInfo{Version: "dev-0002-20260102-bbbbbbb"}, true},
+		{"stable fork revision", "0.4.6.2", "", ChannelStable, releaseInfo{TagName: "v0.4.6.10"}, true},
+		{"dev fork revision", "0.4.6.9", "", ChannelDev, releaseInfo{Version: "0.4.6.10"}, true},
+		{"dev older fork revision", "0.4.6.10", "aaaaaaa", ChannelDev, releaseInfo{Version: "0.4.6.9", Commit: "bbbbbbb"}, false},
+		{"dev legacy to fork revision", "dev-0004-20261124-aaaaaaa", "aaaaaaa", ChannelDev, releaseInfo{Version: "0.4.6.2", Commit: "bbbbbbb"}, true},
 		{"dev incomparable", "0.4.3", "", ChannelDev, releaseInfo{TagName: DevReleaseTag}, false},
 	}
 	for _, tc := range cases {

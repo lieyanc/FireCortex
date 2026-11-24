@@ -4,6 +4,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSyn
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { packageVersion } from "../../../scripts/fork-version.mjs";
 import { msiVersion } from "./release-config.mjs";
 
 const specifications = {
@@ -30,7 +31,7 @@ const specifications = {
 export const releasePlatforms = Object.keys(specifications);
 
 export function releaseAssets(platform, version) {
-  msiVersion(version);
+  msiVersion(packageVersion(version));
   const specs = specifications[platform];
   if (!specs) throw new Error(`unsupported release platform: ${platform}`);
   return specs.map(([directory, extension, suffix, updater = [], optional = false]) => ({
@@ -55,7 +56,9 @@ export function collectReleaseAssets({ platform, version, bundle, out }) {
     if (matches.length !== 1) throw new Error(`expected one ${spec.extension} in ${directory}, found ${matches.length}`);
     const source = matches[0];
     // The updater archive is the only Tauri filename without a version.
-    if (spec.extension !== ".app.tar.gz" && source !== spec.name && !source.includes(`_${version}_`)) {
+    const bundleVersion = packageVersion(version);
+    const bundleName = spec.name.replace(`FireCortex-${version}-`, `FireCortex-${bundleVersion}-`);
+    if (spec.extension !== ".app.tar.gz" && source !== bundleName && !source.includes(`_${bundleVersion}_`)) {
       throw new Error(`asset ${source} does not match version ${version}`);
     }
     plan.push({ from: join(directory, source), to: join(out, spec.name) });
