@@ -190,7 +190,7 @@ func (h *Handler) GetBrandingManifest(c *gin.Context) {
 		Scope:           publicBrandURL(cfg.PublicWebBaseURL, "/"),
 		Display:         "standalone",
 		BackgroundColor: "#ffffff",
-		ThemeColor:      "#0f172a",
+		ThemeColor:      "#018eee",
 		Categories:      []string{"productivity", "business", "utilities"},
 		Lang:            "en",
 		Icons: []BrandingManifestIcon{

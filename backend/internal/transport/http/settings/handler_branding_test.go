@@ -75,7 +75,7 @@ func TestGetBrandingManifestUsesBrandingIcons(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &manifest); err != nil {
 		t.Fatalf("decode manifest: %v", err)
 	}
-	if manifest.Name != "Example Chat" || len(manifest.Icons) != 3 {
+	if manifest.Name != "Example Chat" || manifest.ThemeColor != "#018eee" || len(manifest.Icons) != 3 {
 		t.Fatalf("unexpected manifest: %+v", manifest)
 	}
 	if manifest.StartURL != "https://chat.example.com/chat" || manifest.Icons[0].Src != "https://chat.example.com/pwa/icon-192.png" {

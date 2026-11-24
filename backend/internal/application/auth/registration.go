@@ -1427,8 +1427,8 @@ func buildVerificationHTML(code string, template verificationEmailTemplate, logo
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>%s</title>
   </head>
-  <body style="margin:0;background:#fbfaf7;color:#312f2b;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans SC','Microsoft YaHei',sans-serif;">
-    <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="background:#fbfaf7;padding:56px 18px;">
+  <body style="margin:0;background:#f7f9fb;color:#1b2128;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans SC','Microsoft YaHei',sans-serif;">
+    <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="background:#f7f9fb;padding:56px 18px;">
       <tr>
         <td align="center">
           <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="max-width:360px;">
@@ -1439,25 +1439,25 @@ func buildVerificationHTML(code string, template verificationEmailTemplate, logo
             </tr>
             <tr>
               <td align="center" style="padding:0;">
-                <div style="display:inline-block;width:22px;height:3px;border-radius:999px;background:#b85f24;"></div>
-                <h1 style="margin:18px 0 0;font-size:22px;line-height:1.35;font-weight:650;color:#26231f;letter-spacing:0;">%s</h1>
+                <div style="display:inline-block;width:22px;height:3px;border-radius:999px;background:#018eee;"></div>
+                <h1 style="margin:18px 0 0;font-size:22px;line-height:1.35;font-weight:650;color:#141a21;letter-spacing:0;">%s</h1>
               </td>
             </tr>
             <tr>
               <td style="padding:28px 0 0;">
-                <div style="margin:0 0 8px;font-size:13px;font-weight:600;line-height:1.4;color:#312f2b;">验证码</div>
-                <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="background:#eee8dc;border-radius:8px;">
+                <div style="margin:0 0 8px;font-size:13px;font-weight:600;line-height:1.4;color:#1b2128;">验证码</div>
+                <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="background:#e8f3fd;border:1px solid #cce4fa;border-radius:8px;">
                   <tr>
                     <td align="center" style="padding:17px 18px 16px;">
-                      <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;font-size:30px;line-height:1.15;font-weight:700;letter-spacing:.16em;color:#26231f;">%s</span>
+                      <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;font-size:30px;line-height:1.15;font-weight:700;letter-spacing:.16em;color:#141a21;">%s</span>
                     </td>
                   </tr>
                 </table>
-                <div style="margin-top:8px;font-size:12px;line-height:1.65;color:#8c8378;">10 分钟内有效，请不要泄露给任何人。%s</div>
+                <div style="margin-top:8px;font-size:12px;line-height:1.65;color:#646b72;">10 分钟内有效，请不要泄露给任何人。%s</div>
               </td>
             </tr>
             <tr>
-              <td align="center" style="padding:36px 0 0;font-size:12px;line-height:1.6;color:#aaa298;">这是一封系统邮件，请勿直接回复。</td>
+              <td align="center" style="padding:36px 0 0;font-size:12px;line-height:1.6;color:#8a94a0;">这是一封系统邮件，请勿直接回复。</td>
             </tr>
           </table>
         </td>
@@ -1471,7 +1471,7 @@ func verificationEmailLogoHTML(logoURL string) string {
 	if trimmed := strings.TrimSpace(logoURL); trimmed != "" {
 		return fmt.Sprintf(`<img src="%s" width="150" alt="FireCortex" style="display:block;width:150px;height:auto;border:0;outline:none;text-decoration:none;">`, html.EscapeString(trimmed))
 	}
-	return `<div style="font-size:20px;line-height:1.3;font-weight:700;color:#26231f;">FireCortex</div>`
+	return `<div style="font-size:20px;line-height:1.3;font-weight:700;color:#141a21;">FireCortex</div>`
 }
 
 func publicAssetURL(publicWebBaseURL string, assetPath string) string {
