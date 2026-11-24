@@ -10,6 +10,7 @@ work_dir=$(mktemp -d)
 trap 'rm -rf "$work_dir"' EXIT
 
 cd "$backend_dir"
+export CGO_ENABLED=0
 
 echo "Checking gofmt..."
 find . -type f -name '*.go' -not -path './vendor/*' -exec gofmt -l {} + \
@@ -130,9 +131,9 @@ if [[ $staticcheck_status -eq 1 && ! -s "$work_dir/staticcheck.output" ]]; then
 fi
 
 echo "Running deadcode..."
-# SQLite drivers are only reachable from main in -tags sqlite builds (desktop
-# sidecar / opt-in); analyze with -tags sqlite so that code stays covered while
-# CI separately guards the default CGO_ENABLED=0 build.
+# SQLite drivers are only reachable from main in opt-in -tags sqlite builds;
+# analyze with CGO_ENABLED=0 and -tags sqlite so that code stays covered
+# without invoking CGO.
 set +e
 go tool deadcode -tags sqlite ./... \
   > "$work_dir/deadcode.output" \

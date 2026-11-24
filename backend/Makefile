@@ -13,14 +13,14 @@ check-version:
 
 build: check-version
 	mkdir -p ../.cache/firecortex
-	go build -trimpath -ldflags "$(LDFLAGS)" -o ../.cache/firecortex/firecortex ./cmd/server
+	CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -o ../.cache/firecortex/firecortex ./cmd/server
 
 # Development reads the repository root config.json unless CONFIG_FILE is set.
 run:
 	CONFIG_FILE="$${CONFIG_FILE:-../config.json}" go run -ldflags "$(LDFLAGS)" ./cmd/server
 
 test:
-	go test ./...
+	CGO_ENABLED=0 go test ./...
 
 lint:
 	bash ./scripts/check-go-quality.sh
