@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/gin-gonic/gin"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 )
 
 type rateLimitCall struct {

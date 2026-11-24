@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 // SetMessageUIState godoc

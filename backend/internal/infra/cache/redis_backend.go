@@ -5,10 +5,10 @@ package cache
 import (
 	"context"
 
+	goredis "github.com/go-redis/redis/v8"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/cache/redis"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
-	goredis "github.com/go-redis/redis/v8"
 )
 
 func openRedis(cfg config.Config) (Backend, error) {

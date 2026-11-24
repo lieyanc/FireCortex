@@ -44,7 +44,6 @@ const (
 	MaxContextCompactTriggerPercent     = 95
 )
 
-
 const (
 	// DefaultTurnstileSiteverifyURL 是 Cloudflare Turnstile 默认校验端点。
 	DefaultTurnstileSiteverifyURL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"

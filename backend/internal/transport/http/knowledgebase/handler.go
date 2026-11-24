@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
 	appembedding "github.com/lieyanc/FireCortex/backend/internal/application/embedding"
 	appknowledgebase "github.com/lieyanc/FireCortex/backend/internal/application/knowledgebase"
@@ -17,7 +18,6 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/filecontent"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/queryparam"
-	"github.com/gin-gonic/gin"
 )
 
 // Handler 封装知识库 HTTP 处理。

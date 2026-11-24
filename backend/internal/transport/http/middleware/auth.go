@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/token"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/requestmeta"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
-	"github.com/gin-gonic/gin"
 )
 
 // SessionValidator 校验 access token 对应会话是否有效。

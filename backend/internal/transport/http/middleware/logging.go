@@ -10,9 +10,9 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/gin-gonic/gin"
 	apperrorlog "github.com/lieyanc/FireCortex/backend/internal/application/errorlog"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
-	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 

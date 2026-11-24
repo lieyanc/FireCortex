@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	appupload "github.com/lieyanc/FireCortex/backend/internal/application/upload"
 	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 

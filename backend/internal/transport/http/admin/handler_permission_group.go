@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	appadmin "github.com/lieyanc/FireCortex/backend/internal/application/admin"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
-	"github.com/gin-gonic/gin"
 )
 
 func (h *Handler) permissionGroupIDParam(c *gin.Context) (uint, bool) {

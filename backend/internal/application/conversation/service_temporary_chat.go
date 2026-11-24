@@ -6,13 +6,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
 	"github.com/lieyanc/FireCortex/backend/internal/application/channel"
 	appcm "github.com/lieyanc/FireCortex/backend/internal/application/contentmoderation"
 	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
 	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
-	"github.com/google/uuid"
 )
 
 const temporaryChatMaxContentChars = 1_000_000

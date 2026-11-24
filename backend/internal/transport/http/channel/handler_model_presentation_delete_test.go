@@ -7,11 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	appchannel "github.com/lieyanc/FireCortex/backend/internal/application/channel"
 	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
-	"github.com/gin-gonic/gin"
 )
 
 func TestDeleteModelVendorReturnsReferencedModelDetails(t *testing.T) {

@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	appchannel "github.com/lieyanc/FireCortex/backend/internal/application/channel"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 const maxModelIconUploadRequestBytes = appchannel.MaxModelIconBytes + 256*1024

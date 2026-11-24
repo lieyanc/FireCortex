@@ -47,15 +47,15 @@ func NewEngine(cfg config.Config, svc *appsetup.Service) *gin.Engine {
 	})
 	api.GET("/branding", func(c *gin.Context) {
 		response.Success(c, gin.H{
-			"title":              cfg.BrandTitle,
-			"shortName":          cfg.BrandShortName,
-			"description":        cfg.BrandDescription,
-			"logoURL":            cfg.BrandLogoURL,
-			"faviconURL":         cfg.BrandFaviconURL,
-			"pwaIcon192URL":      cfg.BrandPWAIcon192URL,
-			"pwaIcon512URL":      cfg.BrandPWAIcon512URL,
+			"title":             cfg.BrandTitle,
+			"shortName":         cfg.BrandShortName,
+			"description":       cfg.BrandDescription,
+			"logoURL":           cfg.BrandLogoURL,
+			"faviconURL":        cfg.BrandFaviconURL,
+			"pwaIcon192URL":     cfg.BrandPWAIcon192URL,
+			"pwaIcon512URL":     cfg.BrandPWAIcon512URL,
 			"pwaMaskable512URL": cfg.BrandPWAMaskableIcon512URL,
-			"appleTouchIconURL":  cfg.BrandAppleTouchIcon180URL,
+			"appleTouchIconURL": cfg.BrandAppleTouchIcon180URL,
 		})
 	})
 

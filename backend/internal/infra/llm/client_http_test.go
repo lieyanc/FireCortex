@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
-	"github.com/google/uuid"
 )
 
 func TestTrustedRouteRedirectPreservesSafeLegacyBehavior(t *testing.T) {

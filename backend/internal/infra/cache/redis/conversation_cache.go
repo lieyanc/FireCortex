@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	goredis "github.com/go-redis/redis/v8"
 	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
-	goredis "github.com/go-redis/redis/v8"
 )
 
 // ragCachePayload 是 RAG 缓存的序列化格式，仅限 infra 层使用。

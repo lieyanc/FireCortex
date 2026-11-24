@@ -5,9 +5,9 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/google/uuid"
 	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
-	"github.com/google/uuid"
 )
 
 // forkAncestorMaxDepth 限制 fork 复制的祖先链长度，与仓储层递归 CTE 的上限对齐。

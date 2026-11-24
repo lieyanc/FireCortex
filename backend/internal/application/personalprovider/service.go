@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	appaudit "github.com/lieyanc/FireCortex/backend/internal/application/audit"
 	"github.com/lieyanc/FireCortex/backend/internal/application/channel"
 	domainpersonalprovider "github.com/lieyanc/FireCortex/backend/internal/domain/personalprovider"
@@ -21,7 +22,6 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 

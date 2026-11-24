@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	appskill "github.com/lieyanc/FireCortex/backend/internal/application/skill"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/queryparam"
-	"github.com/gin-gonic/gin"
 )
 
 // Handler 封装技能 HTTP 处理。

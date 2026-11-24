@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/gin-gonic/gin/binding"
 	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
-	"github.com/gin-gonic/gin/binding"
 )
 
 // 错误码是前端 errors.json 依赖的契约。

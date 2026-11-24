@@ -12,12 +12,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	appchannel "github.com/lieyanc/FireCortex/backend/internal/application/channel"
 	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/objectstorage"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
-	"github.com/gin-gonic/gin"
 )
 
 func TestGetModelIconAssetValidatesObjectBeforeConditionalResponse(t *testing.T) {

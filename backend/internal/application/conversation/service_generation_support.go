@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
 	"github.com/lieyanc/FireCortex/backend/internal/application/channel"
 	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
@@ -15,7 +16,6 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 

@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	appaudit "github.com/lieyanc/FireCortex/backend/internal/application/audit"
 	"github.com/lieyanc/FireCortex/backend/internal/application/billing"
 	appstorage "github.com/lieyanc/FireCortex/backend/internal/application/objectstorage"
@@ -27,7 +28,6 @@ import (
 	idpport "github.com/lieyanc/FireCortex/backend/internal/ports/identityprovider"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/requestmeta"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )

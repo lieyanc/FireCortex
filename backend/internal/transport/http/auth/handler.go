@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	appauth "github.com/lieyanc/FireCortex/backend/internal/application/auth"
 	"github.com/lieyanc/FireCortex/backend/internal/application/user"
 	domainknowledgebase "github.com/lieyanc/FireCortex/backend/internal/domain/knowledgebase"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 const refreshTokenCookieName = "firecortex_refresh_token"

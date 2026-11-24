@@ -12,12 +12,12 @@ import (
 	"sync"
 	"time"
 
-	platformtracing "github.com/lieyanc/FireCortex/backend/internal/infra/observability/tracing"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/smithy-go"
+	platformtracing "github.com/lieyanc/FireCortex/backend/internal/infra/observability/tracing"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )

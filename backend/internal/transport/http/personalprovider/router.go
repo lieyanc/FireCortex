@@ -1,8 +1,8 @@
 package personalprovider
 
 import (
-	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
+	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
 )
 
 // probeRequestsPerMinute 限制每个用户每分钟让服务器请求外部地址的次数（检测、添加、更换 Key、刷新模型）。

@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 

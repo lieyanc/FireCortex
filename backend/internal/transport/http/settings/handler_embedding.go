@@ -8,13 +8,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	appadmin "github.com/lieyanc/FireCortex/backend/internal/application/admin"
 	appembedding "github.com/lieyanc/FireCortex/backend/internal/application/embedding"
 	appsettings "github.com/lieyanc/FireCortex/backend/internal/application/settings"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 // GetEmbeddingRuntime godoc

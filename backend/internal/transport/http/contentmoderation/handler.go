@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	appadmin "github.com/lieyanc/FireCortex/backend/internal/application/admin"
 	appcm "github.com/lieyanc/FireCortex/backend/internal/application/contentmoderation"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 type userLabelResolver interface {

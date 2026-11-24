@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
 	appembedding "github.com/lieyanc/FireCortex/backend/internal/application/embedding"
 	appprocessing "github.com/lieyanc/FireCortex/backend/internal/application/processing"
@@ -14,7 +15,6 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/filecontent"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 const multipartUploadOverheadBytes = 1 << 20

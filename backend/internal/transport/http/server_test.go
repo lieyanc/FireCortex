@@ -10,9 +10,9 @@ import (
 	"testing"
 	"testing/fstest"
 
+	"github.com/gin-gonic/gin"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	uicomponenthttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/uicomponent"
-	"github.com/gin-gonic/gin"
 )
 
 func TestVersionEndpointIsPublicAndUncached(t *testing.T) {

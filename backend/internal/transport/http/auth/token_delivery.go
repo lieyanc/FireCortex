@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	appauth "github.com/lieyanc/FireCortex/backend/internal/application/auth"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 // refresh token 的投递方式按客户端平台区分：

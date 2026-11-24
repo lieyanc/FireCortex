@@ -10,8 +10,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/lieyanc/FireCortex/backend/internal/pkg/conv"
 	"github.com/google/uuid"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/conv"
 )
 
 // TemporaryFileInput 描述只在当前请求生命周期内使用的文件。

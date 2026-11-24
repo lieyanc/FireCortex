@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	appmcp "github.com/lieyanc/FireCortex/backend/internal/application/mcp"
 	domainmcp "github.com/lieyanc/FireCortex/backend/internal/domain/mcp"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {

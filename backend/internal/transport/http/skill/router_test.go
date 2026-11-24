@@ -7,11 +7,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	appskill "github.com/lieyanc/FireCortex/backend/internal/application/skill"
 	domainskill "github.com/lieyanc/FireCortex/backend/internal/domain/skill"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 type routeSkillRepo struct {

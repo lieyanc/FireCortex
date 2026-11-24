@@ -15,11 +15,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
 	"github.com/lieyanc/FireCortex/backend/internal/ports/objectstorage"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 	_ "golang.org/x/image/webp"
 )

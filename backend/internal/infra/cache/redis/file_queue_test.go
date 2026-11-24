@@ -3,8 +3,8 @@ package redis
 import (
 	"testing"
 
-	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	goredis "github.com/go-redis/redis/v8"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 func TestParseFileEmbeddingMessagePreservesMetadata(t *testing.T) {

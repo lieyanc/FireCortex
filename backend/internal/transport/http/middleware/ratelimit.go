@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
-	"github.com/gin-gonic/gin"
 )
 
 // RateLimiter 封装 HTTP middleware 所需的限流存储能力。

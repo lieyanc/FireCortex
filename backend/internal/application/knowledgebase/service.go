@@ -6,6 +6,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/google/uuid"
 	appaudit "github.com/lieyanc/FireCortex/backend/internal/application/audit"
 	appembedding "github.com/lieyanc/FireCortex/backend/internal/application/embedding"
 	appupload "github.com/lieyanc/FireCortex/backend/internal/application/upload"
@@ -14,7 +15,6 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/conv"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 

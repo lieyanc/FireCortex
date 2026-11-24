@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/application/modelrouter"
 	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
@@ -18,7 +19,6 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 const resumeActiveCheckInterval = 5 * time.Second

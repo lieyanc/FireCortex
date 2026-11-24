@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	appuser "github.com/lieyanc/FireCortex/backend/internal/application/user"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 // Handler 预留用户域 HTTP 处理器（当前用户管理在 admin 模块暴露）。

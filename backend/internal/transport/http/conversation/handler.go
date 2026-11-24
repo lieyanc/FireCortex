@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/lieyanc/FireCortex/backend/internal/application/billing"
 	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
 	apppersonalprovider "github.com/lieyanc/FireCortex/backend/internal/application/personalprovider"
@@ -18,7 +19,6 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/shared/lifecycle"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 // Handler 封装会话 HTTP 处理。

@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/gin-gonic/gin"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 )
 
 func getFeaturePolicyForTest(t *testing.T, cfg config.Config) map[string]any {

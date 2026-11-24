@@ -8,13 +8,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	appchannel "github.com/lieyanc/FireCortex/backend/internal/application/channel"
 	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/secretbox"
 	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
-	"github.com/gin-gonic/gin"
 )
 
 // 上游的兼容类型解析不出目录接口使用的协议时，预览与同步都应返回 400 protocol_required，而不是笼统的 500。

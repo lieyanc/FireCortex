@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	appadmin "github.com/lieyanc/FireCortex/backend/internal/application/admin"
 	auditapp "github.com/lieyanc/FireCortex/backend/internal/application/audit"
 	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
@@ -23,7 +24,6 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	conversationhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 type conversationExporter interface {

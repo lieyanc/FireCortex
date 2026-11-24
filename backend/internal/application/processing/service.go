@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	appembedding "github.com/lieyanc/FireCortex/backend/internal/application/embedding"
 	"github.com/lieyanc/FireCortex/backend/internal/application/extraction"
 	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
@@ -14,7 +15,6 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 

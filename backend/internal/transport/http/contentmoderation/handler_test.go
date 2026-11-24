@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	appcm "github.com/lieyanc/FireCortex/backend/internal/application/contentmoderation"
 	domaincm "github.com/lieyanc/FireCortex/backend/internal/domain/contentmoderation"
 	cmport "github.com/lieyanc/FireCortex/backend/internal/ports/contentmoderation"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 func TestParseOptionalUserID(t *testing.T) {

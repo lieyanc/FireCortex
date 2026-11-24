@@ -212,16 +212,16 @@ func TestValidatePatchItemUsesRegistry(t *testing.T) {
 
 func TestIsValidDesktopDownloadURL(t *testing.T) {
 	cases := map[string]bool{
-		"https://github.com/lieyanc/FireCortex":                    true,
-		"http://intranet.example.com:8080/app":          true,
-		"":                                              false,
-		"github.com/lieyanc/FireCortex/download":                            false,
-		"//github.com/lieyanc/FireCortex/download":                          false,
-		"ftp://github.com/lieyanc/FireCortex/download":                      false,
-		"javascript:alert(1)":                           false,
-		"https://user@github.com/lieyanc/FireCortex/download":               false,
-		"https://:secret@github.com/lieyanc/FireCortex/download":            false,
-		"https:///download":                             false,
+		"https://github.com/lieyanc/FireCortex":                            true,
+		"http://intranet.example.com:8080/app":                             true,
+		"":                                                                 false,
+		"github.com/lieyanc/FireCortex/download":                           false,
+		"//github.com/lieyanc/FireCortex/download":                         false,
+		"ftp://github.com/lieyanc/FireCortex/download":                     false,
+		"javascript:alert(1)":                                              false,
+		"https://user@github.com/lieyanc/FireCortex/download":              false,
+		"https://:secret@github.com/lieyanc/FireCortex/download":           false,
+		"https:///download":                                                false,
 		"https://github.com/lieyanc/FireCortex" + strings.Repeat("a", 200): false,
 	}
 	for value, want := range cases {

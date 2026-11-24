@@ -9,13 +9,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	appembedding "github.com/lieyanc/FireCortex/backend/internal/application/embedding"
 	appsettings "github.com/lieyanc/FireCortex/backend/internal/application/settings"
 	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
-	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 

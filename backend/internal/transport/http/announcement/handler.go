@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	appannouncement "github.com/lieyanc/FireCortex/backend/internal/application/announcement"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 // Handler 封装公告 HTTP 处理。

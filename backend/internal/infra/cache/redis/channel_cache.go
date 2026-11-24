@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	goredis "github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 // circuitProbeTTLSec 半开 probe 令牌的 TTL（秒）。

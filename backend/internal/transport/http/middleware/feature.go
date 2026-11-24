@@ -3,9 +3,9 @@ package middleware
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
-	"github.com/gin-gonic/gin"
 )
 
 // FeatureDisabledDetails 是 feature.disabled 响应的 details；契约见 docs/ARCHITECTURE.md §4。

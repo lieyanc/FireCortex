@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
 	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
-	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 

@@ -3,9 +3,9 @@ package middleware
 import (
 	"strings"
 
-	"github.com/lieyanc/FireCortex/backend/internal/pkg/traceid"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/lieyanc/FireCortex/backend/internal/pkg/traceid"
 )
 
 // maxRequestIDLength 与审计日志 request_id 列宽一致。

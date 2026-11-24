@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/gin-gonic/gin"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 )
 
 // desktopWebviewOrigins 是官方桌面端（Tauri）webview 的 Origin：macOS/Linux 为 tauri://localhost，

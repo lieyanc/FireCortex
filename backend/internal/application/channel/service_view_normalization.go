@@ -7,11 +7,11 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/google/uuid"
 	domainchannel "github.com/lieyanc/FireCortex/backend/internal/domain/channel"
 	domainpersonalprovider "github.com/lieyanc/FireCortex/backend/internal/domain/personalprovider"
 	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
-	"github.com/google/uuid"
 )
 
 // ---------------------------------------------------------------------------

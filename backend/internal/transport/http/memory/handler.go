@@ -4,10 +4,10 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	appmemory "github.com/lieyanc/FireCortex/backend/internal/application/memory"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 // Handler 封装记忆 HTTP 处理。

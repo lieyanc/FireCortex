@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	appauth "github.com/lieyanc/FireCortex/backend/internal/application/auth"
 	"github.com/gin-gonic/gin"
+	appauth "github.com/lieyanc/FireCortex/backend/internal/application/auth"
 )
 
 func newTestContext(t *testing.T, method, body string, headers map[string]string) (*gin.Context, *httptest.ResponseRecorder) {

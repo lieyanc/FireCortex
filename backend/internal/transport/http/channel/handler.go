@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	appchannel "github.com/lieyanc/FireCortex/backend/internal/application/channel"
 	apppersonalprovider "github.com/lieyanc/FireCortex/backend/internal/application/personalprovider"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 // Handler 封装上游与模型管理 HTTP 处理。

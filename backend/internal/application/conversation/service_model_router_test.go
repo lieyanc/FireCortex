@@ -31,7 +31,8 @@ func (s *stubAutoRouteResolver) ListActiveModels(_ context.Context, _ uint) ([]c
 	return s.models, nil
 }
 
-func (s *stubAutoRouteResolver) MarkRouteFailure(_ context.Context, _ *channel.ResolvedRoute, _ error) {}
+func (s *stubAutoRouteResolver) MarkRouteFailure(_ context.Context, _ *channel.ResolvedRoute, _ error) {
+}
 
 func (s *stubAutoRouteResolver) MarkRouteSuccess(_ context.Context, _ *channel.ResolvedRoute) {}
 

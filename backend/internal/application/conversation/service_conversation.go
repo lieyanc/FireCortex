@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/lieyanc/FireCortex/backend/internal/application/modelrouter"
 	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 

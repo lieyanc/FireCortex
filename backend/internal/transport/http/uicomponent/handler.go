@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	appuicomponent "github.com/lieyanc/FireCortex/backend/internal/application/uicomponent"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/queryparam"
-	"github.com/gin-gonic/gin"
 )
 
 // Handler 封装交互式组件 HTTP 处理。

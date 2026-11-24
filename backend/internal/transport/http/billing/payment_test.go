@@ -8,10 +8,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
-	"github.com/gin-gonic/gin"
 )
 
 func TestPreparePaymentCheckoutRejectsUnsafeEPayEndpoint(t *testing.T) {

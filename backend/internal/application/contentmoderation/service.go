@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	domaincm "github.com/lieyanc/FireCortex/backend/internal/domain/contentmoderation"
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/secretbox"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 

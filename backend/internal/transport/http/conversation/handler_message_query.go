@@ -6,12 +6,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
 	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 // messageTraceSummary 是消息列表 trace 参数的摘要取值。

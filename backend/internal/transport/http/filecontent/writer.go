@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	appupload "github.com/lieyanc/FireCortex/backend/internal/application/upload"
 	"github.com/gin-gonic/gin"
+	appupload "github.com/lieyanc/FireCortex/backend/internal/application/upload"
 )
 
 // Write 将已授权的文件内容以统一的安全响应头写入 HTTP 响应。

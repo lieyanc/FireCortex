@@ -16,8 +16,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 	"github.com/gin-gonic/gin"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 )
 
 func TestDescribeUsesTypedErrorContract(t *testing.T) {

@@ -16,11 +16,11 @@ import (
 
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 
+	"github.com/google/uuid"
 	platformtracing "github.com/lieyanc/FireCortex/backend/internal/infra/observability/tracing"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/outboundhttp"
 	portllm "github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
-	"github.com/google/uuid"
 )
 
 // 超时默认值。

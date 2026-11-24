@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/lieyanc/FireCortex/backend/internal/application/channel"
 	appcm "github.com/lieyanc/FireCortex/backend/internal/application/contentmoderation"
 	appupload "github.com/lieyanc/FireCortex/backend/internal/application/upload"
@@ -23,7 +24,6 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/tokenestimate"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 

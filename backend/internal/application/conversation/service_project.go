@@ -7,13 +7,13 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/google/uuid"
 	"github.com/lieyanc/FireCortex/backend/internal/application/channel"
 	appskill "github.com/lieyanc/FireCortex/backend/internal/application/skill"
 	model "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	domainknowledgebase "github.com/lieyanc/FireCortex/backend/internal/domain/knowledgebase"
 	domainmcp "github.com/lieyanc/FireCortex/backend/internal/domain/mcp"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
-	"github.com/google/uuid"
 )
 
 const (

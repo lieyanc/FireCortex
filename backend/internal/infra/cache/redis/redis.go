@@ -5,9 +5,9 @@ import (
 	"crypto/tls"
 	"time"
 
-	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/go-redis/redis/extra/redisotel/v8"
 	goredis "github.com/go-redis/redis/v8"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"go.opentelemetry.io/otel/attribute"
 )
 

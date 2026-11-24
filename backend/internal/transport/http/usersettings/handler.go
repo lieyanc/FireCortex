@@ -4,10 +4,10 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	appusersettings "github.com/lieyanc/FireCortex/backend/internal/application/usersettings"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 // Handler 封装用户配置 HTTP 处理。

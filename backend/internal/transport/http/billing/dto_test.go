@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/gin-gonic/gin/binding"
 	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
 	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
-	"github.com/gin-gonic/gin/binding"
 )
 
 func TestModelPricingCacheWriteBasisTransportRoundTrip(t *testing.T) {

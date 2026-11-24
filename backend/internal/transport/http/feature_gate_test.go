@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/token"
@@ -18,7 +19,6 @@ import (
 	billinghttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/billing"
 	contentmoderationhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/contentmoderation"
 	conversationhttp "github.com/lieyanc/FireCortex/backend/internal/transport/http/conversation"
-	"github.com/gin-gonic/gin"
 )
 
 const gateTestSecret = "test-jwt-secret-value"

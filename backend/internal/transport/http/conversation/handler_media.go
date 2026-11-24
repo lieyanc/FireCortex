@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"sync/atomic"
 
+	"github.com/gin-gonic/gin"
 	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 // StreamImageGeneration 处理会话内图片生成流式状态接口。

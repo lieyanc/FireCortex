@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	goredis "github.com/go-redis/redis/v8"
+	"github.com/lieyanc/FireCortex/backend/internal/repository"
 )
 
 const consumeProviderAuthRecordScript = `

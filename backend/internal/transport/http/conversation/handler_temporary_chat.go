@@ -11,13 +11,13 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	appconversation "github.com/lieyanc/FireCortex/backend/internal/application/conversation"
 	"github.com/lieyanc/FireCortex/backend/internal/application/modelrouter"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 )
 
 const temporaryChatMaxRequestBytes = 8 << 20

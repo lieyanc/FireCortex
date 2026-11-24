@@ -16,11 +16,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
 	domainbilling "github.com/lieyanc/FireCortex/backend/internal/domain/billing"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 const (

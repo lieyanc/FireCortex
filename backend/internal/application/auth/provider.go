@@ -15,13 +15,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	userapp "github.com/lieyanc/FireCortex/backend/internal/application/user"
 	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/conv"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/requestmeta"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/security"
-	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 

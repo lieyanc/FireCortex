@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/textutil"
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/traceid"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
-	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )

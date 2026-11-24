@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/lieyanc/FireCortex/backend/internal/application/channel"
 	appcompact "github.com/lieyanc/FireCortex/backend/internal/application/compact"
 	appcm "github.com/lieyanc/FireCortex/backend/internal/application/contentmoderation"
@@ -17,7 +18,6 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/pkg/traceid"
 	"github.com/lieyanc/FireCortex/backend/internal/ports/llm"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/background"
-	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"

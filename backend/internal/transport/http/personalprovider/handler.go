@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	appadmin "github.com/lieyanc/FireCortex/backend/internal/application/admin"
 	apppersonalprovider "github.com/lieyanc/FireCortex/backend/internal/application/personalprovider"
 	domainpersonalprovider "github.com/lieyanc/FireCortex/backend/internal/domain/personalprovider"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 // Handler 处理用户自带 Key 的模型服务接口。

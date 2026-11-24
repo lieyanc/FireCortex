@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 	"github.com/gin-gonic/gin"
+	"github.com/lieyanc/FireCortex/backend/internal/infra/config"
 )
 
 func capabilitiesOf(t *testing.T, cfg config.Config) (map[string]bool, http.Header) {

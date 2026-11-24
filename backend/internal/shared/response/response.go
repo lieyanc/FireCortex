@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 	"github.com/gin-gonic/gin"
+	"github.com/lieyanc/FireCortex/backend/internal/shared/apperr"
 )
 
 // Envelope 是统一接口响应体。

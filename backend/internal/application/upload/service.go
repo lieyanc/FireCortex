@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	appstorage "github.com/lieyanc/FireCortex/backend/internal/application/objectstorage"
 	domainconversation "github.com/lieyanc/FireCortex/backend/internal/domain/conversation"
 	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
@@ -24,7 +25,6 @@ import (
 	"github.com/lieyanc/FireCortex/backend/internal/ports/objectstorage"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/pagination"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 

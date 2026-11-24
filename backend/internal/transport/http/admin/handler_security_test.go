@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	appadmin "github.com/lieyanc/FireCortex/backend/internal/application/admin"
 	auditapp "github.com/lieyanc/FireCortex/backend/internal/application/audit"
 	appbilling "github.com/lieyanc/FireCortex/backend/internal/application/billing"
@@ -18,7 +19,6 @@ import (
 	domainuser "github.com/lieyanc/FireCortex/backend/internal/domain/user"
 	"github.com/lieyanc/FireCortex/backend/internal/repository"
 	"github.com/lieyanc/FireCortex/backend/internal/transport/http/middleware"
-	"github.com/gin-gonic/gin"
 )
 
 func TestPatchUserReturnsForbiddenWhenAdminManagesSuperAdmin(t *testing.T) {

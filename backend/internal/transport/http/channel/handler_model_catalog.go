@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	appchannel "github.com/lieyanc/FireCortex/backend/internal/application/channel"
 	"github.com/lieyanc/FireCortex/backend/internal/shared/response"
-	"github.com/gin-gonic/gin"
 )
 
 // ---------------------------------------------------------------------------
