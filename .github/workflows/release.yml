@@ -225,18 +225,27 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # Recreate instead of editing so no stale assets survive.
-          gh release delete dev-latest --repo "${GITHUB_REPOSITORY}" --yes --cleanup-tag || true
+          release_id="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases" \
+            --jq '.[] | select(.tag_name == "dev-latest") | .id')"
           git tag -f dev-latest "${GITHUB_SHA}"
           git push --force origin refs/tags/dev-latest
-          # --latest=false keeps releases/latest pointing at the newest stable release.
-          gh release create dev-latest release/* \
-            --repo "${GITHUB_REPOSITORY}" \
-            --title "Dev build ${{ needs.meta.outputs.version }}" \
-            --notes "Rolling build of ${GITHUB_SHA} from the dev branch." \
-            --prerelease \
-            --target "${GITHUB_SHA}" \
-            --latest=false
+          metadata=(--repo "${GITHUB_REPOSITORY}" --title "Dev build ${{ needs.meta.outputs.version }}"
+            --notes "Rolling build of ${GITHUB_SHA} from the dev branch." --prerelease --latest=false)
+          if [[ -z "${release_id}" ]]; then
+            gh release create dev-latest release/* "${metadata[@]}" --verify-tag
+          else
+            # Publish the discovery metadata after the binaries and checksums.
+            gh release upload dev-latest release/firecortex-* release/{LICENSE,NOTICE,SHA256SUMS} \
+              --repo "${GITHUB_REPOSITORY}" --clobber
+            gh release upload dev-latest release/version.json --repo "${GITHUB_REPOSITORY}" --clobber
+            gh release edit dev-latest "${metadata[@]}" --target "${GITHUB_SHA}"
+            assets="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets" --jq '.[].name')"
+            while IFS= read -r asset; do
+              if [[ -n "${asset}" && ! -f "release/${asset}" ]]; then
+                gh release delete-asset dev-latest "${asset}" --repo "${GITHUB_REPOSITORY}" --yes
+              fi
+            done <<< "${assets}"
+          fi
 
   release-prod:
     name: Publish release
