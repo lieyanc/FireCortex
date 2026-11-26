@@ -182,7 +182,7 @@ func InspectManagedRoot(rawRoot, pgOverride, redisOverride, backupOverride strin
 		result.HasExistingCompose = true
 	}
 
-	pgState, pgVersion, pgReason := inspectPGDataDir(pgDir, result.HasManagedMarker && strings.TrimSpace(pgOverride) == "")
+	pgState, pgVersion, pgReason := inspectPGDataDir(pgDir)
 	switch pgState {
 	case DirStatusInvalid:
 		result.Valid = false
@@ -205,7 +205,7 @@ func InspectManagedRoot(rawRoot, pgOverride, redisOverride, backupOverride strin
 	}
 }
 
-func inspectPGDataDir(pgDir string, knownManagedRoot bool) (status string, pgVersion string, reason string) {
+func inspectPGDataDir(pgDir string) (status string, pgVersion string, reason string) {
 	info, err := os.Stat(pgDir)
 	if errors.Is(err, os.ErrNotExist) {
 		return DirStatusEmpty, "", ""
@@ -218,11 +218,6 @@ func inspectPGDataDir(pgDir string, knownManagedRoot bool) (status string, pgVer
 	}
 
 	entries, err := os.ReadDir(pgDir)
-	// PostgreSQL changes PGDATA to its container UID and mode 0700. After a
-	// partial setup the service user may only be able to inspect its parent.
-	if knownManagedRoot && errors.Is(err, os.ErrPermission) {
-		return DirStatusAdoptablePGData, "", ""
-	}
 	if err != nil {
 		return DirStatusInvalid, "", fmt.Sprintf("cannot read postgres data dir %q: %v", pgDir, err)
 	}
@@ -232,7 +227,15 @@ func inspectPGDataDir(pgDir string, knownManagedRoot bool) (status string, pgVer
 
 	verBytes, verErr := os.ReadFile(filepath.Join(pgDir, "PG_VERSION"))
 	if verErr == nil {
-		return DirStatusAdoptablePGData, strings.TrimSpace(string(verBytes)), ""
+		version := strings.TrimSpace(string(verBytes))
+		major, ok := parsePGMajorDirName(version)
+		if ok && major >= 18 {
+			return DirStatusInvalid, "", fmt.Sprintf("PostgreSQL %s data in %q must be mounted from a root containing %s/docker/PG_VERSION", version, pgDir, version)
+		}
+		if !ok {
+			return DirStatusInvalid, "", fmt.Sprintf("invalid PG_VERSION in %q", pgDir)
+		}
+		return DirStatusAdoptablePGData, version, ""
 	}
 
 	// 允许目录里只含 lost+found（独立挂载的空 ext4 分区根目录）。
@@ -241,16 +244,15 @@ func inspectPGDataDir(pgDir string, knownManagedRoot bool) (status string, pgVer
 	}
 
 	// 支持 PostgreSQL 18+ 官方镜像的版本化目录结构（如 <pgdata>/18/docker/PG_VERSION）。
-	if detectedVersion, ok := inspectVersionedPGDataRoot(pgDir, entries, knownManagedRoot); ok {
+	if detectedVersion, ok := inspectVersionedPGDataRoot(pgDir, entries); ok {
 		return DirStatusAdoptablePGData, detectedVersion, ""
 	}
-	return DirStatusInvalid, "", fmt.Sprintf("postgres data dir %q is not empty and does not contain PG_VERSION; refusing to overwrite unrelated files", pgDir)
+	return DirStatusInvalid, "", fmt.Sprintf("postgres data dir %q has an unrecognized layout; PostgreSQL 18+ requires <major>/docker/PG_VERSION under the mount root", pgDir)
 }
 
-func inspectVersionedPGDataRoot(pgDir string, entries []os.DirEntry, knownManagedRoot bool) (string, bool) {
+func inspectVersionedPGDataRoot(pgDir string, entries []os.DirEntry) (string, bool) {
 	bestMajor := 0
 	bestVersion := ""
-	foundCluster := false
 
 	for _, entry := range entries {
 		name := entry.Name()
@@ -264,74 +266,41 @@ func inspectVersionedPGDataRoot(pgDir string, entries []os.DirEntry, knownManage
 			return "", false
 		}
 		major, ok := parsePGMajorDirName(name)
-		if !ok {
+		if !ok || major < 18 || !validDockerPGData(filepath.Join(pgDir, name), name) {
 			return "", false
 		}
-		verStr, ok := inspectVersionedPGDir(filepath.Join(pgDir, name), name, knownManagedRoot)
-		if !ok {
-			return "", false
-		}
-		foundCluster = true
 		if major > bestMajor {
 			bestMajor = major
-			bestVersion = verStr
+			bestVersion = name
 		}
 	}
-	if !foundCluster {
-		return "", false
-	}
-	return bestVersion, true
+	return bestVersion, bestVersion != ""
 }
 
-func inspectVersionedPGDir(verDir, dirMajorName string, knownManagedRoot bool) (string, bool) {
-	subEntries, err := os.ReadDir(verDir)
-	if errors.Is(err, os.ErrPermission) {
-		if knownManagedRoot {
-			return dirMajorName, true
-		}
-		return "", false
+func validDockerPGData(verDir, major string) bool {
+	entries, err := os.ReadDir(verDir)
+	if err != nil {
+		return false
 	}
-	if err != nil || len(subEntries) == 0 {
-		return "", false
-	}
-
-	detected := ""
-	foundCluster := false
-	for _, sub := range subEntries {
-		name := sub.Name()
-		if name == "lost+found" && sub.IsDir() {
+	foundDocker := false
+	for _, entry := range entries {
+		if entry.Name() == "lost+found" && entry.IsDir() {
 			continue
 		}
-		if !sub.IsDir() {
-			return "", false
+		if entry.Name() != "docker" || !entry.IsDir() {
+			return false
 		}
-		verBytes, verErr := os.ReadFile(filepath.Join(verDir, name, "PG_VERSION"))
-		switch {
-		case verErr == nil:
-			foundCluster = true
-			if trimmed := strings.TrimSpace(string(verBytes)); trimmed != "" {
-				detected = trimmed
-			} else if detected == "" {
-				detected = dirMajorName
-			}
-		case errors.Is(verErr, os.ErrPermission) && (knownManagedRoot || name == "docker"):
-			// PostgreSQL 将 PGDATA（如 <major>/docker）设为容器 UID 所有的 0700 权限，
-			// 非 root 运行的服务进程可能无法直接读取其内部 PG_VERSION。
-			foundCluster = true
-			if detected == "" {
-				detected = dirMajorName
-			}
-		default:
-			return "", false
-		}
+		foundDocker = true
 	}
-	if !foundCluster {
-		return "", false
+	if !foundDocker {
+		return false
 	}
-	if detected == "" {
-		detected = dirMajorName
+	version, err := os.ReadFile(filepath.Join(verDir, "docker", "PG_VERSION"))
+	// The container owns PGDATA (0700). Its parent still identifies the exact mount layout.
+	if errors.Is(err, os.ErrPermission) {
+		return true
 	}
-	return detected, true
+	return err == nil && strings.TrimSpace(string(version)) == major
 }
 
 func parsePGMajorDirName(name string) (int, bool) {
@@ -387,7 +356,38 @@ func PrepareManagedDirs(rootDir, pgDir, redisDir, backupDir, servicesDir string)
 			return fmt.Errorf("create managed dir %q: %w", dir, err)
 		}
 	}
+	if err := ensurePostgresMountDirPerm(pgDir); err != nil {
+		return err
+	}
 	return writeManagedMarker(rootDir)
+}
+
+// ensurePostgresMountDirPerm 确保 PG 18+ 挂载到 /var/lib/postgresql 的宿主机目录对容器内
+// postgres 用户（UID 999）至少具备读取与穿越权限（o+rx，例如 0755）；对 PG <= 17 直接作为
+// PGDATA（0700）的旧目录不做权限放宽。
+func ensurePostgresMountDirPerm(pgDir string) error {
+	trimmed := strings.TrimSpace(pgDir)
+	if trimmed == "" {
+		return nil
+	}
+	// Legacy PG <= 17 mounts pgDir directly as PGDATA (0700 owned by container UID 999);
+	// never widen an existing PGDATA directory.
+	if _, err := os.Stat(filepath.Join(trimmed, "PG_VERSION")); err == nil || errors.Is(err, os.ErrPermission) {
+		return nil
+	}
+	info, err := os.Stat(trimmed)
+	if err != nil {
+		return fmt.Errorf("stat postgres data dir %q: %w", trimmed, err)
+	}
+	const otherRX = os.FileMode(0o005)
+	if info.Mode().Perm()&otherRX == otherRX {
+		return nil
+	}
+	mode := (info.Mode() & (os.ModePerm | os.ModeSetuid | os.ModeSetgid | os.ModeSticky)) | 0o055
+	if err := os.Chmod(trimmed, mode); err != nil {
+		return fmt.Errorf("ensure postgres mount dir %q is traversable: %w", trimmed, err)
+	}
+	return nil
 }
 
 func writeManagedMarker(rootDir string) error {

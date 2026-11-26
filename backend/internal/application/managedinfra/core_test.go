@@ -2,8 +2,11 @@ package managedinfra
 
 import (
 	"context"
+	"errors"
 	"io"
+	"strings"
 	"testing"
+	"time"
 
 	managedports "github.com/lieyanc/FireCortex/backend/internal/ports/managedinfra"
 )
@@ -28,6 +31,9 @@ type fakeDockerClient struct {
 	pulledImages   []string
 	containers     map[string]*managedports.ContainerInfo
 	started        []string
+	restarted      []string
+	execErr        error
+	tailLogs       string
 }
 
 func (f *fakeDockerClient) Host() string { return "unix:///fake/docker.sock" }
@@ -75,14 +81,28 @@ func (f *fakeDockerClient) StartContainer(_ context.Context, nameOrID string) er
 	}
 	return nil
 }
-func (f *fakeDockerClient) StopContainer(context.Context, string, int) error    { return nil }
-func (f *fakeDockerClient) RestartContainer(context.Context, string, int) error { return nil }
+func (f *fakeDockerClient) StopContainer(context.Context, string, int) error { return nil }
+func (f *fakeDockerClient) RestartContainer(_ context.Context, nameOrID string, _ int) error {
+	f.restarted = append(f.restarted, nameOrID)
+	for _, c := range f.containers {
+		if c.ID == nameOrID || c.Name == nameOrID {
+			c.Running = true
+			c.Status = "running"
+		}
+	}
+	return nil
+}
 func (f *fakeDockerClient) RemoveContainer(context.Context, string, bool) error { return nil }
 func (f *fakeDockerClient) ContainerStats(context.Context, string) (managedports.ContainerStats, error) {
 	return managedports.ContainerStats{}, nil
 }
-func (f *fakeDockerClient) TailLogs(context.Context, string, int) (string, error) { return "", nil }
+func (f *fakeDockerClient) TailLogs(context.Context, string, int) (string, error) {
+	return f.tailLogs, nil
+}
 func (f *fakeDockerClient) Exec(_ context.Context, _ string, cmd []string, _ []string) (managedports.ExecResult, error) {
+	if f.execErr != nil {
+		return managedports.ExecResult{}, f.execErr
+	}
 	if len(cmd) > 0 && cmd[0] == "redis-cli" {
 		return managedports.ExecResult{ExitCode: 0, Stdout: "PONG"}, nil
 	}
@@ -128,4 +148,66 @@ func TestEnsurePostgresAndRedisLifecycle(t *testing.T) {
 	if len(fake.pulledImages) != 2 || len(fake.started) != 2 {
 		t.Fatalf("unexpected docker calls for redis: pulled=%v started=%v", fake.pulledImages, fake.started)
 	}
+}
+
+func TestEnsurePostgresRestartsCrashLoopingContainerAndSurfacesLogs(t *testing.T) {
+	origPoll := pgReadyPollInterval
+	origGrace := containerCrashLoopGrace
+	pgReadyPollInterval = 5 * time.Millisecond
+	containerCrashLoopGrace = 15 * time.Millisecond
+	defer func() {
+		pgReadyPollInterval = origPoll
+		containerCrashLoopGrace = origGrace
+	}()
+
+	t.Run("restarting existing container triggers immediate restart", func(t *testing.T) {
+		fake := &fakeDockerClient{
+			containers: map[string]*managedports.ContainerInfo{
+				managedports.PostgresContainerName: {
+					ID:      "pg-restarting",
+					Name:    managedports.PostgresContainerName,
+					Status:  "restarting",
+					Running: true,
+				},
+			},
+		}
+		err := EnsurePostgres(context.Background(), fake, managedports.ContainerSpec{
+			Name:    managedports.PostgresContainerName,
+			Image:   "pgvector/pgvector:pg18-trixie",
+			Network: "firecortex-network",
+		}, "firecortex", "firecortex", nil)
+		if err != nil {
+			t.Fatalf("EnsurePostgres failed: %v", err)
+		}
+		if len(fake.restarted) != 1 || fake.restarted[0] != "pg-restarting" {
+			t.Fatalf("expected RestartContainer to be called for restarting container, got %v", fake.restarted)
+		}
+	})
+
+	t.Run("crash-looping container fails fast with deduplicated recent logs", func(t *testing.T) {
+		fake := &fakeDockerClient{
+			containers: map[string]*managedports.ContainerInfo{
+				managedports.PostgresContainerName: {
+					ID:      "pg-loop",
+					Name:    managedports.PostgresContainerName,
+					Status:  "restarting",
+					Running: true,
+				},
+			},
+			execErr: errors.New("Container pg-loop is restarting, wait until the container is running"),
+			tailLogs: "2026-11-26T10:52:58.100Z mkdir: cannot create directory '/var/lib/postgresql': Permission denied\n" +
+				"2026-11-26T10:52:59.200Z mkdir: cannot create directory '/var/lib/postgresql': Permission denied\n",
+		}
+		err := waitForPostgresReady(context.Background(), fake, managedports.PostgresContainerName, "firecortex", "firecortex", 5*time.Second)
+		if err == nil {
+			t.Fatal("expected crash-loop error, got nil")
+		}
+		if !strings.Contains(err.Error(), "crash-looping") {
+			t.Fatalf("expected crash-looping reason, got %v", err)
+		}
+		wantLog := "mkdir: cannot create directory '/var/lib/postgresql': Permission denied"
+		if strings.Count(err.Error(), wantLog) != 1 {
+			t.Fatalf("expected deduplicated recent log line once, got %v", err)
+		}
+	})
 }

@@ -212,17 +212,31 @@ func TestPathGuardBlocksProtectedAndUnrelatedDirs(t *testing.T) {
 		}
 	})
 
-	t.Run("pg18 versioned dir without PG_VERSION is rejected", func(t *testing.T) {
-		root := filepath.Join(t.TempDir(), "managed")
-		clusterDir := filepath.Join(root, "postgres", "pgdata", "18", "docker")
-		if err := os.MkdirAll(clusterDir, 0o750); err != nil {
-			t.Fatal(err)
-		}
-		res := InspectManagedRoot(root, "", "", "")
-		if res.Valid || res.Status != DirStatusInvalid {
-			t.Fatalf("expected invalid status when 18/docker has no PG_VERSION, got %+v", res)
-		}
-	})
+	for _, tc := range []struct {
+		name, cluster, version string
+	}{
+		{"non-Docker cluster", "18/main", "18"},
+		{"cluster used as mount root", ".", "18"},
+		{"missing version file", "18/docker", ""},
+		{"version differs from directory", "19/docker", "18"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			cluster := filepath.Join(root, "postgres", "pgdata", tc.cluster)
+			if err := os.MkdirAll(cluster, 0o750); err != nil {
+				t.Fatal(err)
+			}
+			if tc.version != "" {
+				if err := os.WriteFile(filepath.Join(cluster, "PG_VERSION"), []byte(tc.version+"\n"), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			res := InspectManagedRoot(root, "", "", "")
+			if res.Valid || res.Status != DirStatusInvalid {
+				t.Fatalf("expected invalid PGDATA at %s, got %+v", tc.cluster, res)
+			}
+		})
+	}
 
 	t.Run("pg18 unreadable 0700 docker subdir is still recognized", func(t *testing.T) {
 		if os.Geteuid() == 0 {
@@ -245,6 +259,55 @@ func TestPathGuardBlocksProtectedAndUnrelatedDirs(t *testing.T) {
 		res := InspectManagedRoot(root, "", "", "")
 		if !res.Valid || res.Status != DirStatusAdoptablePGData || res.PGVersion != "18" {
 			t.Fatalf("expected adoptable pgdata v18 on EACCES docker subdir, got %+v", res)
+		}
+	})
+
+	t.Run("PrepareManagedDirs makes pg18 mount root traversable without widening legacy pgdata", func(t *testing.T) {
+		root := filepath.Join(t.TempDir(), "managed")
+		pgDir := filepath.Join(root, "postgres", "pgdata")
+		redisDir := filepath.Join(root, "redis")
+		backupDir := filepath.Join(root, "postgres", "backups")
+		servicesDir := filepath.Join(root, "services")
+
+		// Pre-create pgDir with restrictive 0750 mode to simulate a prior run or strict umask.
+		if err := os.MkdirAll(pgDir, 0o750); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chmod(pgDir, 0o750); err != nil {
+			t.Fatal(err)
+		}
+		if err := PrepareManagedDirs(root, pgDir, redisDir, backupDir, servicesDir); err != nil {
+			t.Fatalf("PrepareManagedDirs failed: %v", err)
+		}
+		pgInfo, err := os.Stat(pgDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if pgInfo.Mode().Perm()&0o005 != 0o005 {
+			t.Fatalf("expected pgDir to be world read/traversable (o+rx), got %04o", pgInfo.Mode().Perm())
+		}
+
+		// Legacy PG <= 17 directory with direct PG_VERSION at 0700 must keep 0700.
+		legacyRoot := filepath.Join(t.TempDir(), "managed-legacy")
+		legacyPG := filepath.Join(legacyRoot, "postgres", "pgdata")
+		if err := os.MkdirAll(legacyPG, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(legacyPG, "PG_VERSION"), []byte("16\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chmod(legacyPG, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := PrepareManagedDirs(legacyRoot, legacyPG, "", "", ""); err != nil {
+			t.Fatalf("PrepareManagedDirs legacy failed: %v", err)
+		}
+		legacyInfo, err := os.Stat(legacyPG)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if legacyInfo.Mode().Perm() != 0o700 {
+			t.Fatalf("expected legacy PGDATA dir mode 0700 preserved, got %04o", legacyInfo.Mode().Perm())
 		}
 	})
 }

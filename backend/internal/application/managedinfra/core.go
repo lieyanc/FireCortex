@@ -21,6 +21,12 @@ const (
 	coreReadyTimeout  = 90 * time.Second
 )
 
+var (
+	pgReadyPollInterval     = 1 * time.Second
+	redisReadyPollInterval  = 500 * time.Millisecond
+	containerCrashLoopGrace = 10 * time.Second
+)
+
 // ProgressEvent 描述核心基础设施编排过程中的实时步骤事件（领域对象，无协议标签）。
 type ProgressEvent struct {
 	Step      string
@@ -221,6 +227,12 @@ func EnsurePostgres(
 			emit("start", "Failed to start PostgreSQL container: "+startErr.Error(), 0, "failed")
 			return startErr
 		}
+	case strings.EqualFold(existing.Status, "restarting"):
+		emit("start", "Restarting existing PostgreSQL container...", 50, "running")
+		if restartErr := client.RestartContainer(ctx, existing.ID, 10); restartErr != nil {
+			emit("start", "Failed to restart PostgreSQL container: "+restartErr.Error(), 0, "failed")
+			return restartErr
+		}
 	case !existing.Running:
 		emit("start", "Starting existing stopped PostgreSQL container...", 50, "running")
 		if startErr := client.StartContainer(ctx, existing.ID); startErr != nil {
@@ -233,7 +245,7 @@ func EnsurePostgres(
 
 	emit("health", "Waiting for PostgreSQL readiness...", 85, "running")
 	if err := waitForPostgresReady(ctx, client, spec.Name, pgUser, pgDatabase, coreReadyTimeout); err != nil {
-		emit("health", "PostgreSQL readiness timed out: "+err.Error(), 0, "failed")
+		emit("health", "PostgreSQL readiness failed: "+err.Error(), 0, "failed")
 		return err
 	}
 	emit("health", "PostgreSQL + pgvector is ready", 100, "done")
@@ -299,6 +311,12 @@ func EnsureRedis(
 			emit("start", "Failed to start Redis container: "+startErr.Error(), 0, "failed")
 			return startErr
 		}
+	case strings.EqualFold(existing.Status, "restarting"):
+		emit("start", "Restarting existing Redis container...", 50, "running")
+		if restartErr := client.RestartContainer(ctx, existing.ID, 10); restartErr != nil {
+			emit("start", "Failed to restart Redis container: "+restartErr.Error(), 0, "failed")
+			return restartErr
+		}
 	case !existing.Running:
 		emit("start", "Starting existing stopped Redis container...", 50, "running")
 		if startErr := client.StartContainer(ctx, existing.ID); startErr != nil {
@@ -311,7 +329,7 @@ func EnsureRedis(
 
 	emit("health", "Waiting for Redis readiness...", 85, "running")
 	if err := waitForRedisReady(ctx, client, spec.Name, password, coreReadyTimeout); err != nil {
-		emit("health", "Redis readiness timed out: "+err.Error(), 0, "failed")
+		emit("health", "Redis readiness failed: "+err.Error(), 0, "failed")
 		return err
 	}
 	emit("health", "Redis cache service is ready", 100, "done")
@@ -327,6 +345,7 @@ func waitForPostgresReady(ctx context.Context, client managedports.DockerClient,
 	}
 	deadline := time.Now().Add(timeout)
 	var lastErr string
+	var restartingSince time.Time
 	for {
 		res, err := client.Exec(ctx, containerName, []string{"pg_isready", "-U", user, "-d", dbName}, nil)
 		if err == nil && res.ExitCode == 0 {
@@ -334,19 +353,23 @@ func waitForPostgresReady(ctx context.Context, client managedports.DockerClient,
 		}
 		if err != nil {
 			lastErr = err.Error()
+			if crashErr := checkContainerCrashState(ctx, client, "postgres", containerName, &restartingSince); crashErr != nil {
+				return crashErr
+			}
 		} else {
+			restartingSince = time.Time{}
 			lastErr = strings.TrimSpace(res.Stdout + " " + res.Stderr)
 		}
 		if time.Now().After(deadline) {
 			if lastErr == "" {
 				lastErr = "pg_isready did not succeed in time"
 			}
-			return fmt.Errorf("postgres container %q not ready: %s", containerName, lastErr)
+			return formatContainerNotReadyError(ctx, client, "postgres", containerName, lastErr)
 		}
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-time.After(1 * time.Second):
+		case <-time.After(pgReadyPollInterval):
 		}
 	}
 }
@@ -358,6 +381,7 @@ func waitForRedisReady(ctx context.Context, client managedports.DockerClient, co
 		env = []string{"REDISCLI_AUTH=" + password}
 	}
 	var lastErr string
+	var restartingSince time.Time
 	for {
 		res, err := client.Exec(ctx, containerName, []string{"redis-cli", "ping"}, env)
 		if err == nil && res.ExitCode == 0 && strings.Contains(strings.ToUpper(res.Stdout), "PONG") {
@@ -365,21 +389,113 @@ func waitForRedisReady(ctx context.Context, client managedports.DockerClient, co
 		}
 		if err != nil {
 			lastErr = err.Error()
+			if crashErr := checkContainerCrashState(ctx, client, "redis", containerName, &restartingSince); crashErr != nil {
+				return crashErr
+			}
 		} else {
+			restartingSince = time.Time{}
 			lastErr = strings.TrimSpace(res.Stdout + " " + res.Stderr)
 		}
 		if time.Now().After(deadline) {
 			if lastErr == "" {
 				lastErr = "redis ping did not return PONG"
 			}
-			return fmt.Errorf("redis container %q not ready: %s", containerName, lastErr)
+			return formatContainerNotReadyError(ctx, client, "redis", containerName, lastErr)
 		}
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-time.After(500 * time.Millisecond):
+		case <-time.After(redisReadyPollInterval):
 		}
 	}
+}
+
+func checkContainerCrashState(
+	ctx context.Context,
+	client managedports.DockerClient,
+	serviceLabel string,
+	containerName string,
+	restartingSince *time.Time,
+) error {
+	info, err := client.InspectContainer(ctx, containerName)
+	if err != nil || info == nil {
+		return nil
+	}
+	switch strings.ToLower(strings.TrimSpace(info.Status)) {
+	case "exited", "dead":
+		return formatContainerNotReadyError(ctx, client, serviceLabel, containerName, "container status is "+info.Status)
+	case "restarting":
+		if restartingSince.IsZero() {
+			*restartingSince = time.Now()
+			return nil
+		}
+		if time.Since(*restartingSince) >= containerCrashLoopGrace {
+			return formatContainerNotReadyError(ctx, client, serviceLabel, containerName, "container is crash-looping (restarting)")
+		}
+	default:
+		*restartingSince = time.Time{}
+	}
+	return nil
+}
+
+func formatContainerNotReadyError(ctx context.Context, client managedports.DockerClient, serviceLabel, containerName, reason string) error {
+	snippet := recentContainerLogSnippet(ctx, client, containerName)
+	if snippet != "" {
+		return fmt.Errorf("%s container %q not ready: %s; recent logs: %s", serviceLabel, containerName, reason, snippet)
+	}
+	return fmt.Errorf("%s container %q not ready: %s", serviceLabel, containerName, reason)
+}
+
+func recentContainerLogSnippet(ctx context.Context, client managedports.DockerClient, containerName string) string {
+	raw, err := client.TailLogs(ctx, containerName, 20)
+	if err != nil || strings.TrimSpace(raw) == "" {
+		return ""
+	}
+	lines := strings.Split(strings.ReplaceAll(raw, "\r\n", "\n"), "\n")
+	var unique []string
+	seen := make(map[string]struct{}, len(lines))
+	for _, line := range lines {
+		cleaned := stripDockerLogTimestamp(strings.TrimSpace(line))
+		if cleaned == "" {
+			continue
+		}
+		if _, dup := seen[cleaned]; dup {
+			continue
+		}
+		seen[cleaned] = struct{}{}
+		unique = append(unique, cleaned)
+	}
+	if len(unique) == 0 {
+		return ""
+	}
+	if len(unique) > 5 {
+		unique = unique[len(unique)-5:]
+	}
+	joined := strings.Join(unique, " | ")
+	const maxLen = 500
+	if len(joined) > maxLen {
+		return joined[len(joined)-maxLen:]
+	}
+	return joined
+}
+
+func stripDockerLogTimestamp(line string) string {
+	idx := strings.IndexByte(line, ' ')
+	if idx <= 0 {
+		return line
+	}
+	if _, err := time.Parse(time.RFC3339Nano, line[:idx]); err != nil {
+		return line
+	}
+	return strings.TrimSpace(line[idx+1:])
+}
+
+func validateManagedPostgresDir(cfg config.Config, hostOps managedports.HostOps) error {
+	dir := hostOps.InspectManagedRoot(cfg.EffectiveManagedDataDir(), cfg.ManagedPostgresDataDir, cfg.ManagedRedisDataDir, cfg.ManagedBackupDir)
+	if !dir.Valid {
+		return fmt.Errorf("managed directory check failed: %s", dir.Reason)
+	}
+	return managedports.ValidatePostgresImageForDataVersion(cfg.ManagedPostgresImage, dir.PGVersion)
 }
 
 // EnsureStartupCoreServices 在正式模式连接数据库/缓存前执行启动自愈：
@@ -428,8 +544,7 @@ func EnsureStartupCoreServices(ctx context.Context, cfg config.Config, hostOps m
 	}
 
 	if cfg.ManagedPostgresEnabled {
-		dirInfo := hostOps.InspectManagedRoot(rootDir, cfg.ManagedPostgresDataDir, cfg.ManagedRedisDataDir, cfg.ManagedBackupDir)
-		if err := managedports.ValidatePostgresImageForDataVersion(cfg.ManagedPostgresImage, dirInfo.PGVersion); err != nil {
+		if err := validateManagedPostgresDir(cfg, hostOps); err != nil {
 			return err
 		}
 		user, password, dbName := ParsePostgresDSN(cfg.PostgresDSN)

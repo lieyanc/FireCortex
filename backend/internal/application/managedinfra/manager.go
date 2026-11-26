@@ -280,7 +280,10 @@ func (m *Manager) inspectPostgresView(ctx context.Context, cfg config.Config, cl
 	}
 	view.Image = ctr.Image
 	view.Health = ctr.Health
-	if ctr.Running {
+	if strings.EqualFold(ctr.Status, "restarting") {
+		view.Status = "unhealthy"
+		view.Message = "Container is restarting"
+	} else if ctr.Running {
 		view.Status = "running"
 		view.Reachable = ctr.Health == "" || ctr.Health == "healthy"
 		if !view.Reachable {
@@ -352,7 +355,10 @@ func (m *Manager) inspectRedisView(ctx context.Context, cfg config.Config, clien
 	}
 	view.Image = ctr.Image
 	view.Health = ctr.Health
-	if ctr.Running {
+	if strings.EqualFold(ctr.Status, "restarting") {
+		view.Status = "unhealthy"
+		view.Message = "Container is restarting"
+	} else if ctr.Running {
 		view.Status = "running"
 		view.Reachable = ctr.Health == "" || ctr.Health == "healthy"
 		if !view.Reachable {
@@ -552,9 +558,17 @@ func (m *Manager) runCoreServiceAction(
 		m.completeJob(jobID, action, serviceID, "Service restarted and healthy")
 	case "start":
 		if serviceID == managedports.CoreServicePostgres {
-			dirInfo := m.hostOps.InspectManagedRoot(cfg.EffectiveManagedDataDir(), cfg.ManagedPostgresDataDir, cfg.ManagedRedisDataDir, cfg.ManagedBackupDir)
-			if err := managedports.ValidatePostgresImageForDataVersion(cfg.ManagedPostgresImage, dirInfo.PGVersion); err != nil {
+			if err := validateManagedPostgresDir(cfg, m.hostOps); err != nil {
 				m.failJob(jobID, action, serviceID, "validate", err)
+				return
+			}
+			if err := m.hostOps.PrepareManagedDirs(cfg.EffectiveManagedDataDir(), cfg.EffectiveManagedPostgresDataDir(), "", "", ""); err != nil {
+				m.failJob(jobID, action, serviceID, "prepare", err)
+				return
+			}
+		} else {
+			if err := m.hostOps.PrepareManagedDirs(cfg.EffectiveManagedDataDir(), "", cfg.EffectiveManagedRedisDataDir(), "", ""); err != nil {
+				m.failJob(jobID, action, serviceID, "prepare", err)
 				return
 			}
 		}
@@ -568,9 +582,12 @@ func (m *Manager) runCoreServiceAction(
 		m.completeJob(jobID, action, serviceID, "Core service started and healthy")
 	case "pull":
 		if serviceID == managedports.CoreServicePostgres {
-			dirInfo := m.hostOps.InspectManagedRoot(cfg.EffectiveManagedDataDir(), cfg.ManagedPostgresDataDir, cfg.ManagedRedisDataDir, cfg.ManagedBackupDir)
-			if err := managedports.ValidatePostgresImageForDataVersion(cfg.ManagedPostgresImage, dirInfo.PGVersion); err != nil {
+			if err := validateManagedPostgresDir(cfg, m.hostOps); err != nil {
 				m.failJob(jobID, action, serviceID, "validate", err)
+				return
+			}
+			if err := m.hostOps.PrepareManagedDirs(cfg.EffectiveManagedDataDir(), cfg.EffectiveManagedPostgresDataDir(), "", "", ""); err != nil {
+				m.failJob(jobID, action, serviceID, "prepare", err)
 				return
 			}
 			m.emitJobEvent(jobID, action, serviceID, "backup", "Creating pre-upgrade PostgreSQL backup snapshot...", 10, "running")
@@ -579,6 +596,11 @@ func (m *Manager) runCoreServiceAction(
 				return
 			}
 			m.emitJobEvent(jobID, action, serviceID, "backup", "Pre-upgrade backup snapshot saved", 20, "done")
+		} else {
+			if err := m.hostOps.PrepareManagedDirs(cfg.EffectiveManagedDataDir(), "", cfg.EffectiveManagedRedisDataDir(), "", ""); err != nil {
+				m.failJob(jobID, action, serviceID, "prepare", err)
+				return
+			}
 		}
 		spec := m.buildCoreSpec(cfg, serviceID)
 		m.emitJobEvent(jobID, action, serviceID, "pull", "Pulling image "+spec.Image+"...", 25, "running")
